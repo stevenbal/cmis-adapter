@@ -5,7 +5,6 @@ from drc.backend.abstract import BaseDRCStorageBackend
 from drc_cmis import settings
 
 from .client import default_client
-from .models import DRCCMISConnection
 
 
 class CMISDRCStorageBackend(BaseDRCStorageBackend):
@@ -37,7 +36,8 @@ class CMISDRCStorageBackend(BaseDRCStorageBackend):
         else:
             return reverse('cmis:cmis-document-download', kwargs={'inhoud': enkelvoudiginformatieobject.identificatie})
 
-    def create_document(self, enkelvoudiginformatieobject):
+    def create_document(self, enkelvoudiginformatieobject, bestand=None, link=None):
+        from .models import DRCCMISConnection
         connection = DRCCMISConnection.objects.create(
             enkelvoudiginformatieobject=enkelvoudiginformatieobject, cmis_object_id=""
         )
@@ -47,15 +47,15 @@ class CMISDRCStorageBackend(BaseDRCStorageBackend):
             zaak_url=None,
             filename=None,
             sender=settings.DRC_CMIS_SENDER_PROPERTY,
-            stream=enkelvoudiginformatieobject.inhoud,
+            stream=bestand,
         )
         connection.cmis_object_id = cmis_doc.getObjectId().rsplit(";")[0]
         connection.save()
 
-    def update_document(self, enkelvoudiginformatieobject, updated_values):
-        if not hasattr(enkenvoudiginformatieobject, 'drccmisconnection'):
+    def update_document(self, enkelvoudiginformatieobject, updated_values, bestand=None, link=None):
+        if not hasattr(enkelvoudiginformatieobject, 'cmisstorage'):
             raise AttributeError('This document is not connected to CMIS')
-        default_client.update_zaakdocument(enkelvoudiginformatieobject.drccmisconnection)
+        default_client.update_zaakdocument(enkelvoudiginformatieobject.cmisstorage)
 
     def remove_document(self, enkelvoudiginformatieobject):
         raise NotImplementedError()

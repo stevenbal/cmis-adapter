@@ -102,3 +102,6 @@ ENV/
 .mypy_cache/
 uploads/
 alfresco/alfresco-community-installer-201707-linux-x64.bin
+reports/junit.xml
+
+reports/
