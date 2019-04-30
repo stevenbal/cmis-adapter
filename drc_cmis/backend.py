@@ -53,7 +53,9 @@ class CMISDRCStorageBackend(BaseDRCStorageBackend):
         connection.save()
 
     def update_document(self, enkelvoudiginformatieobject, updated_values):
-        raise NotImplementedError()
+        if not hasattr(enkenvoudiginformatieobject, 'drccmisconnection'):
+            raise AttributeError('This document is not connected to CMIS')
+        default_client.update_zaakdocument(enkelvoudiginformatieobject.drccmisconnection)
 
     def remove_document(self, enkelvoudiginformatieobject):
         raise NotImplementedError()
