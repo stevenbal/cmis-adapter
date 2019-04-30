@@ -7,8 +7,15 @@ python:
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install -U tox-travis
 
+before_script:
+  - cd alfresco
+  - vagrant up
 # Command to run tests, e.g. python setup.py test
 script: tox
+
+after_script:
+  - cd alfresco
+  - vagrant halt
 
 # Assuming you have installed the travis-ci CLI tool, after you
 # create the Github repo and add it to Travis, run the
