@@ -6,25 +6,25 @@ python:
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - sudo echo "deb http://download.virtualbox.org/virtualbox/debian precise contrib" | sudo tee -a /etc/apt/sources.list
-  - wget http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | sudo apt-key add -
-  - sudo apt-get update
-  - sudo apt-get -y install linux-headers-$(uname -r)
-  - sudo apt-get -y install virtualbox-4.2
-  - VBoxManage -v
-  - wget http://files.vagrantup.com/packages/be0bc66efc0c5919e92d8b79e973d9911f2a511f/vagrant_1.0.5_i686.deb
-  - sudo dpkg -i vagrant_1.0.5_i686.deb
   - pip install -U tox-travis
+#   - sudo echo "deb http://download.virtualbox.org/virtualbox/debian precise contrib" | sudo tee -a /etc/apt/sources.list
+#   - wget http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | sudo apt-key add -
+#   - sudo apt-get update
+#   - sudo apt-get -y install linux-headers-$(uname -r)
+#   - sudo apt-get -y install virtualbox-4.2
+#   - VBoxManage -v
+#   - wget http://files.vagrantup.com/packages/be0bc66efc0c5919e92d8b79e973d9911f2a511f/vagrant_1.0.5_i686.deb
+#   - sudo dpkg -i vagrant_1.0.5_i686.deb
 
 before_script:
   - cd alfresco
-  - /opt/vagrant/bin/vagrant up
+  - docker-compose up -d
 # Command to run tests, e.g. python setup.py test
 script: tox
 
 after_script:
   - cd alfresco
-  - /opt/vagrant/bin/vagrant halt
+  - docker-compose stop
 
 # Assuming you have installed the travis-ci CLI tool, after you
 # create the Github repo and add it to Travis, run the
