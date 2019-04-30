@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = drc_cmis
+
+[report]
+omit = */migrations/*
+exclude_lines =
+    pragma: no cover
+    noqa
