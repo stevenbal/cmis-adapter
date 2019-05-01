@@ -32,7 +32,7 @@ services:
                 -Xms1g -Xmx1g
                 "
         volumes:
-            # - ./volumes/data/alf-repo-data:/usr/local/tomcat/alf_data
+            - ./volumes/data/alf-repo-data:/usr/local/tomcat/alf_data
             - ./volumes/logs/alfresco:/usr/local/tomcat/logs
             # - ./volumes/config/alfresco-global.properties:/usr/local/tomcat/shared/classes/alfresco-global.properties
         ports:
