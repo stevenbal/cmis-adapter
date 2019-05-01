@@ -19,6 +19,7 @@ install:
 before_script:
   - cd alfresco
   - docker-compose up -d
+  - cd ../
 # Command to run tests, e.g. python setup.py test
 script: tox
 
