@@ -1,18 +1,21 @@
 ===================
-Alfresco on Vagrant
+Alfresco on Docker
 ===================
 
-Creates a linux VM with vagrant, downloads, installs and runs Alfresco
-Community.
+Creates a container that runs Alfresco Community.
 
 Usage
 =====
 
 To use this with your project you need to follow these steps:
 
-#. Start the virtual machine::
+#. Go to this directory::
 
-    $ vagrant up
+    $ cd alfresco
+
+#. Run docker-compose in the background::
+
+    $ docker-compose up -d
 
 #. If this is the first time, it will take a while for Alfresco to be
    downloaded, installed and configured.
@@ -30,30 +33,14 @@ To use this with your project you need to follow these steps:
 
 #. Click "Opslaan".
 
-====
+Locations
+=========
 
 #. You can find the Alfresco installation at::
 
     http://localhost:8080/
+    # The default username/password are: admin/admin
 
-The default username/password are: Admin/admin
+#. You can find the CMIS endpoint at::
 
-
-Background
-==========
-
-Virtual machine
----------------
-
-- Uses Vagrant Virtualbox provider
-- Creates a VM based on Ubuntu Xenial 64bit
-- VM with 4 CPUs, 4GB of memory
-- Downloads Alfresco from Sourceforge
-- Alfresco is exposed to **local port 8080**
-
-Alfresco Setup
---------------
-
-- Standard Alfresco installation with PostgreSQL
-- Admin login defaults to admin:admin
-- Install location: /opt/alfresco
+    http://localhost:8082/alfresco/cmisatom

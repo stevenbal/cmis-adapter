@@ -20,7 +20,6 @@ from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
     DocumentLockedException, SyncException
 )
-from .models import ChangeLog, DRCCMISConnection
 from .query import CMISQuery
 from .utils import get_cmis_object_id
 
@@ -330,6 +329,7 @@ class CMISDRCClient(DRCClient):
         :return: A `OrderedDict` with all `CMISChangeType`s as key and the
                  number of actions as value.
         """
+        from .models import ChangeLog, DRCCMISConnection
         EnkelvoudigInformatieObject = apps.get_model(*settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT.split("."))
         self._repo.reload()
         try:
