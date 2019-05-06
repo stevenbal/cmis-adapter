@@ -5,22 +5,6 @@ from django.conf import settings
 
 class _Settings(object):
     @property
-    def DRC_CMIS_CLIENT_URL(self):
-        return getattr(settings, "DRC_CMIS_CLIENT_URL")
-
-    @property
-    def DRC_CMIS_CLIENT_USER(self):
-        return getattr(settings, "DRC_CMIS_CLIENT_USER")
-
-    @property
-    def DRC_CMIS_CLIENT_USER_PASSWORD(self):
-        return getattr(settings, "DRC_CMIS_CLIENT_USER_PASSWORD")
-
-    @property
-    def DRC_CMIS_SENDER_PROPERTY(self):
-        return getattr(settings, "DRC_CMIS_SENDER_PROPERTY", None)
-
-    @property
     def DRC_CMIS_UPLOAD_TO(self):
         return getattr(settings, "DRC_CMIS_UPLOAD_TO", "drc_cmis.utils.upload_to")
 

@@ -1,5 +1,7 @@
 from django.db import models
 
+from solo.models import SingletonModel
+
 from drc_cmis import settings
 
 from .choices import ChangeLogStatus
@@ -86,3 +88,16 @@ class DRCCMISConnection(models.Model):
                 obj.save()
 
         return updated_objects
+
+
+class CMISConfiguration(SingletonModel):
+    client_url = models.URLField(default='http://localhost:8082/alfresco/cmisatom')
+    client_user = models.CharField(max_length=200, default='admin')
+    client_password = models.CharField(max_length=200, default='admin')
+    sender_property = models.CharField(max_length=200, null=True, blank=True)
+
+    def __unicode__(self):
+        return u"CMIS Configuration"
+
+    class Meta:
+        verbose_name = "CMIS Configuration"

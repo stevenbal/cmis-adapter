@@ -2,6 +2,11 @@
 History
 =======
 
+0.0.5 (2019-05-06)
+------------------
+
+* Moved some settings to a solo database object. to make it more dynamic.
+
 0.0.4 (2019-05-06)
 ------------------
 
