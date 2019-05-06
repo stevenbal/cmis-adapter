@@ -3,7 +3,8 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
-recursive-include drc_cmis
+recursive-include drc_cmis/management *
+recursive-include drc_cmis/migrations *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
