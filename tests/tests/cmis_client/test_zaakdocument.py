@@ -92,10 +92,13 @@ class CMISClientTests(DMSMixin, TestCase):
             cmis_doc.properties['cmis:objectId'].rsplit(';')[0]
         )
 
-    @override_settings(DRC_CMIS_SENDER_PROPERTY='zsdms:documentauteur')
     def test_maak_zaakdocument_met_sender_property(self):
         self.cmis_client.creeer_zaakfolder(self.zaak_url)
 
+        from drc_cmis.models import CMISConfiguration
+        config = CMISConfiguration.get_solo()
+        config.sender_property = 'zsdms:documentauteur'
+        config.save()
         koppeling = DRCCMISConnectionFactory.create()
 
         cmis_doc = self.cmis_client.maak_zaakdocument_met_inhoud(koppeling, self.zaak_url, sender='maykin', stream=BytesIO(b'test'))
