@@ -91,16 +91,10 @@ class DRCCMISConnection(models.Model):
 
 
 class CMISConfiguration(SingletonModel):
-    DRC_CMIS_CLIENT_URL = os.getenv('DRC_CMIS_CLIENT_URL', 'http://localhost:8082/alfresco/cmisatom')
-    DRC_CMIS_CLIENT_USER = os.getenv('DRC_CMIS_CLIENT_USER', 'admin')
-    DRC_CMIS_CLIENT_USER_PASSWORD = os.getenv('DRC_CMIS_CLIENT_USER_PASSWORD', 'admin')
-    # Use a property to store the sender information
-    DRC_CMIS_SENDER_PROPERTY = os.getenv('DRC_CMIS_SENDER_PROPERTY', None)
-
     client_url = models.URLField(default='http://localhost:8082/alfresco/cmisatom')
     client_user = models.CharField(max_length=200, default='admin')
     client_password = models.CharField(max_length=200, default='admin')
-    sender_property = mdoels.CharField(max_length=200, null=True, blank=True)
+    sender_property = models.CharField(max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return u"CMIS Configuration"
