@@ -39,6 +39,9 @@ class DRCCMISConnection(models.Model):
         "zsdms:dct.omschrijving": "informatieobjecttype",
     }
 
+    def __str__(self):
+        return f"CMIS koppeling voor {self.enkelvoudiginformatieobject}"
+
     def set_cmis_doc(self, cmis_doc):
         self.cmis_object_id = cmis_doc.getObjectId().rsplit(";")[0]
         self.save()
