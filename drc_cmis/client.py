@@ -43,12 +43,15 @@ class CMISDRCClient(DRCClient):
         :param user: string, username to login on the document store
         :param password: string, password to login on the document store
         """
+        from .models import CMISConfiguration
+        config = CMISConfiguration.get_solo()
+
         if url is None:
-            url = settings.DRC_CMIS_CLIENT_URL
+            url = config.client_url
         if user is None:
-            user = settings.DRC_CMIS_CLIENT_USER
+            user = config.client_user
         if password is None:
-            password = settings.DRC_CMIS_CLIENT_USER_PASSWORD
+            password = config.client_password
         _client = CmisClient(url, user, password)
         self._repo = _client.getDefaultRepository()
         self._root_folder = self._repo.getObjectByPath("/")

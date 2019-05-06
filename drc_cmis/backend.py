@@ -37,16 +37,17 @@ class CMISDRCStorageBackend(BaseDRCStorageBackend):
             return reverse('cmis:cmis-document-download', kwargs={'inhoud': enkelvoudiginformatieobject.identificatie})
 
     def create_document(self, enkelvoudiginformatieobject, bestand=None, link=None):
-        from .models import DRCCMISConnection
+        from .models import DRCCMISConnection, CMISConfiguration
         connection = DRCCMISConnection.objects.create(
             enkelvoudiginformatieobject=enkelvoudiginformatieobject, cmis_object_id=""
         )
 
+        config = CMISConfiguration.get_solo()
         cmis_doc = default_client.maak_zaakdocument_met_inhoud(
             koppeling=connection,
             zaak_url=None,
             filename=None,
-            sender=settings.DRC_CMIS_SENDER_PROPERTY,
+            sender=config.sender_property,
             stream=bestand,
         )
         connection.cmis_object_id = cmis_doc.getObjectId().rsplit(";")[0]

@@ -73,7 +73,6 @@ TEMPLATES = [
 #
 # CMIS SETTINGS
 #
-# DRC_CMIS_CLIENT_URL = 'http://localhost:8080/alfresco/cmisatom'
 DRC_CMIS_CLIENT_URL = 'http://localhost:8082/alfresco/cmisatom'
 DRC_CMIS_CLIENT_USER = 'admin'
 DRC_CMIS_CLIENT_USER_PASSWORD = 'admin'
