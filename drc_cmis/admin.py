@@ -5,4 +5,5 @@ from .models import DRCCMISConnection
 
 @admin.register(DRCCMISConnection)
 class DRCCMISConnectionAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('enkelvoudiginformatieobject', )
+    search_fields = ('enkelvoudiginformatieobject', )

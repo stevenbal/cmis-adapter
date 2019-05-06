@@ -14,6 +14,7 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'django_choices',
     'django',
+    'cmislib-maykin',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -43,6 +44,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/gemeenteutrecht/drc_cmis',
-    version='0.0.1',
+    version='0.0.2',
     zip_safe=False,
 )
