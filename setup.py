@@ -15,6 +15,7 @@ requirements = [
     'django_choices',
     'django',
     'cmislib-maykin',
+    'django-solo',
 ]
 
 setup_requirements = ['pytest-runner', ]
