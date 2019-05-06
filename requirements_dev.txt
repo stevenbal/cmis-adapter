@@ -16,3 +16,4 @@ cmislib-maykin==0.7.1.dev0
 django-webtest==1.9.4
 unittest-xml-reporting==2.5.1
 invoke==1.2.0
+django-solo==1.1.3

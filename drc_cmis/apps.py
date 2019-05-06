@@ -8,6 +8,7 @@ class CMISConfig(AppConfig):
     app_name = "cmis"
 
     def ready(self):
+        # pass
         register(check_cmis, Tags.compatibility, deploy=True)
 
 

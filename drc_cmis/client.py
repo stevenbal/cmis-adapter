@@ -178,8 +178,11 @@ class CMISDRCClient(DRCClient):
             zaakfolder = self._get_zaakfolder(zaak_url)
 
         properties = self._build_cmis_doc_properties(koppeling, filename=filename)
-        if settings.DRC_CMIS_SENDER_PROPERTY:
-            properties[settings.DRC_CMIS_SENDER_PROPERTY] = sender
+
+        from .models import CMISConfiguration
+        config = CMISConfiguration.get_solo()
+        if config.sender_property:
+            properties[config.sender_property] = sender
 
         _doc = self._repo.createDocument(
             name=koppeling.enkelvoudiginformatieobject.titel,

@@ -2,8 +2,6 @@ from django.urls import reverse
 
 from drc.backend.abstract import BaseDRCStorageBackend
 
-from drc_cmis import settings
-
 from .client import default_client
 
 
