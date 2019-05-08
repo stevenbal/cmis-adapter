@@ -32,6 +32,7 @@ class CMISDRCClient:
 
     document_query = CMISQuery("SELECT * FROM zsdms:document WHERE zsdms:documentIdentificatie = '%s'")
     TEMP_FOLDER_NAME = settings.DRC_CMIS_TEMP_FOLDER_NAME
+    TRASH_FOLDER = 'prullenbak'
 
     def __init__(self, url=None, user=None, password=None):
         """
