@@ -14,7 +14,6 @@ from cmislib.exceptions import ObjectNotFoundException, UpdateConflictException
 
 from drc_cmis import settings
 
-from .abstract import DRCClient
 from .choices import ChangeLogStatus, CMISChangeType, CMISObjectType
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
@@ -26,7 +25,7 @@ from .utils import get_cmis_object_id
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCClient(DRCClient):
+class CMISDRCClient:
     """
     DRC client implementation using the CMIS protocol.
     """
@@ -191,6 +190,7 @@ class CMISDRCClient(DRCClient):
             contentType=content_type,
             parentFolder=zaakfolder,
         )
+
         return _doc
 
     def geef_inhoud(self, document):
@@ -291,6 +291,11 @@ class CMISDRCClient(DRCClient):
         cmis_folder = self._get_zaakfolder(zaak_url)
         trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
         cmis_doc.move(cmis_folder, trash_folder)
+
+    def gooi_in_prullenbak(self, document):
+        cmis_doc = self._get_cmis_doc(document)
+        trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
+        cmis_doc.move(self._root_folder, trash_folder)
 
     def is_locked(self, document):
         cmis_doc = self._get_cmis_doc(document)
