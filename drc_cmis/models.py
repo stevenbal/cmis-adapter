@@ -57,11 +57,6 @@ class DRCCMISConnection(models.Model):
         """
         result = {}
         for cmis_property, field_name in self.CMIS_MAPPING.items():
-            # try:
-            #     field_class = get_model_field(EnkelvoudigInformatieObject, field_name)
-            # except FieldDoesNotExist:
-            #     field_class = None
-
             val = get_model_value(self.enkelvoudiginformatieobject, field_name)
             if val is None:
                 if not allow_none:
