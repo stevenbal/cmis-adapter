@@ -8,6 +8,9 @@ gemma-drc-cmis
 .. image:: https://img.shields.io/travis/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
            :target: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis
 
+.. image:: https://img.shields.io/codecov/c/gh/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
+           :alt: Codecov
+
 A CMIS backend for gemma-documentregistratiecomponent
 
 
