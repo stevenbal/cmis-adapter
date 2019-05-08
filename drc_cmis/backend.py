@@ -5,21 +5,22 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 
-from drc.backend.abstract import BaseDRCStorageBackend
-
 from .client import default_client
 
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCStorageBackend(BaseDRCStorageBackend):
+class CMISDRCStorageBackend:
     """
     This is the backend that is used to store the documents in a CMIS compatible backend.
+
+    This class is based on:
+    drc.backend.abstract.BaseDRCStorageBackend
     """
 
     def get_folder(self, zaak_url):
         # Folders will not be supported for now
-        pass
+        return None
 
     def create_folder(self, zaak_url):
         # Folders will not be supported for now
