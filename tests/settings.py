@@ -7,6 +7,8 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 SITE_ID = 1
 
+IS_HTTPS = False
+
 INSTALLED_APPS = [
     'drc_cmis',
     'tests.app',
@@ -16,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 ]
 
 MIDDLEWARE = [
