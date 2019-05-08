@@ -3,14 +3,14 @@ python:
 - 3.6
 
 install:
-- pip install -rrequirements_dev.txt
+- pip install -U tox-travis
 
 before_script:
 - cd alfresco
 - docker-compose up -d
 - cd ../
 
-script: coverage run runtests.py
+script: tox
 
 after_script:
 - cd alfresco
