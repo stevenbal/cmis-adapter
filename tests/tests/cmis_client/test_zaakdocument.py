@@ -226,5 +226,5 @@ class CMISClientTests(DMSMixin, TestCase):
         self.assertIsNone(result)
         # check that it's gone
         trash_folder, _ = self.cmis_client._get_or_create_folder(self.cmis_client.TRASH_FOLDER)
-        self.assertEqual(len(trash_folder.getChildren()), 0)
+        self.assertEqual(len(trash_folder.getChildren()), 1)
         self.assertEqual(len(zaak_folder.getChildren()), 0)
