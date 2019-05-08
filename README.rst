@@ -2,16 +2,11 @@
 gemma-drc-cmis
 ==============
 
+.. .. image:: https://img.shields.io/pypi/v/drc-cmis.svg?style=for-the-badge
+..         :target: https://pypi.org/project/drc-cmis/
 
-.. .. image:: https://img.shields.io/pypi/v/drc_cmis.svg
-..         :target: https://pypi.python.org/pypi/drc_cmis
-
-.. .. image:: https://img.shields.io/travis/audreyr/drc_cmis.svg
-..         :target: https://travis-ci.org/audreyr/drc_cmis
-
-.. .. image:: https://readthedocs.org/projects/drc-cmis/badge/?version=latest
-..         :target: https://drc-cmis.readthedocs.io/en/latest/?badge=latest
-..         :alt: Documentation Status
+.. .. image:: https://img.shields.io/travis/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
+..         :target: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis
 
 A CMIS backend for gemma-documentregistratiecomponent
 
@@ -38,18 +33,9 @@ Add to installed apps
         ...
     ]
 
-Add `drc_cmis` to the backends
-
-::
-
-    DRC_STORAGE_BACKENDS = [
-        'drc.backend.django.DjangoDRCStorageBackend', # If you also want to store it via django.
-        'drc_cmis.backend.CMISDRCStorageBackend',
-    ]
-
+Enable `cmis storage` in the admin of the drc under `Plugin` `Storage Config`.
 
 Features
 --------
 
-- Integrate cmis with the issues
-- Issues all year round
+- Integrate cmis in the drc
