@@ -11,7 +11,9 @@ gemma-drc-cmis
 .. image:: https://img.shields.io/codecov/c/gh/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
            :alt: Codecov
 
-A CMIS backend for gemma-documentregistratiecomponent
+A CMIS backend for gemma-documentregistratiecomponent.
+
+This package is not ment to be run seperate from gemma-documentregistratiecomponent
 
 
 * Free software: MIT license

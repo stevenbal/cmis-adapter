@@ -3,7 +3,7 @@ python:
 - 3.6
 
 install:
-- pip install -U tox-travis
+- pip install -rrequirements_dev.txt
 
 before_script:
 - cd alfresco
