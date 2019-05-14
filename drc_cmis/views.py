@@ -18,7 +18,7 @@ class DownloadFileView(DetailView):
         filename, content = default_client.geef_inhoud(document)
         content.seek(0)
         file_content = content.read()
-        print(file_content)
+
         if file_content:
             response = HttpResponse(
                 file_content, content_type="application/force-download"
@@ -27,5 +27,5 @@ class DownloadFileView(DetailView):
                 filename
             )
             return response
-        print("failed!!")
+
         raise Http404("Geen inhoud gevonden.")

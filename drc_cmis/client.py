@@ -232,7 +232,6 @@ class CMISDRCClient:
         try:
             doc = self._get_cmis_doc(document)
         except DocumentDoesNotExistError:
-            print("failed here")
             return (None, BytesIO())
 
         filename = doc.properties["cmis:name"]
@@ -334,7 +333,8 @@ class CMISDRCClient:
     def gooi_in_prullenbak(self, document):
         cmis_doc = self._get_cmis_doc(document)
         trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
-        cmis_doc.move(self._root_folder, trash_folder)
+        default_folder, _ = self._get_or_create_folder(self.TEMP_FOLDER_NAME)
+        cmis_doc.move(default_folder, trash_folder)
 
     def is_locked(self, document):
         cmis_doc = self._get_cmis_doc(document)
