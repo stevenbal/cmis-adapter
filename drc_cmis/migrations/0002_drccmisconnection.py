@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 (
                     "enkelvoudiginformatieobject",
                     models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE, to=settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT
+                        on_delete=django.db.models.deletion.CASCADE, to=settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL
                     ),
                 ),
             ],

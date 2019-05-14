@@ -13,8 +13,8 @@ class _Settings(object):
         return getattr(settings, "DRC_CMIS_CLIENT_CLASS", "drc_cmis.client.CMISDRCClient")
 
     @property
-    def DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT(self):
-        return getattr(settings, "DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT", "datamodel.EnkelvoudigInformatieObject")
+    def ENKELVOUDIGINFORMATIEOBJECT_MODEL(self):
+        return getattr(settings, "ENKELVOUDIGINFORMATIEOBJECT_MODEL", "datamodel.EnkelvoudigInformatieObject")
 
     @property
     def DRC_CMIS_TEMP_FOLDER_NAME(self):

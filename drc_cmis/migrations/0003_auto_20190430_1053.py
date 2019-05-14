@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='drccmisconnection',
             name='enkelvoudiginformatieobject',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='cmisstorage', to=settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT),
+            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='cmisstorage', to=settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL),
         ),
     ]

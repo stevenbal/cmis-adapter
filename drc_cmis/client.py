@@ -14,7 +14,6 @@ from cmislib.exceptions import ObjectNotFoundException, UpdateConflictException
 
 from drc_cmis import settings
 
-from .abstract import DRCClient
 from .choices import ChangeLogStatus, CMISChangeType, CMISObjectType
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
@@ -26,13 +25,14 @@ from .utils import get_cmis_object_id
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCClient(DRCClient):
+class CMISDRCClient:
     """
     DRC client implementation using the CMIS protocol.
     """
 
     document_query = CMISQuery("SELECT * FROM zsdms:document WHERE zsdms:documentIdentificatie = '%s'")
     TEMP_FOLDER_NAME = settings.DRC_CMIS_TEMP_FOLDER_NAME
+    TRASH_FOLDER = "prullenbak"
 
     def __init__(self, url=None, user=None, password=None):
         """
@@ -44,6 +44,7 @@ class CMISDRCClient(DRCClient):
         :param password: string, password to login on the document store
         """
         from .models import CMISConfiguration
+
         config = CMISConfiguration.get_solo()
 
         if url is None:
@@ -102,7 +103,9 @@ class CMISDRCClient(DRCClient):
         result_set = self._repo.query(query)
         unpacked_result_set = [item for item in result_set]
         if not unpacked_result_set:
-            error_string = "Document met identificatie {} bestaat niet in het DRC".format(document.identificatie)
+            error_string = "Document met identificatie {} bestaat niet in het CMIS connection".format(
+                document.identificatie
+            )
             raise DocumentDoesNotExistError(error_string)
         doc = unpacked_result_set[0]
         doc = doc.getLatestVersion()
@@ -180,6 +183,7 @@ class CMISDRCClient(DRCClient):
         properties = self._build_cmis_doc_properties(koppeling, filename=filename)
 
         from .models import CMISConfiguration
+
         config = CMISConfiguration.get_solo()
         if config.sender_property:
             properties[config.sender_property] = sender
@@ -191,6 +195,7 @@ class CMISDRCClient(DRCClient):
             contentType=content_type,
             parentFolder=zaakfolder,
         )
+
         return _doc
 
     def geef_inhoud(self, document):
@@ -292,6 +297,12 @@ class CMISDRCClient(DRCClient):
         trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
         cmis_doc.move(cmis_folder, trash_folder)
 
+    def gooi_in_prullenbak(self, document):
+        cmis_doc = self._get_cmis_doc(document)
+        trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
+        default_folder, _ = self._get_or_create_folder(self.TEMP_FOLDER_NAME)
+        cmis_doc.move(default_folder, trash_folder)
+
     def is_locked(self, document):
         cmis_doc = self._get_cmis_doc(document)
         pwc = cmis_doc.getPrivateWorkingCopy()
@@ -336,7 +347,8 @@ class CMISDRCClient(DRCClient):
                  number of actions as value.
         """
         from .models import ChangeLog, DRCCMISConnection
-        EnkelvoudigInformatieObject = apps.get_model(*settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT.split("."))
+
+        EnkelvoudigInformatieObject = apps.get_model(*settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL.split("."))
         self._repo.reload()
         try:
             dms_change_log_token = int(self._repo.info["latestChangeLogToken"])

@@ -1,4 +1,3 @@
-from django.contrib.admin.utils import get_fields_from_path
 from django.db.models.constants import LOOKUP_SEP
 
 from .choices import CMISObjectType
@@ -77,17 +76,3 @@ def get_model_value(obj, field_name):
         obj = getattr(obj, field)
 
     return obj
-
-
-def get_model_field(model, field_name):
-    """
-    Returns the `Field` instance belonging to `field_name` on a `Model`
-    instance or class. This works for related fields.
-
-    Example::
-
-        >>> get_model_field(Zaak, 'zaaktype__zaaktypeomschrijving')
-        <django.db.models.fields.CharField: zaaktypeomschrijving>
-
-    """
-    return get_fields_from_path(model, field_name)[-1]

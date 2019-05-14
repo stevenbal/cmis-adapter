@@ -2,4 +2,12 @@ from django.urls import path
 
 from .views import DownloadFileView
 
-urlpatterns = [path("content/<str:inhoud>", DownloadFileView.as_view(), name="cmis-document-download")]
+app_name = "drc_cmis"
+
+urlpatterns = [
+    path(
+        "content/<str:inhoud>.bin",
+        DownloadFileView.as_view(),
+        name="cmis-document-download",
+    )
+]
