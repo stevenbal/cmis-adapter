@@ -9,18 +9,23 @@ from .client import default_client
 
 
 class DownloadFileView(DetailView):
-    model = apps.get_model(*settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT.split("."))
-    slug_field = "uuid"
+    model = apps.get_model(*settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL.split("."))
+    slug_field = "identificatie"
     slug_url_kwarg = "inhoud"
 
     def get(self, request, *args, **kwargs):
         document = self.get_object()
         filename, content = default_client.geef_inhoud(document)
-
+        content.seek(0)
         file_content = content.read()
-
+        print(file_content)
         if file_content:
-            response = HttpResponse(file_content, content_type="application/force-download")
-            response["Content-Disposition"] = "attachment; filename=%s.bin" % smart_str(filename)
+            response = HttpResponse(
+                file_content, content_type="application/force-download"
+            )
+            response["Content-Disposition"] = "attachment; filename=%s.bin" % smart_str(
+                filename
+            )
             return response
-        raise Http404
+        print("failed!!")
+        raise Http404("Geen inhoud gevonden.")

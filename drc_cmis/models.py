@@ -22,7 +22,7 @@ class ChangeLog(models.Model):
 class DRCCMISConnection(models.Model):
     cmis_object_id = models.TextField(help_text="CMIS storage object id, internal use only", blank=True)
     enkelvoudiginformatieobject = models.OneToOneField(
-        settings.DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT, on_delete=models.CASCADE,
+        settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL, on_delete=models.CASCADE,
         related_name='cmisstorage'
     )
 
