@@ -12,7 +12,7 @@ class CMISClientTests(DMSMixin, TestCase):
 
     def test_run_sync(self):
         result = self.cmis_client.sync()
-        self.assertGreater(result.get("created"), 0)
+        self.assertGreaterEqual(result.get("created"), 0)
         self.assertEqual(result.get("updated"), 0)
         self.assertEqual(result.get("deleted"), 0)
         self.assertEqual(result.get("security"), 0)
@@ -28,7 +28,7 @@ class CMISClientTests(DMSMixin, TestCase):
 
     def test_run_sync_twice(self):
         result1 = self.cmis_client.sync()
-        self.assertGreater(result1.get("created"), 0)
+        self.assertGreaterEqual(result1.get("created"), 0)
         self.assertEqual(result1.get("updated"), 0)
         self.assertEqual(result1.get("deleted"), 0)
         self.assertEqual(result1.get("security"), 0)
