@@ -109,3 +109,4 @@ alfresco2/
 .vscode/
 alfresco/volumes/data/
 alfresco/volumes/logs/
+tests/database.db

@@ -6,7 +6,7 @@ import sys
 def runtests(args=None):
     test_dir = os.path.dirname(__file__)
     sys.path.insert(0, test_dir)
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
+    os.environ["DJANGO_SETTINGS_MODULE"] = "tests.settings"
 
     import django
     from django.test.utils import get_runner
@@ -16,10 +16,10 @@ def runtests(args=None):
 
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True)
-    args = args or ['.']
+    args = args or ["."]
     failures = test_runner.run_tests(args)
     sys.exit(failures)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runtests(sys.argv[1:])
