@@ -16,11 +16,8 @@ from drc_cmis import settings
 
 from .choices import ChangeLogStatus, CMISChangeType, CMISObjectType
 from .exceptions import (
-    DocumentConflictException,
-    DocumentDoesNotExistError,
-    DocumentExistsError,
-    DocumentLockedException,
-    SyncException,
+    DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
+    DocumentLockedException, SyncException
 )
 from .query import CMISQuery
 from .utils import get_cmis_object_id
