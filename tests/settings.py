@@ -7,6 +7,8 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 SITE_ID = 1
 
+IS_HTTPS = False
+
 INSTALLED_APPS = [
     'drc_cmis',
     'tests.app',
@@ -16,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 ]
 
 MIDDLEWARE = [
@@ -76,4 +79,4 @@ TEMPLATES = [
 DRC_CMIS_CLIENT_URL = 'http://localhost:8082/alfresco/cmisatom'
 DRC_CMIS_CLIENT_USER = 'admin'
 DRC_CMIS_CLIENT_USER_PASSWORD = 'admin'
-DRC_CMIS_ENKELVOUDIGINFORMATIEOBJECT = 'app.EnkelvoudigInformatieObject'
+ENKELVOUDIGINFORMATIEOBJECT_MODEL = 'app.EnkelvoudigInformatieObject'

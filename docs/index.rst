@@ -1,5 +1,5 @@
 Welcome to gemma-drc-cmis's documentation!
-======================================
+==========================================
 
 .. toctree::
    :maxdepth: 2
