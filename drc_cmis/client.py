@@ -33,9 +33,7 @@ class CMISDRCClient:
     DRC client implementation using the CMIS protocol.
     """
 
-    document_query = CMISQuery(
-        "SELECT * FROM zsdms:document WHERE zsdms:documentIdentificatie = '%s'"
-    )
+    document_query = CMISQuery("SELECT * FROM zsdms:document WHERE zsdms:documentIdentificatie = '%s'")
     TEMP_FOLDER_NAME = settings.DRC_CMIS_TEMP_FOLDER_NAME
     TRASH_FOLDER = "prullenbak"
 
@@ -77,9 +75,7 @@ class CMISDRCClient:
         """
         if parent is None:
             parent = self._root_folder
-        existing = next(
-            (child for child in parent.getChildren() if child.name == name), None
-        )
+        existing = next((child for child in parent.getChildren() if child.name == name), None)
         if existing is not None:
             return (existing, False)
         return (parent.createFolder(name, properties=properties or {}), True)
@@ -90,18 +86,12 @@ class CMISDRCClient:
             name = slugify(zaak_url)
         else:
             if not folder_config.name:
-                raise ValueError(
-                    ("Could not determine a folder name for zaak {}").format(
-                        slugify(zaak_url)
-                    )
-                )
+                raise ValueError(("Could not determine a folder name for zaak {}").format(slugify(zaak_url)))
         return folder_config.name or name
 
     def _get_zaakfolder(self, zaak_url):
         upload_to = self.upload_to(zaak_url)
-        bits = [
-            self.get_folder_name(zaak_url, folder_config) for folder_config in upload_to
-        ]
+        bits = [self.get_folder_name(zaak_url, folder_config) for folder_config in upload_to]
         path = "/" + ("/").join(bits)
         return self._repo.getObjectByPath(path)
 
@@ -124,10 +114,7 @@ class CMISDRCClient:
         doc = doc.getLatestVersion()
         if checkout_id is not None:
             pwc = doc.getPrivateWorkingCopy()
-            if (
-                not pwc
-                or not pwc.properties["cmis:versionSeriesCheckedOutId"] == checkout_id
-            ):
+            if not pwc or not pwc.properties["cmis:versionSeriesCheckedOutId"] == checkout_id:
                 raise DocumentConflictException("Foutieve 'pwc id' meegestuurd")
         return doc
 
@@ -153,9 +140,7 @@ class CMISDRCClient:
 
         parent = None
         for folder_config in upload_to:
-            properties = (
-                {"cmis:objectTypeId": folder_config.type} if folder_config.type else {}
-            )
+            properties = {"cmis:objectTypeId": folder_config.type} if folder_config.type else {}
             name = self.get_folder_name(zaak_url, folder_config)
             parent, _ = self._get_or_create_folder(name, properties, parent=parent)
 
@@ -166,13 +151,7 @@ class CMISDRCClient:
         return self.maak_zaakdocument_met_inhoud(koppeling, zaak_url, filename, sender)
 
     def maak_zaakdocument_met_inhoud(
-        self,
-        koppeling,
-        zaak_url=None,
-        filename=None,
-        sender=None,
-        stream=None,
-        content_type=None,
+        self, koppeling, zaak_url=None, filename=None, sender=None, stream=None, content_type=None
     ):
         """
         :param zaak_url: TODO
@@ -256,17 +235,13 @@ class CMISDRCClient:
         cmis_doc.setContentStream(stream, content_type)
 
     def update_zaakdocument(self, koppeling, checkout_id=None, inhoud=None):
-        cmis_doc = self._get_cmis_doc(
-            koppeling.enkelvoudiginformatieobject, checkout_id=checkout_id
-        )
+        cmis_doc = self._get_cmis_doc(koppeling.enkelvoudiginformatieobject, checkout_id=checkout_id)
 
         if checkout_id:
             cmis_doc = cmis_doc.getPrivateWorkingCopy()
         # build up the properties
         current_properties = cmis_doc.properties
-        new_properties = self._build_cmis_doc_properties(
-            koppeling, filename=inhoud.bestandsnaam if inhoud else None
-        )
+        new_properties = self._build_cmis_doc_properties(koppeling, filename=inhoud.bestandsnaam if inhoud else None)
         diff_properties = {
             key: value
             for key, value in new_properties.items()
@@ -281,12 +256,7 @@ class CMISDRCClient:
 
         if inhoud is not None:
             content = inhoud.to_cmis()
-            self.zet_inhoud(
-                koppeling.enkelvoudiginformatieobject,
-                content,
-                None,
-                checkout_id=checkout_id,
-            )
+            self.zet_inhoud(koppeling.enkelvoudiginformatieobject, content, None, checkout_id=checkout_id)
 
         # all went well so far, so if we have a checkout_id, we must check the document back in
         if checkout_id:
@@ -381,47 +351,33 @@ class CMISDRCClient:
         """
         from .models import ChangeLog, DRCCMISConnection
 
-        EnkelvoudigInformatieObject = apps.get_model(
-            *settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL.split(".")
-        )
+        EnkelvoudigInformatieObject = apps.get_model(*settings.ENKELVOUDIGINFORMATIEOBJECT_MODEL.split("."))
         self._repo.reload()
         try:
             dms_change_log_token = int(self._repo.info["latestChangeLogToken"])
         except KeyError:
-            raise ImproperlyConfigured(
-                "Could not retrieve the latest change log token from the DRC."
-            )
+            raise ImproperlyConfigured("Could not retrieve the latest change log token from the DRC.")
 
         if not dryrun:
             change_log = ChangeLog.objects.create(token=dms_change_log_token)
-            if (
-                (ChangeLog.objects.exclude(pk=change_log.pk)).filter(
-                    status=ChangeLogStatus.in_progress
-                )
-            ).count() > 0:
+            if ((ChangeLog.objects.exclude(pk=change_log.pk)).filter(status=ChangeLogStatus.in_progress)).count() > 0:
                 change_log.delete()
                 raise SyncException("A synchronization process is already running.")
             else:
                 pass
                 # change_log = None
-            last_change_log = (
-                ChangeLog.objects.filter(status=ChangeLogStatus.completed)
-            ).last()
+            last_change_log = (ChangeLog.objects.filter(status=ChangeLogStatus.completed)).last()
             last_zs_change_log_token = last_change_log.token if last_change_log else 0
             max_items = dms_change_log_token - last_zs_change_log_token
             if max_items < 0:
-                raise SyncException(
-                    "The DRC change log token is older than our records."
-                )
+                raise SyncException("The DRC change log token is older than our records.")
             else:
                 if max_items == 0:
                     return {}
                 created, updated, deleted, security, failed = (0, 0, 0, 0, 0)
                 cache = set()
                 result_set = self._repo.getContentChanges(
-                    changeLogToken=last_zs_change_log_token,
-                    includeProperties=True,
-                    maxItems=max_items,
+                    changeLogToken=last_zs_change_log_token, includeProperties=True, maxItems=max_items
                 )
 
                 for change_entry in result_set:
@@ -432,10 +388,7 @@ class CMISDRCClient:
                         continue
                     cache.add(cache_key)
                     try:
-                        if change_type in [
-                            CMISChangeType.created,
-                            CMISChangeType.updated,
-                        ]:
+                        if change_type in [CMISChangeType.created, CMISChangeType.updated]:
                             try:
                                 dms_document = self._repo.getObject(object_id)
                             except ObjectNotFoundException:
@@ -448,18 +401,12 @@ class CMISDRCClient:
                                 failed += 1
                                 continue
 
-                            dms_object_type = dms_document.properties.get(
-                                "cmis:objectTypeId"
-                            )
+                            dms_object_type = dms_document.properties.get("cmis:objectTypeId")
                             if dms_object_type == CMISObjectType.edc:
                                 if change_type == CMISChangeType.updated:
                                     try:
-                                        zs_document_id = dms_document.properties.get(
-                                            "zsdms:documentIdentificatie"
-                                        )
-                                        edc = EnkelvoudigInformatieObject.objects.get(
-                                            identificatie=zs_document_id
-                                        )
+                                        zs_document_id = dms_document.properties.get("zsdms:documentIdentificatie")
+                                        edc = EnkelvoudigInformatieObject.objects.get(identificatie=zs_document_id)
                                     except EnkelvoudigInformatieObject.DoesNotExist:
                                         logger.error(
                                             "[%s-%s] Object was %s but could not be found in the ZRC.",
@@ -469,9 +416,7 @@ class CMISDRCClient:
                                         )
                                         failed += 1
                                     else:
-                                        edc.update_cmis_properties(
-                                            dms_document.properties, commit=not dryrun
-                                        )
+                                        edc.update_cmis_properties(dms_document.properties, commit=not dryrun)
                                         updated += 1
 
                                 else:
@@ -480,11 +425,7 @@ class CMISDRCClient:
                         else:
                             if change_type == CMISChangeType.deleted:
                                 if not dryrun:
-                                    delete_count = (
-                                        DRCCMISConnection.objects.filter(
-                                            cmis_object_id=object_id
-                                        )
-                                    ).delete()
+                                    delete_count = (DRCCMISConnection.objects.filter(cmis_object_id=object_id)).delete()
                                     if delete_count[0] == 0:
                                         logger.warning(
                                             "[%s-%s] Object was %s but could not be found in the ZRC.",
@@ -498,9 +439,7 @@ class CMISDRCClient:
                                 else:
                                     if change_type == CMISChangeType.security:
                                         logger.info(
-                                            "[%s-%s] Security changes are not processed.",
-                                            change_entry.id,
-                                            object_id,
+                                            "[%s-%s] Security changes are not processed.", change_entry.id, object_id
                                         )
                                         security += 1
                                     else:

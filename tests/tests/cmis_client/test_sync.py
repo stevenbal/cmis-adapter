@@ -1,17 +1,8 @@
-# TODO, Test the sync function of the client
-from collections import OrderedDict
-from datetime import date, datetime
-from io import BytesIO
-from unittest import skipIf
+from django.test import TestCase
 
-from django.test import TestCase, override_settings
-
-import pytz
-
-from drc_cmis.exceptions import DocumentExistsError, SyncException
+from drc_cmis.exceptions import SyncException
 from drc_cmis.models import ChangeLog
 
-from ..factories import EnkelvoudigInformatieObjectFactory
 from ..mixins import DMSMixin
 
 
@@ -33,9 +24,7 @@ class CMISClientTests(DMSMixin, TestCase):
         with self.assertRaises(SyncException) as exc:
             self.cmis_client.sync()
 
-        self.assertEqual(
-            exc.exception.args, ("A synchronization process is already running.",)
-        )
+        self.assertEqual(exc.exception.args, ("A synchronization process is already running.",))
 
     def test_run_sync_twice(self):
         result1 = self.cmis_client.sync()
