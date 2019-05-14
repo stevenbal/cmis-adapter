@@ -9,7 +9,7 @@ Sphinx==1.8.1
 twine==1.12.1
 pytest==3.8.2
 pytest-runner==4.2
-django
+django<2.2
 factory-boy==2.11.1
 django-choices==1.6.2
 cmislib-maykin==0.7.1.dev0
