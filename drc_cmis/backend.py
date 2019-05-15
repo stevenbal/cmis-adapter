@@ -1,16 +1,19 @@
 import logging
 
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.cache import cache
 from django.urls import reverse
 
+from import_class import import_class
+
+# from .cache import cache
 from .client import default_client
+from .exceptions import DocumentDoesNotExistError
 
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCStorageBackend:
+class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
     """
     This is the backend that is used to store the documents in a CMIS compatible backend.
 
@@ -35,17 +38,36 @@ class CMISDRCStorageBackend:
         pass
 
     def get_document(self, enkelvoudiginformatieobject):
+        TempDocument = import_class(settings.TEMP_DOCUMENT_CLASS)
         try:
-            enkelvoudiginformatieobject.cmisstorage
-        except ObjectDoesNotExist:
+            storage = enkelvoudiginformatieobject.cmisstorage
+        except AttributeError:
             # logger.exception(e)
-            return None
+            return TempDocument()
         else:
-            path = reverse('cmis:cmis-document-download', kwargs={'inhoud': enkelvoudiginformatieobject.identificatie})
-            host = get_current_site(None).domain
-            schema = 'https' if settings.IS_HTTPS else 'http'
-            url = f'{schema}://{host}{path}'
-            return url
+            cached_document = cache.get(enkelvoudiginformatieobject.identificatie)
+            if cached_document:
+                return cached_document
+
+            print('creating caches')
+            try:
+                cmis_doc = default_client._get_cmis_doc(enkelvoudiginformatieobject)
+            except DocumentDoesNotExistError:
+                temp_document = TempDocument()
+                cache.set(enkelvoudiginformatieobject.identificatie, temp_document, 60)
+                return temp_document
+            else:
+                temp_document = TempDocument(
+                    url=reverse('cmis:cmis-document-download', kwargs={'inhoud': enkelvoudiginformatieobject.identificatie}),
+                    auteur=cmis_doc.properties.get('zsdms:documentauteur'),
+                    bestandsnaam=cmis_doc.properties.get('cmis:name'),
+                    creatiedatum=cmis_doc.properties.get('zsdms:documentcreatiedatum'),
+                    vertrouwelijkheidaanduiding=cmis_doc.properties.get('zsdms:vertrouwelijkaanduiding'),
+                    taal=cmis_doc.properties.get('zsdms:documenttaal'),
+                )
+                cache.set(enkelvoudiginformatieobject.identificatie, temp_document, 60)
+                return temp_document
+
 
     def create_document(self, enkelvoudiginformatieobject, bestand=None, link=None):
         from .models import DRCCMISConnection, CMISConfiguration
