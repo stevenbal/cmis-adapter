@@ -66,20 +66,20 @@ class CMISClientTests(DMSMixin, TestCase):
             'cmis:contentStreamFileName': 'bestand.txt',
             'cmis:contentStreamLength': 20,
             'cmis:contentStreamMimeType': 'application/binary',  # the default if it couldn't be determined
-            # 'zsdms:dct.categorie': document.informatieobjecttype.informatieobjectcategorie,
-            'zsdms:dct.omschrijving': document.informatieobjecttype,
-            'zsdms:documentIdentificatie': str(document.identificatie),
-            'zsdms:documentauteur': document.auteur,
-            'zsdms:documentbeschrijving': document.beschrijving,
-            'zsdms:documentcreatiedatum': get_correct_date(document.creatiedatum),
-            # 'zsdms:documentformaat': None,
-            'zsdms:documentLink': None,
-            'zsdms:documentontvangstdatum': None,
-            'zsdms:documentstatus': None,
-            'zsdms:documenttaal': document.taal,
-            'zsdms:documentversie': None,
-            'zsdms:documentverzenddatum': None,
-            'zsdms:vertrouwelijkaanduiding': document.vertrouwelijkheidaanduiding
+            # 'drc:dct.categorie': document.informatieobjecttype.informatieobjectcategorie,
+            'drc:dct.omschrijving': document.informatieobjecttype,
+            'drc:identificatie': str(document.identificatie),
+            'drc:documentauteur': document.auteur,
+            'drc:documentbeschrijving': document.beschrijving,
+            'drc:documentcreatiedatum': get_correct_date(document.creatiedatum),
+            # 'drc:documentformaat': None,
+            'drc:documentLink': None,
+            'drc:documentontvangstdatum': None,
+            'drc:documentstatus': None,
+            'drc:documenttaal': document.taal,
+            'drc:documentversie': None,
+            'drc:documentverzenddatum': None,
+            'drc:vertrouwelijkaanduiding': document.vertrouwelijkheidaanduiding
         })
 
         # the doc must be unlocked after update, easy check -> lock it

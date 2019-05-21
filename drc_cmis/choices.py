@@ -11,9 +11,9 @@ class CMISChangeType(DjangoChoices):
 
 
 class CMISObjectType(DjangoChoices):
-    zaken = ChoiceItem("F:zsdms:zaken", _("Zaken hoofd folder"))
-    zaak_folder = ChoiceItem("F:zsdms:zaak", _("Zaak folder"))
-    edc = ChoiceItem("D:zsdms:document", _("Enkelvoudig document"))
+    zaken = ChoiceItem("F:drc:zaken", _("Zaken hoofd folder"))
+    zaak_folder = ChoiceItem("F:drc:zaak", _("Zaak folder"))
+    edc = ChoiceItem("D:drc:document", _("Enkelvoudig document"))
 
 
 class CMISCapabilities(DjangoChoices):

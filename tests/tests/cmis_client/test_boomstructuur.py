@@ -28,16 +28,16 @@ class CMISClientTests(DMSMixin, TestCase):
         zaak_folder = children[0]
         self.assertEqual(zaak_folder.name, 'httpzaaknllocatie')
         self.assertExpectedProps(zaak_folder, {
-            'cmis:objectTypeId': 'F:zsdms:zaak',
+            'cmis:objectTypeId': 'F:drc:zaak',
             'cmis:baseTypeId': 'cmis:folder',
             'cmis:path': '/Zaken/httpzaaknllocatie',
-            'zsdms:startdatum': None,
-            'zsdms:einddatum': None,
-            'zsdms:zaakniveau': None,  # TODO
-            'zsdms:deelzakenindicatie': None,  # TODO
-            'zsdms:registratiedatum': None,
-            'zsdms:archiefnominatie': None,
-            'zsdms:datumVernietigDossier': None,
+            'drc:startdatum': None,
+            'drc:einddatum': None,
+            'drc:zaakniveau': None,  # TODO
+            'drc:deelzakenindicatie': None,  # TODO
+            'drc:registratiedatum': None,
+            'drc:archiefnominatie': None,
+            'drc:datumVernietigDossier': None,
         })
 
     def test_boomstructuur_unique_name(self):
@@ -60,14 +60,14 @@ class CMISClientTests(DMSMixin, TestCase):
         zaak_folder = children[0]
         self.assertEqual(zaak_folder.name, '{}'.format(stamp).replace('.', ''))
         self.assertExpectedProps(zaak_folder, {
-            'cmis:objectTypeId': 'F:zsdms:zaak',
+            'cmis:objectTypeId': 'F:drc:zaak',
             'cmis:baseTypeId': 'cmis:folder',
             'cmis:path': '/Zaken/{}'.format(stamp).replace('.', ''),
-            'zsdms:startdatum': None,
-            'zsdms:einddatum': None,
-            'zsdms:zaakniveau': None,  # TODO
-            'zsdms:deelzakenindicatie': None,  # TODO
-            'zsdms:registratiedatum': None,
-            'zsdms:archiefnominatie': None,
-            'zsdms:datumVernietigDossier': None,
+            'drc:startdatum': None,
+            'drc:einddatum': None,
+            'drc:zaakniveau': None,  # TODO
+            'drc:deelzakenindicatie': None,  # TODO
+            'drc:registratiedatum': None,
+            'drc:archiefnominatie': None,
+            'drc:datumVernietigDossier': None,
         })

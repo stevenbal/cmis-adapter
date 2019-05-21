@@ -8,7 +8,9 @@ import pytz
 
 from drc_cmis.exceptions import DocumentDoesNotExistError, DocumentExistsError
 
-from ..factories import DRCCMISConnectionFactory, EnkelvoudigInformatieObjectFactory
+from ..factories import (
+    DRCCMISConnectionFactory, EnkelvoudigInformatieObjectFactory
+)
 from ..mixins import DMSMixin
 
 
@@ -44,18 +46,18 @@ class CMISClientTests(DMSMixin, TestCase):
                 "cmis:contentStreamFileName": document.titel,
                 "cmis:contentStreamLength": 0,
                 "cmis:contentStreamMimeType": "application/binary",
-                "zsdms:dct.omschrijving": document.informatieobjecttype,
-                "zsdms:documentIdentificatie": str(document.identificatie),
-                "zsdms:documentauteur": document.auteur,
-                "zsdms:documentbeschrijving": document.beschrijving,
-                "zsdms:documentcreatiedatum": get_correct_date(document.creatiedatum),
-                "zsdms:documentLink": None,
-                "zsdms:documentontvangstdatum": document.ontvangstdatum,
-                "zsdms:documentstatus": None,
-                "zsdms:documenttaal": document.taal,
-                "zsdms:documentversie": None,
-                "zsdms:documentverzenddatum": None,
-                "zsdms:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
+                "drc:dct.omschrijving": document.informatieobjecttype,
+                "drc:identificatie": str(document.identificatie),
+                "drc:documentauteur": document.auteur,
+                "drc:documentbeschrijving": document.beschrijving,
+                "drc:documentcreatiedatum": get_correct_date(document.creatiedatum),
+                "drc:documentLink": None,
+                "drc:documentontvangstdatum": document.ontvangstdatum,
+                "drc:documentstatus": None,
+                "drc:documenttaal": document.taal,
+                "drc:documentversie": None,
+                "drc:documentverzenddatum": None,
+                "drc:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
             },
         )
 
@@ -81,18 +83,18 @@ class CMISClientTests(DMSMixin, TestCase):
                 "cmis:contentStreamFileName": document.titel,
                 "cmis:contentStreamLength": 4,
                 "cmis:contentStreamMimeType": "application/binary",
-                "zsdms:dct.omschrijving": document.informatieobjecttype,
-                "zsdms:documentIdentificatie": str(document.identificatie),
-                "zsdms:documentauteur": document.auteur,
-                "zsdms:documentbeschrijving": document.beschrijving,
-                "zsdms:documentcreatiedatum": get_correct_date(document.creatiedatum),
-                "zsdms:documentLink": None,
-                "zsdms:documentontvangstdatum": document.ontvangstdatum,
-                "zsdms:documentstatus": None,
-                "zsdms:documenttaal": document.taal,
-                "zsdms:documentversie": None,
-                "zsdms:documentverzenddatum": None,
-                "zsdms:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
+                "drc:dct.omschrijving": document.informatieobjecttype,
+                "drc:identificatie": str(document.identificatie),
+                "drc:documentauteur": document.auteur,
+                "drc:documentbeschrijving": document.beschrijving,
+                "drc:documentcreatiedatum": get_correct_date(document.creatiedatum),
+                "drc:documentLink": None,
+                "drc:documentontvangstdatum": document.ontvangstdatum,
+                "drc:documentstatus": None,
+                "drc:documenttaal": document.taal,
+                "drc:documentversie": None,
+                "drc:documentverzenddatum": None,
+                "drc:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
             },
         )
 
@@ -108,7 +110,7 @@ class CMISClientTests(DMSMixin, TestCase):
         from drc_cmis.models import CMISConfiguration
 
         config = CMISConfiguration.get_solo()
-        config.sender_property = "zsdms:documentauteur"
+        config.sender_property = "drc:documentauteur"
         config.save()
         koppeling = DRCCMISConnectionFactory.create()
 
@@ -124,18 +126,18 @@ class CMISClientTests(DMSMixin, TestCase):
                 "cmis:contentStreamFileName": document.titel,
                 "cmis:contentStreamLength": 4,
                 "cmis:contentStreamMimeType": "application/binary",
-                "zsdms:dct.omschrijving": document.informatieobjecttype,
-                "zsdms:documentIdentificatie": str(document.identificatie),
-                "zsdms:documentauteur": "maykin",  # overridden by the sender
-                "zsdms:documentbeschrijving": document.beschrijving,
-                "zsdms:documentcreatiedatum": get_correct_date(document.creatiedatum),
-                "zsdms:documentLink": None,
-                "zsdms:documentontvangstdatum": document.ontvangstdatum,
-                "zsdms:documentstatus": None,
-                "zsdms:documenttaal": document.taal,
-                "zsdms:documentversie": None,
-                "zsdms:documentverzenddatum": None,
-                "zsdms:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
+                "drc:dct.omschrijving": document.informatieobjecttype,
+                "drc:identificatie": str(document.identificatie),
+                "drc:documentauteur": "maykin",  # overridden by the sender
+                "drc:documentbeschrijving": document.beschrijving,
+                "drc:documentcreatiedatum": get_correct_date(document.creatiedatum),
+                "drc:documentLink": None,
+                "drc:documentontvangstdatum": document.ontvangstdatum,
+                "drc:documentstatus": None,
+                "drc:documenttaal": document.taal,
+                "drc:documentversie": None,
+                "drc:documentverzenddatum": None,
+                "drc:vertrouwelijkaanduiding": document.vertrouwelijkheidaanduiding,
             },
         )
 

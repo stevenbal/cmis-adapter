@@ -3,15 +3,14 @@ from django.test import override_settings
 from cmislib.exceptions import ObjectNotFoundException
 
 from drc_cmis import settings
-from drc_cmis.client import default_client
+from drc_cmis.client import cmis_client
 
 
 class DMSMixin:
-    @override_settings(DRC_CMIS_TEMP_FOLDER_NAME='/_temp')
     def setUp(self):
         super().setUp()
 
-        self.cmis_client = default_client
+        self.cmis_client = cmis_client
         self.addCleanup(lambda: self._removeTree('/Zaken'))
         self.addCleanup(lambda: self._removeTree('/Sites/archief/documentLibrary'))
         self.addCleanup(lambda: self._removeTree('/_temp'))

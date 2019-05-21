@@ -1,14 +1,15 @@
+import base64
 import logging
 
 from django.conf import settings
-from django.core.cache import cache
 from django.urls import reverse
 
+from cmislib.exceptions import UpdateConflictException
 from import_class import import_class
 
 # from .cache import cache
-from .client import default_client
-from .exceptions import DocumentDoesNotExistError
+from .client import cmis_client
+from .exceptions import DocumentExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -20,85 +21,77 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
     This class is based on:
     drc.backend.abstract.BaseDRCStorageBackend
     """
+    def create_document(self, validated_data, inhoud):
+        identificatie = validated_data.pop('identificatie')
+        titel = validated_data.get('titel')
 
-    def get_folder(self, zaak_url):
-        # Folders will not be supported for now
-        return None
-
-    def create_folder(self, zaak_url):
-        # Folders will not be supported for now
-        pass
-
-    def rename_folder(self, old_zaak_url, new_zaak_url):
-        # Folders will not be supported for now
-        pass
-
-    def remove_folder(self, zaak_url):
-        # Folders will not be supported for now
-        pass
-
-    def get_document(self, enkelvoudiginformatieobject):
-        TempDocument = import_class(settings.TEMP_DOCUMENT_CLASS)
         try:
-            storage = enkelvoudiginformatieobject.cmisstorage
-        except AttributeError:
-            # logger.exception(e)
-            return TempDocument()
-        else:
-            cached_document = cache.get(enkelvoudiginformatieobject.identificatie)
-            if cached_document:
-                return cached_document
+            cmis_client.create_document(identificatie, titel, validated_data, inhoud)
+        except UpdateConflictException:
+            raise self.exception_class({None: 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'}, create=True)
+        except DocumentExistsError as e:
+            raise self.exception_class({None: e.message}, create=True)
 
-            print('creating caches')
-            try:
-                cmis_doc = default_client._get_cmis_doc(enkelvoudiginformatieobject)
-            except DocumentDoesNotExistError:
-                temp_document = TempDocument()
-                cache.set(enkelvoudiginformatieobject.identificatie, temp_document, 60)
-                return temp_document
-            else:
-                temp_document = TempDocument(
-                    url=reverse('cmis:cmis-document-download', kwargs={'inhoud': enkelvoudiginformatieobject.identificatie}),
-                    auteur=cmis_doc.properties.get('zsdms:documentauteur'),
-                    bestandsnaam=cmis_doc.properties.get('cmis:name'),
-                    creatiedatum=cmis_doc.properties.get('zsdms:documentcreatiedatum'),
-                    vertrouwelijkheidaanduiding=cmis_doc.properties.get('zsdms:vertrouwelijkaanduiding'),
-                    taal=cmis_doc.properties.get('zsdms:documenttaal'),
-                )
-                cache.set(enkelvoudiginformatieobject.identificatie, temp_document, 60)
-                return temp_document
+    def get_documents(self):
+        cmis_documents = cmis_client.get_cmis_documents()
 
+        documents_data = []
+        for cmis_doc in cmis_documents:
+            documents_data.append(self._create_dict_from_cmis_doc(cmis_doc))
 
-    def create_document(self, enkelvoudiginformatieobject, bestand=None, link=None):
-        from .models import DRCCMISConnection, CMISConfiguration
-        connection = DRCCMISConnection.objects.create(
-            enkelvoudiginformatieobject=enkelvoudiginformatieobject, cmis_object_id=""
-        )
+        return documents_data
 
-        config = CMISConfiguration.get_solo()
-        cmis_doc = default_client.maak_zaakdocument_met_inhoud(
-            koppeling=connection,
-            zaak_url=None,
-            filename=None,
-            sender=config.sender_property,
-            stream=bestand,
-        )
-        connection.cmis_object_id = cmis_doc.getObjectId().rsplit(";")[0]
-        connection.save()
+    def update_enkelvoudiginformatieobject(self, validated_data, identificatie, inhoud):
+        cmis_client.update_document(identificatie, validated_data, inhoud)
 
-    def update_document(self, enkelvoudiginformatieobject, updated_values, bestand=None, link=None):
-        if not hasattr(enkelvoudiginformatieobject, 'cmisstorage'):
-            raise AttributeError('This document is not connected to CMIS')
-        default_client.update_zaakdocument(enkelvoudiginformatieobject.cmisstorage)
+    def _create_dict_from_cmis_doc(self, cmis_doc):
+        properties = cmis_doc.getProperties()
 
-    def remove_document(self, enkelvoudiginformatieobject):
-        if not hasattr(enkelvoudiginformatieobject, 'cmisstorage'):
-            raise AttributeError('This document is not connected to CMIS')
-        default_client.gooi_in_prullenbak(enkelvoudiginformatieobject)
+        # Values that need some parsing.
+        creatiedatum = properties.get("drc:creatiedatum")
+        if creatiedatum:
+            creatiedatum = creatiedatum.date()
 
-    def connect_document_to_folder(self, enkelvoudiginformatieobject):
-        # Folders will not be supported for now
-        # Alfresco does not support multiple connections yet.
-        # TODO: Look into relationships
-        # createRelationship
-        pass
+        ontvangstdatum = properties.get("drc:ontvangstdatum")
+        if ontvangstdatum:
+            ontvangstdatum = ontvangstdatum.date()
+
+        verzenddatum = properties.get("drc:verzenddatum")
+        if verzenddatum:
+            verzenddatum = verzenddatum.date()
+
+        ondertekening_datum = properties.get("drc:ondertekening_datum")
+        if ondertekening_datum:
+            ondertekening_datum = ondertekening_datum.date()
+
+        integriteit_datum = properties.get("drc:integriteit_datum")
+        if integriteit_datum:
+            integriteit_datum = integriteit_datum.date()
+
+        inhoud = None  # base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
+
+        return {
+            "url": "{}{}".format(settings.HOST_URL, reverse('objectinformatieobject-detail', kwargs={'version': '1', 'uuid': properties.get("drc:identificatie")})),
+            "titel": properties.get("cmis:name"),
+            "identificatie": properties.get("drc:identificatie"),
+            "bronorganisatie": properties.get("drc:bronorganisatie"),
+            "creatiedatum": creatiedatum,
+            "vertrouwelijkaanduiding": properties.get("drc:vertrouwelijkaanduiding"),
+            "auteur": properties.get("drc:auteur"),
+            "status": properties.get("drc:status"),
+            "beschrijving": properties.get("drc:beschrijving"),
+            "ontvangstdatum": ontvangstdatum,
+            "verzenddatum": verzenddatum,
+            "indicatie_gebruiksrecht": properties.get("drc:indicatie_gebruiksrecht"),
+            "ondertekening_soort": properties.get("drc:ondertekening_soort"),
+            "ondertekening_datum": ondertekening_datum,
+            "informatieobjecttype": properties.get("drc:informatieobjecttype"),
+            "formaat": properties.get("drc:formaat"),
+            "taal": properties.get("drc:taal"),
+            "bestandsnaam": properties.get("drc:bestandsnaam"),
+            "link": properties.get("drc:link"),
+            "integriteit_algoritme": properties.get("drc:integriteit_algoritme"),
+            "integriteit_waarde": properties.get("drc:integriteit_waarde"),
+            "integriteit_datum": integriteit_datum,
+            "inhoud": inhoud,
+        }

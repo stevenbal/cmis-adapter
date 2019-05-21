@@ -4,9 +4,11 @@ from django.urls import reverse
 import factory
 from django_webtest import WebTest
 
-from drc_cmis.client import default_client
+from drc_cmis.client import cmis_client
 
-from .factories import DRCCMISConnectionFactory, EnkelvoudigInformatieObjectFactory
+from .factories import (
+    DRCCMISConnectionFactory, EnkelvoudigInformatieObjectFactory
+)
 from .mixins import DMSMixin
 
 
@@ -25,7 +27,7 @@ class DownloadFileViewTests(DMSMixin, WebTest):
         koppeling = DRCCMISConnectionFactory(
             enkelvoudiginformatieobject=enkelvoudig_informatie_object
         )
-        default_client.maak_zaakdocument_met_inhoud(
+        cmis_client.maak_zaakdocument_met_inhoud(
             koppeling, stream=enkelvoudig_informatie_object.inhoud
         )
         enkelvoudig_informatie_object.inhoud.seek(0)

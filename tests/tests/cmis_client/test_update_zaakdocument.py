@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from faker import Faker
 
-from drc_cmis.client import default_client
+from drc_cmis.client import cmis_client
 from drc_cmis.exceptions import DocumentConflictException
 from drc_cmis.storage import BinaireInhoud
 
@@ -21,7 +21,7 @@ class CMISClientTests(DMSMixin, TestCase):
         document = EnkelvoudigInformatieObjectFactory.create()
 
         koppeling = DRCCMISConnectionFactory(enkelvoudiginformatieobject=document)
-        default_client.maak_zaakdocument_met_inhoud(koppeling, stream=document.inhoud)
+        cmis_client.maak_zaakdocument_met_inhoud(koppeling, stream=document.inhoud)
 
         # Update the document
         new_file_name = fake.file_name()
@@ -37,10 +37,10 @@ class CMISClientTests(DMSMixin, TestCase):
         self.assertExpectedProps(
             cmis_doc, {
                 'cmis:contentStreamLength': document.inhoud.size,
-                'zsdms:documentIdentificatie': str(document.identificatie),
+                'drc:identificatie': str(document.identificatie),
                 'cmis:versionSeriesCheckedOutId': None,
                 'cmis:name': new_file_name,
-                'zsdms:documentbeschrijving': 'Andere beschrijving',
+                'drc:documentbeschrijving': 'Andere beschrijving',
             }
         )
 
@@ -66,7 +66,7 @@ class CMISClientTests(DMSMixin, TestCase):
         self.assertExpectedProps(
             cmis_doc, {
                 'cmis:contentStreamLength': 20,
-                'zsdms:documentIdentificatie': str(document.identificatie),
+                'drc:identificatie': str(document.identificatie),
                 'cmis:versionSeriesCheckedOutId': None,
                 'cmis:name': new_file_name,
             }

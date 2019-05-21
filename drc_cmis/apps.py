@@ -31,12 +31,12 @@ def check_cmis(app_configs, **kwargs):
     :param kwargs:
     :return:
     """
-    from .client import default_client
+    from .client import cmis_client
     from .choices import CMISCapabilities, CMISCapabilityChanges
 
     errors = []
     try:
-        capabilities = default_client._repo.capabilities
+        capabilities = cmis_client._repo.capabilities
     except Exception:
         errors.append(
             Error(

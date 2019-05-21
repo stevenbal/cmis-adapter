@@ -5,8 +5,8 @@ class CMISQuery:
 
     Usage:
     >>> query = CMSQuery("SELECT * FROM cmis:document WHERE cmis:objectTypeId = '%s'")
-    >>> query('zsdms:document')
-    "SELECT * FROM cmis:document WHERE cmis:objectTypeId = 'zsdms:document';"
+    >>> query('drc:document')
+    "SELECT * FROM cmis:document WHERE cmis:objectTypeId = 'drc:document';"
     """
 
     def __init__(self, query):

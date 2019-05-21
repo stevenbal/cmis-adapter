@@ -8,18 +8,18 @@ class ModelTests(TestCase):
         koppeling = DRCCMISConnectionFactory()
         document = koppeling.enkelvoudiginformatieobject
         self.assertEqual(koppeling.get_cmis_properties(), {
-            'zsdms:documenttaal': document.taal,
-            'zsdms:documentLink': '',
+            'drc:documenttaal': document.taal,
+            'drc:documentLink': '',
             'cmis:name': document.titel,
-            'zsdms:documentIdentificatie': document.identificatie,
-            'zsdms:documentcreatiedatum': document.creatiedatum,
-            'zsdms:documentontvangstdatum': None,
-            'zsdms:documentbeschrijving': document.beschrijving,
-            'zsdms:documentverzenddatum': None,
-            'zsdms:vertrouwelijkaanduiding': document.vertrouwelijkheidaanduiding,
-            'zsdms:documentauteur': document.auteur,
-            'zsdms:documentstatus': '',
-            'zsdms:dct.omschrijving': 'https://example.com/ztc/api/v1/catalogus/1/informatieobjecttype/1'
+            'drc:identificatie': document.identificatie,
+            'drc:documentcreatiedatum': document.creatiedatum,
+            'drc:documentontvangstdatum': None,
+            'drc:documentbeschrijving': document.beschrijving,
+            'drc:documentverzenddatum': None,
+            'drc:vertrouwelijkaanduiding': document.vertrouwelijkheidaanduiding,
+            'drc:documentauteur': document.auteur,
+            'drc:documentstatus': '',
+            'drc:dct.omschrijving': 'https://example.com/ztc/api/v1/catalogus/1/informatieobjecttype/1'
         })
 
     def test_get_cmis_properties_with_mapping(self):
