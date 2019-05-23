@@ -23,169 +23,6 @@
 
  <constraints/>
     <types>
-        <!-- <type name="drc:zaaktype">
-            <title>Zaaktype</title>
-            <description>Zaaktype</description>
-            <parent>cm:folder</parent>
-            <properties>
-                <property name="drc:Zaaktype-omschrijving">
-                    <title>Zaaktype omschrijving</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-            </properties>
-        </type> -->
-
-        <!-- <type name="drc:zaak">
-            <title>Zaakdossier</title>
-            <description>Zaakdossier</description>
-            <parent>cm:folder</parent>
-            <properties>
-                <property name="drc:startdatum">
-                    <title>Startdatum zaak</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:einddatum">
-                    <title>Einddatum zaak</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaakniveau">
-                    <title>Zaakniveau</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:deelzakenindicatie">
-                    <title>Indicatie deelzaken</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:registratiedatum">
-                    <title>Registratiedatum zaak</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:archiefnominatie">
-                    <title>Archiefnominatie zaak</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:datumVernietigDossier">
-                    <title>Vernietigingsdatum zaak</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:resultaatomschrijving">
-                    <title>Resultaatomschrijving zaak</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:medewerkeridentificatie">
-                    <title>Medewerkeridentificatie initiator</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:organisatieidentificatie">
-                    <title>Organisatieidentificatie initiator</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:inp.bsn">
-                    <title>Burger service nummer initiator</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:anp.identificatie">
-                    <title>Nummer van ander natuurlijk persoon (initiator)</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:inn.nnpId">
-                    <title>Nummer van ander niet natuurlijk persoon (initiator)</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:ann.identificatie">
-                    <title>Nummer van buitenlands niet natuurlijk persoon (initiator)</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:vestigingsNummer">
-                    <title>Vestigingsnummer (initiator)</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-            </properties>
-            <mandatory-aspects>
-                <aspect>drc:zaakidentificatieAspect</aspect>
-            </mandatory-aspects>
-        </type> -->
-
         <type name="drc:document">
             <title>Document</title>
             <description>Document</description>
@@ -234,102 +71,46 @@
                 <property name="drc:auteur">
                     <title>DRC - Auteur</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:status">
                     <title>DRC - Status</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:beschrijving">
                     <title>DRC - Beschrijving</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:ontvangstdatum">
                     <title>DRC - Ontvangst datum</title>
                     <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:verzenddatum">
                     <title>DRC - Verzend datum</title>
                     <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
-                <!-- TODO: Nog in te vullen -->
                 <property name="drc:indicatie_gebruiksrecht">
                     <title>DRC - Indicatie gebruiksrecht</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:ondertekening_soort">
                     <title>DRC - Ondertekening soort</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:ondertekening_datum">
                     <title>DRC - Ondertekening datum</title>
                     <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:informatieobjecttype">
                     <title>DRC - Informatie object type</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:formaat">
                     <title>DRC - Formaat</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:taal">
                     <title>DRC - Taal</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:bestandsnaam">
                     <title>DRC - Bestandsnaam</title>
@@ -343,33 +124,22 @@
                 <property name="drc:link">
                     <title>DRC - link</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:integriteit_algoritme">
                     <title>DRC - integriteit_algoritme</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:integriteit_waarde">
                     <title>DRC - integriteit_waarde</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
                 </property>
                 <property name="drc:integriteit_datum">
                     <title>DRC - integriteit_datum</title>
                     <type>d:date</type>
+                </property>
+                <property name="drc:zaak_url">
+                    <title>DRC - zaak_url</title>
+                    <type>d:text</type>
                     <index enabled="true">
                         <atomic>true</atomic>
                         <stored>false</stored>
@@ -382,26 +152,7 @@
             <!-- tmlo:datumAanmaak word door alfresco bijgehouden in het veld cm:created  -->
             <mandatory-aspects>
                 <aspect>cm:titled</aspect>
-                <!-- <aspect>drc:zaakidentificatieAspect</aspect> -->
             </mandatory-aspects>
         </type>
     </types>
-
-    <!-- <aspects>
-          <aspect name="drc:zaakidentificatieAspect">
-            <title>Zaakidentificatie Aspect</title>
-           <description>Zaakidentificatie Aspect</description>
-            <properties>
-              <property name="drc:zaakidentificatie">
-                    <title>Zaak identificatie</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-             </property>
-            </properties>
-        </aspect>
-    </aspects> -->
 </model>

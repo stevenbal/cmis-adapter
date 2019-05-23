@@ -1,4 +1,6 @@
+import codecs
 import logging
+from datetime import datetime
 from io import BytesIO
 
 from django.utils.text import slugify
@@ -21,14 +23,12 @@ class CMISDRCClient:
     """
     DRC client implementation using the CMIS protocol.
     """
-
-    documents_query = CMISQuery("SELECT * FROM cmis:document")
+    documents_query = CMISQuery("SELECT * FROM cmis:document as D WHERE %s")
     document_query = CMISQuery("SELECT * FROM drc:document WHERE drc:identificatie = '%s'")
-    TEMP_FOLDER_NAME = 'temp_enkelvoudiginformatieobjecten'
-    TRASH_FOLDER = "prullenbak"
 
     _repo = None
     _root_folder = None
+    _base_folder = None
 
     @property
     def _get_repo(self):
@@ -48,6 +48,12 @@ class CMISDRCClient:
             self._root_folder = self._get_repo.getObjectByPath("/")
         return self._root_folder
 
+    @property
+    def _get_base_folder(self):
+        if not self._base_folder:
+            self._base_folder = self._get_or_create_folder('DRC', self._get_root_folder)
+        return self._base_folder
+
     def create_document(self, identificatie, data, stream=None):
         """
         :param identificatie: EnkelvoudigInformatieObject identificatie
@@ -59,15 +65,19 @@ class CMISDRCClient:
         """
         self._check_document_exists(identificatie)
 
+        now = datetime.now()
+
         if stream is None:
             stream = BytesIO()
 
-        temp_folder, _ = self._get_or_create_folder(self.TEMP_FOLDER_NAME, self._get_root_folder)
+        year_folder = self._get_or_create_folder(str(now.year), self._get_base_folder)
+        month_folder = self._get_or_create_folder(str(now.month), year_folder)
+        day_folder = self._get_or_create_folder(str(now.day), month_folder)
         properties = self._build_properties(identificatie, data)
 
         return self._get_repo.createDocument(
             name=data.get('titel'), properties=properties, contentFile=stream, contentType=None,
-            parentFolder=temp_folder,
+            parentFolder=day_folder,
         )
 
     def get_cmis_documents(self):
@@ -76,7 +86,25 @@ class CMISDRCClient:
 
         :return: :class:`AtomPubDocument` list
         """
-        query = self.documents_query()
+        from .models import CMISConfig
+        config = CMISConfig.get_solo()
+        folders = config.locations.values_list('location', flat=True)
+
+        folder_query = ""
+        for index, folder in enumerate(folders):
+            cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
+            # /app:company_home/cm:DRC/*/*/*/*
+            # folder_query += f"CONTAINS(D, 'PATH:\"{folder}\"') "
+            folder_query += f"IN_TREE(D, '{cmis_folder.properties.get('cmis:objectId')}') "
+            if index + 1 < len(folders):
+                folder_query += "OR "
+
+        query = self.documents_query(folder_query)
+        print(query)
+        # Remove the /'s from the string
+        query = codecs.escape_decode(query)[0].decode()
+        print(query)
+
         result_set = self._get_repo.query(query)
         unpacked_result_set = [item for item in result_set]
         cmis_documents = [doc.getLatestVersion() for doc in unpacked_result_set]
@@ -135,9 +163,13 @@ class CMISDRCClient:
           pass to the folder object
         :return: the folder that was retrieved or created.
         """
-        existing = next((child for child in parent.getChildren() if child.name == name), None)
+        print('===================================================')
+        existing = next((child for child in parent.getChildren() if str(child.name) == str(name)), None)
         if existing is not None:
             return existing
+
+        print(parent)
+        print(name)
         return parent.createFolder(name, properties=properties or {})
 
     def _build_properties(self, identificatie, data):
