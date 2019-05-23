@@ -93,8 +93,6 @@ class CMISDRCClient:
         folder_query = ""
         for index, folder in enumerate(folders):
             cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
-            # /app:company_home/cm:DRC/*/*/*/*
-            # folder_query += f"CONTAINS(D, 'PATH:\"{folder}\"') "
             folder_query += f"IN_TREE(D, '{cmis_folder.properties.get('cmis:objectId')}') "
             if index + 1 < len(folders):
                 folder_query += "OR "
