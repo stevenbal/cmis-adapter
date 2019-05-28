@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from io import BytesIO
 
+from django.utils import timezone
 from django.utils.text import slugify
 
 from cmislib import CmisClient
@@ -24,7 +25,9 @@ class CMISDRCClient:
     DRC client implementation using the CMIS protocol.
     """
     documents_query = CMISQuery("SELECT * FROM cmis:document as D WHERE %s")
+    document_cases_query = CMISQuery("SELECT * FROM drc:document WHERE drc:oio_zaak_url IS NOT NULL")
     document_query = CMISQuery("SELECT * FROM drc:document WHERE drc:identificatie = '%s'")
+    document_query = CMISQuery("SELECT * FROM cmis:document WHERE cmis:objectId = 'workspace://SpacesStore/%s;1.0'")
 
     _repo = None
     _root_folder = None
@@ -80,24 +83,28 @@ class CMISDRCClient:
             parentFolder=day_folder,
         )
 
-    def get_cmis_documents(self):
+    def get_cmis_documents(self, filter_case=False):
         """
-        Givens a list of cmis documents.
+        Gives a list of cmis documents.
 
         :return: :class:`AtomPubDocument` list
         """
         from .models import CMISConfig
-        config = CMISConfig.get_solo()
-        folders = config.locations.values_list('location', flat=True)
 
-        folder_query = ""
-        for index, folder in enumerate(folders):
-            cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
-            folder_query += f"IN_TREE(D, '{cmis_folder.properties.get('cmis:objectId')}') "
-            if index + 1 < len(folders):
-                folder_query += "OR "
+        if filter_case:
+            query = self.document_cases_query()
+        else:
+            config = CMISConfig.get_solo()
+            folders = config.locations.values_list('location', flat=True)
 
-        query = self.documents_query(folder_query)
+            folder_query = ""
+            for index, folder in enumerate(folders):
+                cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
+                folder_query += f"IN_TREE(D, '{cmis_folder.properties.get('cmis:objectId')}') "
+                if index + 1 < len(folders):
+                    folder_query += "OR "
+            query = self.documents_query(folder_query)
+
         print(query)
         # Remove the /'s from the string
         query = codecs.escape_decode(query)[0].decode()
@@ -138,7 +145,7 @@ class CMISDRCClient:
             if current_properties.get(key) != new_properties.get(key)
         }
 
-        print(diff_properties)
+        print(diff_properties)  # TODO: remove print
 
         try:
             cmis_doc.updateProperties(diff_properties)
@@ -148,6 +155,23 @@ class CMISDRCClient:
 
         if stream is not None:
             cmis_doc.setContentStream(stream, None)
+
+    def update_case_connection(self, cmis_doc, data):
+        current_properties = cmis_doc.properties
+        new_properties = self._build_case_properties(data)
+        diff_properties = {
+            key: value
+            for key, value in new_properties.items()
+            if current_properties.get(key) != new_properties.get(key)
+        }
+
+        print(diff_properties)  # TODO: remove print
+
+        try:
+            cmis_doc.updateProperties(diff_properties)
+        except UpdateConflictException as exc:
+            # Node locked!
+            raise DocumentConflictException from exc
 
     # Private functions.
     # TODO: Paste private functions.
@@ -194,6 +218,16 @@ class CMISDRCClient:
             "drc:integriteit_algoritme": data.get('integriteit_algoritme', ''),
             "drc:integriteit_waarde": data.get('integriteit_waarde', ''),
             "drc:integriteit_datum": data.get('integriteit_datum'),
+        }
+
+    def _build_case_properties(self, data):
+        return {
+            "drc:oio_zaak_url": data.get('object'),
+            "drc:oio_object_type": data.get('objectType'),
+            "drc:oio_aard_relatie_weergave": data.get('aardRelatieWeergave'),
+            "drc:oio_titel": data.get('titel'),
+            "drc:oio_beschrijving": data.get('beschrijving'),
+            "drc:oio_registratiedatum": timezone.now().date(),
         }
 
     def _check_document_exists(self, identificatie):

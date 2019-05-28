@@ -50,6 +50,32 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
         cmis_document = cmis_client.get_cmis_document(identificatie=uuid)
         return self._create_dict_from_cmis_doc(cmis_document)
 
+    def get_document_cases(self):
+        cmis_documents = cmis_client.get_cmis_documents(filter_case=True)
+
+        documents_data = []
+        for cmis_doc in cmis_documents:
+            dict_document = self._create_case_dict_from_cmis_doc(cmis_doc)
+            if dict_document:
+                print(dict_document)
+                # documents_data.append(dict_document)
+
+        return documents_data
+
+    def create_case_link(self, validated_data):
+        """
+        There are 2 possible paths here,
+        1. There is no case connected to the document yet. So the document can be connected to the case.
+        2. There is a case connected to the document, so we need to create a copy of the document.
+        """
+        document_id = validated_data.get('informatieobject').split('/')[-1]
+        cmis_doc = cmis_client.get_cmis_document(identificatie=document_id)
+
+        if not cmis_doc.properties.get('drc:oio_zaak_url'):
+            cmis_client.update_case_connection(cmis_doc, validated_data)
+        else:
+            assert False, 'Has a case connected.'
+
     def _create_dict_from_cmis_doc(self, cmis_doc):
         properties = cmis_doc.getProperties()
 
@@ -76,14 +102,16 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
 
         identificatie = properties.get("drc:identificatie")
 
+        cmis_id = properties.get("cmis:versionSeriesId").split('/')[-1]
+
         try:
             inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
         except AssertionError:
             return None
         else:
             return {
-                "url": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': identificatie})) if identificatie else None,
-                "inhoud": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': identificatie})),
+                "url": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
+                "inhoud": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
                 "creatiedatum": creatiedatum,
                 "ontvangstdatum": ontvangstdatum,
                 "verzenddatum": verzenddatum,
@@ -106,4 +134,48 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
                 "integriteit_algoritme": properties.get("drc:integriteit_algoritme"),
                 "integriteit_waarde": properties.get("drc:integriteit_waarde"),
                 "bestandsomvang": len(inhoud),
+            }
+
+    def _create_case_dict_from_cmis_doc(self, cmis_doc):
+        properties = cmis_doc.getProperties()
+
+        # Values that need some parsing.
+        creatiedatum = properties.get("drc:creatiedatum")
+        if creatiedatum:
+            creatiedatum = creatiedatum.date()
+
+        ontvangstdatum = properties.get("drc:ontvangstdatum")
+        if ontvangstdatum:
+            ontvangstdatum = ontvangstdatum.date()
+
+        verzenddatum = properties.get("drc:verzenddatum")
+        if verzenddatum:
+            verzenddatum = verzenddatum.date()
+
+        ondertekening_datum = properties.get("drc:ondertekening_datum")
+        if ondertekening_datum:
+            ondertekening_datum = ondertekening_datum.date()
+
+        integriteit_datum = properties.get("drc:integriteit_datum")
+        if integriteit_datum:
+            integriteit_datum = integriteit_datum.date()
+
+        identificatie = properties.get("drc:identificatie")
+
+        cmis_id = properties.get("cmis:versionSeriesId").split('/')[-1]
+
+        try:
+            inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
+        except AssertionError:
+            return None
+        else:
+            return {
+                "url": "{}{}".format(settings.HOST_URL, reverse('objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
+                "informatieobject": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
+                "object": properties.get('drc:oio_zaak_url'),
+                "object_type": properties.get("drc:oio_object_type"),
+                "aard_relatie_weergave": properties.get("drc:oio_aard_relatie_weergave"),
+                "titel": properties.get("drc:oio_titel"),
+                "beschrijving": properties.get("drc:oio_beschrijving"),
+                "registratiedatum": properties.get("drc:oio_registratiedatum"),
             }

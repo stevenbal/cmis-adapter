@@ -137,14 +137,34 @@
                     <title>DRC - integriteit_datum</title>
                     <type>d:date</type>
                 </property>
-                <property name="drc:zaak_url">
-                    <title>DRC - zaak_url</title>
+                <property name="drc:oio_zaak_url">
+                    <title>DRC - oio zaak_url</title>
                     <type>d:text</type>
                     <index enabled="true">
                         <atomic>true</atomic>
                         <stored>false</stored>
                         <tokenised>true</tokenised>
                     </index>
+                </property>
+                <property name="drc:oio_object_type">
+                    <title>DRC - oio object_type</title>
+                    <type>d:text</type>
+                </property>
+                <property name="drc:oio_aard_relatie_weergave">
+                    <title>DRC - oio aard_relatie_weergave</title>
+                    <type>d:text</type>
+                </property>
+                <property name="drc:oio_titel">
+                    <title>DRC - oio titel</title>
+                    <type>d:text</type>
+                </property>
+                <property name="drc:oio_beschrijving">
+                    <title>DRC - oio beschrijving</title>
+                    <type>d:text</type>
+                </property>
+                <property name="drc:oio_registratiedatum">
+                    <title>DRC - oio registratiedatum</title>
+                    <type>d:date</type>
                 </property>
             </properties>
             <!-- Identificatiekenmerk (noderef) word door alfresco automatisch gegenereerd en staat in  het veld sys:node-uuid
