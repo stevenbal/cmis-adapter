@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<model xmlns="http://www.alfresco.org/model/dictionary/1.0" name="hlm:drcCmis">
+<model xmlns="http://www.alfresco.org/model/dictionary/1.0" name="hlm:drcdocuments">
     <description>Alfresco Content Model voor Document Registratie Component</description>
     <version>1.0</version>
     <imports>
@@ -10,19 +10,126 @@
     <namespaces>
         <namespace prefix="hlm" uri="http://haarlem.nl/model/1.0" />
         <namespace prefix="tmlo" uri="http://haarlem.nl/tmlo/1.0" />
-       <namespace prefix="drc" uri="http://www.egem.nl/king/zsdms" />
+        <namespace prefix="drc" uri="http://www.egem.nl/king/zsdms" />
     </namespaces>
 
- <!--  Algemene opmerkingen:
+    <!--  Algemene opmerkingen:
         -   Datums zijn voorlopig als 'd:date' opgenomen en niet als 'd:datetime'.
             Tijdstippen worden dus niet opgeslagen in de gedeclareerde velden.
             De Systeem data (cm:created en cm:modified) zijn wel van het type d:datetime.
         -   De velden cm:title en drc:zaakidentificatie zijn opgenomen in aspecten.
             Een eventuele cmis query die deze properties op wil vragen, moet een join doen met deze aspecten (resp. cm:title en drc:zaakidentificatieAspect).
- -->
+    -->
+    <constraints/>
 
- <constraints/>
     <types>
+        <type name="drc:zaaktypefolder">
+            <title>Zaaktype folder</title>
+            <description>Zaaktype folder</description>
+            <parent>cm:folder</parent>
+            <properties>
+                <property name="drc:zaaktype-identificatie">
+                    <title>drc - Zaaktype - Identificatie</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaaktype-url">
+                    <title>drc - Zaaktype - Url</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+            </properties>
+        </type>
+        <type name="drc:zaakfolder">
+            <title>Zaak folder</title>
+            <description>Zaakfolder</description>
+            <parent>cm:folder</parent>
+            <properties>
+                <property name="drc:zaak-identificatie">
+                    <title>drc - Zaak - Identificatie</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-url">
+                    <title>drc - Zaak - Url</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-zaaktype_url">
+                    <title>drc - Zaak - Zaaktype url</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-startdatum">
+                    <title>drc - Zaak - Startdatum</title>
+                    <type>d:date</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-einddatum">
+                    <title>drc - Zaak - Einddatum</title>
+                    <type>d:date</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-deelzakenindicatie">
+                    <title>drc - Zaak - Indicatie deelzaken</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>false</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-registratiedatum">
+                    <title>drc - Zaak - Registratiedatum</title>
+                    <type>d:date</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaak-bronorganisatie">
+                    <title>drc - Zaak - bronorganisatie</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>true</tokenised>
+                    </index>
+                </property>
+            </properties>
+            <mandatory-aspects>
+                <aspect>drc:zaakidentificatieAspect</aspect>
+            </mandatory-aspects>
+        </type>
         <type name="drc:document">
             <title>Document</title>
             <description>Document</description>
@@ -175,4 +282,22 @@
             </mandatory-aspects>
         </type>
     </types>
+
+    <aspects>
+        <aspect name="drc:zaakidentificatieAspect">
+            <title>Zaakidentificatie Aspect</title>
+            <description>Zaakidentificatie Aspect</description>
+            <properties>
+                <property name="drc:zaakidentificatie">
+                    <title>Zaak identificatie</title>
+                    <type>d:text</type>
+                    <index enabled="true">
+                        <atomic>true</atomic>
+                        <stored>false</stored>
+                        <tokenised>false</tokenised>
+                    </index>
+                </property>
+            </properties>
+        </aspect>
+    </aspects>
 </model>

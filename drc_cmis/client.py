@@ -57,6 +57,42 @@ class CMISDRCClient:
             self._base_folder = self._get_or_create_folder('DRC', self._get_root_folder)
         return self._base_folder
 
+    # ZRC Notification client calls.
+    def get_or_create_zaaktype_folder(self, zaaktype):
+        """
+        Create a folder with the prefix 'zaaktype-' to make a zaaktype folder
+
+        TODO: create custom model.
+        """
+        properties = {
+            "cmis:objectTypeId": "F:drc:zaaktypefolder",
+            "drc:zaaktype-url": zaaktype.get('url'),
+            "drc:zaaktype-identificatie": zaaktype.get('identificatie'),
+        }
+
+        cmis_folder = self._get_or_create_folder(f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}", self._get_base_folder)
+        return cmis_folder
+
+    def get_or_create_zaak_folder(self, zaak, zaaktype_folder):
+        """
+        Create a folder with the prefix 'zaak-' to make a zaak folder
+        """
+
+        properties = {
+            "cmis:objectTypeId": "F:drc:zaakfolder",
+            "drc:zaak-url": zaak.get('url'),
+            "drc:zaak-identificatie": zaak.get('identificatie'),
+            "drc:zaak-zaaktype_url": zaak.get('zaaktype'),
+            "drc:zaak-startdatum": zaak.get("startdatum"),
+            "drc:zaak-einddatum": zaak.get("einddatum"),
+            "drc:zaak-deelzakenindicatie": "",
+            "drc:zaak-registratiedatum": zaak.get("registratiedatum"),
+            "drc:zaak-bronorganisatie": zaak.get("bronorganisatie"),
+        }
+        cmis_folder = self._get_or_create_folder(f"zaak-{zaak.get('identificatie')}", zaaktype_folder, properties)
+        return cmis_folder
+
+    # DRC client calls.
     def create_document(self, identificatie, data, stream=None):
         """
         :param identificatie: EnkelvoudigInformatieObject identificatie
@@ -173,6 +209,9 @@ class CMISDRCClient:
             # Node locked!
             raise DocumentConflictException from exc
 
+    def move_to_case(self, cmis_doc, folder_name):
+        pass
+
     # Private functions.
     # TODO: Paste private functions.
     def _get_or_create_folder(self, name, parent, properties=None):
@@ -185,18 +224,15 @@ class CMISDRCClient:
           pass to the folder object
         :return: the folder that was retrieved or created.
         """
-        print('===================================================')
         existing = next((child for child in parent.getChildren() if str(child.name) == str(name)), None)
         if existing is not None:
             return existing
 
-        print(parent)
-        print(name)
         return parent.createFolder(name, properties=properties or {})
 
     def _build_properties(self, identificatie, data):
         return {
-            "cmis:objectTypeId": CMISObjectType.edc,  # Set the type of document that is uploaded.
+            "cmis:objectTypeId": 'D:drc:document',  # Set the type of document that is uploaded.
             "cmis:name": data.get('titel'),
             "drc:identificatie": identificatie,
             "drc:bronorganisatie": data.get('bronorganisatie'),

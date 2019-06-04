@@ -1,36 +1,26 @@
-==============
-gemma-drc-cmis
-==============
+Gemma DRC CMIS
+========================================================
 
-.. image:: https://img.shields.io/pypi/v/drc-cmis.svg?style=for-the-badge
-           :target: https://pypi.org/project/drc-cmis/
+-----
 
-.. image:: https://img.shields.io/travis/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
-           :target: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis
+.. contents:: **Table of Contents**
+    :backlinks: none
 
-.. image:: https://img.shields.io/codecov/c/gh/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
-           :alt: Codecov
+Installation
+------------
 
-A CMIS backend for gemma-documentregistratiecomponent.
+Gemma DRC CMIS is distributed on `PyPI <https://pypi.org>`_ as a universal
+wheel and is available on Linux/macOS and Windows and supports
+Python 2.7/3.5+ and PyPy.
 
-This package is not ment to be run seperate from gemma-documentregistratiecomponent
+.. code-block:: bash
 
+    $ pip install gemma-drc-cmis
 
-* Free software: MIT license
-* Documentation: https://drc-cmis.readthedocs.io.
-
-How to install
---------------
-
-Install via pip
-
-::
-
-    pip install gemma-drc-cmis
 
 Add to installed apps
 
-::
+.. code-block:: bash
 
     INSTALLED_APPS = [
         ...
@@ -38,9 +28,8 @@ Add to installed apps
         ...
     ]
 
-Enable `cmis storage` in the admin of the drc under `Plugin` `Storage Config`.
+License
+-------
 
-Features
---------
-
-- Integrate cmis in the drc
+Gemma DRC CMIS is distributed under the terms of the
+`MIT License <https://choosealicense.com/licenses/mit>`_.

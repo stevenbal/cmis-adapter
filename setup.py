@@ -1,45 +1,52 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""The setup script."""
+from io import open
 
 from setuptools import find_packages, setup
 
-with open("README.rst") as readme_file:
-    readme = readme_file.read()
+with open('source /home/jorik/sites/gemma_drc_cmis/env/bin/activate/__init__.py', 'r') as f:
+    for line in f:
+        if line.startswith('__version__'):
+            version = line.strip().split('=')[1].strip(' \'"')
+            break
+    else:
+        version = '0.0.1'
 
-with open("HISTORY.rst") as history_file:
-    history = history_file.read()
+with open('README.rst', 'r', encoding='utf-8') as f:
+    readme = f.read()
 
-requirements = ["django_choices", "django", "cmislib-maykin", "django-solo"]
-
-setup_requirements = ["pytest-runner"]
-
-test_requirements = ["pytest"]
+REQUIRES = [
+    "django_choices", "django", "cmislib-maykin", "django-solo"
+]
 
 setup(
-    author="maykinmedia",
+    name='source /home/jorik/sites/gemma-drc-cmis/env/bin/activate',
+    version=version,
+    description='A CMIS backend for gemma-documentregistratiecomponent',
+    long_description=readme,
+    author='Jorik Kraaikamp',
+    author_email='jorikkraaikamp@gmail.com',
+    maintainer='Jorik Kraaikamp',
+    maintainer_email='jorikkraaikamp@gmail.com',
+    url='https://github.com/gemeenteutrecht/drc_cmis',
+    license='MIT',
+
+    keywords=[
+        '',
+    ],
+
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: Implementation :: CPython',
         "Framework :: Django",
     ],
-    description="A CMIS backend for gemma-documentregistratiecomponent",
-    install_requires=requirements,
-    license="MIT license",
-    long_description=readme + "\n\n" + history,
-    include_package_data=True,
-    keywords="drc_cmis",
-    name="drc_cmis",
-    packages=find_packages(include=["drc_cmis"]),
-    setup_requires=setup_requirements,
-    test_suite="tests",
-    tests_require=test_requirements,
-    url="https://github.com/gemeenteutrecht/drc_cmis",
-    version="0.0.6",
-    zip_safe=False,
+
+    install_requires=REQUIRES,
+    tests_require=['coverage', 'pytest'],
+
+    packages=find_packages(),
 )

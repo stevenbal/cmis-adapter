@@ -26,7 +26,11 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
         titel = validated_data.get('titel')
 
         try:
-            cmis_client.create_document(identificatie, validated_data, inhoud)
+            cmis_doc = cmis_client.create_document(identificatie, validated_data, inhoud)
+            print(cmis_doc)
+            dict_doc = self._create_dict_from_cmis_doc(cmis_doc)
+            print(dict_doc)
+            return dict_doc
         except UpdateConflictException:
             raise self.exception_class({None: 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'}, create=True)
         except DocumentExistsError as e:
@@ -107,6 +111,7 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
         try:
             inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
         except AssertionError:
+            print('None!!!!!!!!!')
             return None
         else:
             return {
