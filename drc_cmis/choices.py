@@ -3,13 +3,6 @@ from django.utils.translation import ugettext_lazy as _
 from djchoices import ChoiceItem, DjangoChoices
 
 
-class CMISChangeType(DjangoChoices):
-    created = ChoiceItem("created", _("Created"))
-    updated = ChoiceItem("updated", _("Updated"))
-    deleted = ChoiceItem("deleted", _("Deleted"))
-    security = ChoiceItem("security", _("Security"))
-
-
 class CMISObjectType(DjangoChoices):
     zaken = ChoiceItem("F:drc:zaken", _("Zaken hoofd folder"))
     zaak_folder = ChoiceItem("F:drc:zaak", _("Zaak folder"))
@@ -64,74 +57,3 @@ class CMISCapabilities(DjangoChoices):
     )
     acl = ChoiceItem("ACL", _("Indicates the level of support for ACLs by the repository."))
     join = ChoiceItem("Join", _(" Indicates the types of JOIN keywords that the Repository can fulfill in queries."))
-
-
-class CMISCapabilityContentStreamUpdatability(DjangoChoices):
-    none = ChoiceItem("none", _(" The content stream may never be updated."))
-    anytime = ChoiceItem("anytime", _(" The content stream may be updated any time."))
-    pwconly = ChoiceItem("pwconly", _(" The content stream may be updated only when checked out."))
-
-
-class CMISCapabilityRenditions(DjangoChoices):
-    read = ChoiceItem("read", _(" Renditions are provided by the repository and readable by the client."))
-    none = ChoiceItem("none", _(" The repository does not expose renditions at all."))
-
-
-class CMISCapabilityQuery(DjangoChoices):
-    none = ChoiceItem("none", _(" No queries of any kind can be fulfilled."))
-    metadataonly = ChoiceItem(
-        "metadataonly",
-        _(
-            " Only queries that filter based on object properties can be fulfilled. Specifically, the CONTAINS() predicate function is not supported."
-        ),
-    )
-    fulltextonly = ChoiceItem(
-        "fulltextonly",
-        _(
-            " Only queries that filter based on the full-text content of documents can be fulfilled. Specifically, only the CONTAINS() predicate function can be included in the WHERE clause."
-        ),
-    )
-    bothseparate = ChoiceItem(
-        "bothseparate",
-        _(
-            " The repository can fulfill queries that filter EITHER on the full-text content of documents OR on their properties, but NOT if both types of filters are included in the same query."
-        ),
-    )
-    bothcombined = ChoiceItem(
-        "bothcombined",
-        _(
-            " The repository can fulfill queries that filter on both the full-text content of documents and their properties in the same query."
-        ),
-    )
-
-
-class CMISCapabilityChanges(DjangoChoices):
-    none = ChoiceItem("none", _(" The repository does not support the change log feature."))
-    objectidsonly = ChoiceItem(
-        "objectidsonly",
-        _(
-            " The change log can return only the ObjectIDs for changed objects in the repository and an indication of the type of change, not details of the actual change."
-        ),
-    )
-    properties = ChoiceItem(
-        "properties", _(" The change log can return properties and the ObjectID for the changed objects")
-    )
-    all = ChoiceItem(
-        "all",
-        _(
-            " The change log can return the ObjectIDs for changed objects in the repository and more information about the actual change"
-        ),
-    )
-
-
-class CMISCapabilityACL(DjangoChoices):
-    none = ChoiceItem("none", _(" The repository does not support ACL services"))
-    discover = ChoiceItem("discover", _(" The repository supports discovery of ACLs (getACL and other services)"))
-    manage = ChoiceItem(
-        "manage", _(" The repository supports discovery of ACLs AND applying ACLs (getACL and applyACL services)")
-    )
-
-
-class ChangeLogStatus(DjangoChoices):
-    completed = ChoiceItem("completed", _("Completed"))
-    in_progress = ChoiceItem("in_progress", _("In progress"))

@@ -28,7 +28,7 @@
             <description>Zaaktype folder</description>
             <parent>cm:folder</parent>
             <properties>
-                <property name="drc:zaaktype-identificatie">
+                <property name="drc:zaaktype_identificatie">
                     <title>drc - Zaaktype - Identificatie</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -37,7 +37,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaaktype-url">
+                <property name="drc:zaaktype_url">
                     <title>drc - Zaaktype - Url</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -53,7 +53,7 @@
             <description>Zaakfolder</description>
             <parent>cm:folder</parent>
             <properties>
-                <property name="drc:zaak-identificatie">
+                <property name="drc:zaak_identificatie">
                     <title>drc - Zaak - Identificatie</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -62,7 +62,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-url">
+                <property name="drc:zaak_url">
                     <title>drc - Zaak - Url</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -71,7 +71,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-zaaktype_url">
+                <property name="drc:zaak_zaaktype_url">
                     <title>drc - Zaak - Zaaktype url</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -80,7 +80,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-startdatum">
+                <property name="drc:zaak_startdatum">
                     <title>drc - Zaak - Startdatum</title>
                     <type>d:date</type>
                     <index enabled="true">
@@ -89,7 +89,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-einddatum">
+                <property name="drc:zaak_einddatum">
                     <title>drc - Zaak - Einddatum</title>
                     <type>d:date</type>
                     <index enabled="true">
@@ -98,7 +98,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-deelzakenindicatie">
+                <property name="drc:zaak_deelzakenindicatie">
                     <title>drc - Zaak - Indicatie deelzaken</title>
                     <type>d:text</type>
                     <index enabled="true">
@@ -107,7 +107,7 @@
                         <tokenised>false</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-registratiedatum">
+                <property name="drc:zaak_registratiedatum">
                     <title>drc - Zaak - Registratiedatum</title>
                     <type>d:date</type>
                     <index enabled="true">
@@ -116,7 +116,7 @@
                         <tokenised>true</tokenised>
                     </index>
                 </property>
-                <property name="drc:zaak-bronorganisatie">
+                <property name="drc:zaak_bronorganisatie">
                     <title>drc - Zaak - bronorganisatie</title>
                     <type>d:text</type>
                     <index enabled="true">

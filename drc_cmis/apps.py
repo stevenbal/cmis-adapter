@@ -32,7 +32,7 @@ def check_cmis(app_configs, **kwargs):
     :return:
     """
     from .client import cmis_client
-    from .choices import CMISCapabilities, CMISCapabilityChanges
+    from .choices import CMISCapabilities
 
     errors = []
     try:
@@ -53,7 +53,7 @@ def check_cmis(app_configs, **kwargs):
         if not unfiling:
             errors.append(Error("The DMS does not support Unfiling or it's disabled."))
         changes = capabilities.get(CMISCapabilities.changes, None)
-        if not changes or changes == CMISCapabilityChanges.none:
+        if not changes or changes == "none":
             errors.append(
                 Error(
                     "The DMS does not support Change Log, or it's disabled.",

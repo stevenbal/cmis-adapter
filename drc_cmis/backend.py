@@ -3,9 +3,9 @@ import logging
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils.module_loading import import_string
 
 from cmislib.exceptions import UpdateConflictException
-from import_class import import_class
 
 # from .cache import cache
 from .client import cmis_client
@@ -14,7 +14,7 @@ from .exceptions import DocumentExistsError
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
+class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
     """
     This is the backend that is used to store the documents in a CMIS compatible backend.
 
@@ -27,9 +27,7 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
 
         try:
             cmis_doc = cmis_client.create_document(identificatie, validated_data, inhoud)
-            print(cmis_doc)
             dict_doc = self._create_dict_from_cmis_doc(cmis_doc)
-            print(dict_doc)
             return dict_doc
         except UpdateConflictException:
             raise self.exception_class({None: 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'}, create=True)
@@ -48,7 +46,8 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
         return documents_data
 
     def update_enkelvoudiginformatieobject(self, validated_data, identificatie, inhoud):
-        cmis_client.update_document(identificatie, validated_data, inhoud)
+        cmis_document = cmis_client.update_document(identificatie, validated_data, inhoud)
+        return self._create_dict_from_cmis_doc(cmis_document)
 
     def get_document(self, uuid):
         cmis_document = cmis_client.get_cmis_document(identificatie=uuid)
@@ -77,6 +76,11 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
 
         if not cmis_doc.properties.get('drc:oio_zaak_url'):
             cmis_client.update_case_connection(cmis_doc, validated_data)
+            folder = cmis_client.get_folder_from_case_url(validated_data.get('object'))
+            if folder:
+                cmis_client.move_to_case(cmis_doc, folder)
+            else:
+                assert False, "Should make create a cache for things todo"
         else:
             assert False, 'Has a case connected.'
 
@@ -111,7 +115,6 @@ class CMISDRCStorageBackend(import_class(settings.ABSTRACT_BASE_CLASS)):
         try:
             inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
         except AssertionError:
-            print('None!!!!!!!!!')
             return None
         else:
             return {

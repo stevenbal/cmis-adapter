@@ -18,4 +18,10 @@ unittest-xml-reporting==2.5.1
 invoke==1.2.0
 django-solo==1.1.3
 codecov
-vng-api-common[notifications]==0.38.0
+vng-api-common[notifications]==0.52.4
+pytest-django==3.4.8
+psycopg2
+black
+isort
+pep8
+pylint

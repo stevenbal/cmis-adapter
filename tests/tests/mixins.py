@@ -1,4 +1,4 @@
-from django.test import override_settings
+from datetime import date
 
 from cmislib.exceptions import ObjectNotFoundException
 
@@ -9,24 +9,13 @@ from drc_cmis.client import cmis_client
 class DMSMixin:
     def setUp(self):
         super().setUp()
-
-        self.cmis_client = cmis_client
-        self.addCleanup(lambda: self._removeTree('/Zaken'))
-        self.addCleanup(lambda: self._removeTree('/Sites/archief/documentLibrary'))
-        self.addCleanup(lambda: self._removeTree('/_temp'))
-        self.addCleanup(lambda: self._removeTree('/Unfiled'))
-        self.addCleanup(lambda: self._removeTree('/enkelvoudiginformatieobjecten'))
-
-        self.zaak_url = 'http://zaak.nl/locatie'
+        today = date.today()
+        self.addCleanup(lambda: self._removeTree(f"/{settings.BASE_FOLDER_LOCATION}"))
+        cmis_client._base_folder = None
 
     def _removeTree(self, path):
         try:
-            root_folder = self.cmis_client._repo.getObjectByPath(path)
+            root_folder = cmis_client._repo.getObjectByPath(path)
         except ObjectNotFoundException:
             return
         root_folder.deleteTree()
-
-    def assertExpectedProps(self, obj, expected: dict):
-        for prop, expected_value in expected.items():
-            with self.subTest(prop=prop, expected_value=expected_value):
-                self.assertEqual(obj.properties[prop], expected_value, msg="prop: {}".format(prop))
