@@ -1,7 +1,6 @@
 """
 Listen to the notifications that are send by the NRC
 """
-from rest_framework.response import Response
 from vng_api_common.models import APICredential
 from vng_api_common.notifications.handlers import RoutingHandler, auth, log
 from zds_client.client import Client

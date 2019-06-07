@@ -1,3 +1,4 @@
+hatch==0.20.0
 flake8==3.5.0
 tox==3.5.2
 pip==18.1
@@ -9,6 +10,7 @@ Sphinx==1.8.1
 twine==1.12.1
 pytest==3.8.2
 pytest-runner==4.2
+pytest-cov==2.7.1
 django<2.2
 factory-boy==2.11.1
 django-choices==1.6.2

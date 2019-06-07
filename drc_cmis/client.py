@@ -72,7 +72,8 @@ class CMISDRCClient:
             "drc:zaaktype_identificatie": zaaktype.get('identificatie'),
         }
 
-        cmis_folder = self._get_or_create_folder(f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}", self._get_base_folder, properties)
+        folder_name = f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}"
+        cmis_folder = self._get_or_create_folder(folder_name, self._get_base_folder, properties)
         return cmis_folder
 
     def get_or_create_zaak_folder(self, zaak, zaaktype_folder):
@@ -102,7 +103,7 @@ class CMISDRCClient:
         :param stream: Inhoud van het document.
 
         :return: AtomPubDocument instance die aangemaakt werd.
-        :raises: DocumentExistsError wanneer er al een document met dezelfde identificatie bestaat, binnen de zaakfolder.
+        :raises: DocumentExistsError wanneer er al een document met dezelfde identificatie bestaat, binnen de zaakfolder
         """
         self._check_document_exists(identificatie)
 
@@ -406,5 +407,6 @@ class CMISDRCClient:
     # def verwijder_document(self, document):
     #     cmis_doc = self.get_cmis_document(document)
     #     cmis_doc.delete()
+
 
 cmis_client = CMISDRCClient()

@@ -2,7 +2,7 @@ from io import open
 
 from setuptools import find_packages, setup
 
-with open('source /home/jorik/sites/gemma_drc_cmis/env/bin/activate/__init__.py', 'r') as f:
+with open('drc_cmis/__init__.py', 'r') as f:
     for line in f:
         if line.startswith('__version__'):
             version = line.strip().split('=')[1].strip(' \'"')
@@ -18,7 +18,7 @@ REQUIRES = [
 ]
 
 setup(
-    name='source /home/jorik/sites/gemma-drc-cmis/env/bin/activate',
+    name='drc_cmis',
     version=version,
     description='A CMIS backend for gemma-documentregistratiecomponent',
     long_description=readme,

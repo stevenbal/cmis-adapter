@@ -23,14 +23,14 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
     """
     def create_document(self, validated_data, inhoud):
         identificatie = validated_data.pop('identificatie')
-        titel = validated_data.get('titel')
 
         try:
             cmis_doc = cmis_client.create_document(identificatie, validated_data, inhoud)
             dict_doc = self._create_dict_from_cmis_doc(cmis_doc)
             return dict_doc
         except UpdateConflictException:
-            raise self.exception_class({None: 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'}, create=True)
+            error_message = 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'
+            raise self.exception_class({None: error_message}, create=True)
         except DocumentExistsError as e:
             raise self.exception_class({None: e.message}, create=True)
 
@@ -117,9 +117,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except AssertionError:
             return None
         else:
+            url = "{}{}".format(settings.HOST_URL, reverse(
+                'enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id}
+            ))
             return {
-                "url": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
-                "inhoud": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
+                "url": url,
+                "inhoud": url,
                 "creatiedatum": creatiedatum,
                 "ontvangstdatum": ontvangstdatum,
                 "verzenddatum": verzenddatum,
@@ -168,22 +171,24 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         if integriteit_datum:
             integriteit_datum = integriteit_datum.date()
 
-        identificatie = properties.get("drc:identificatie")
+        properties.get("drc:identificatie")
 
         cmis_id = properties.get("cmis:versionSeriesId").split('/')[-1]
 
-        try:
-            inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
-        except AssertionError:
-            return None
-        else:
-            return {
-                "url": "{}{}".format(settings.HOST_URL, reverse('objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
-                "informatieobject": "{}{}".format(settings.HOST_URL, reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})),
-                "object": properties.get('drc:oio_zaak_url'),
-                "object_type": properties.get("drc:oio_object_type"),
-                "aard_relatie_weergave": properties.get("drc:oio_aard_relatie_weergave"),
-                "titel": properties.get("drc:oio_titel"),
-                "beschrijving": properties.get("drc:oio_beschrijving"),
-                "registratiedatum": properties.get("drc:oio_registratiedatum"),
-            }
+        url = "{}{}".format(settings.HOST_URL, reverse(
+            'objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id}
+        ))
+        eio_url = "{}{}".format(settings.HOST_URL, reverse(
+            'enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id}
+        ))
+
+        return {
+            "url": url,
+            "informatieobject": eio_url,
+            "object": properties.get('drc:oio_zaak_url'),
+            "object_type": properties.get("drc:oio_object_type"),
+            "aard_relatie_weergave": properties.get("drc:oio_aard_relatie_weergave"),
+            "titel": properties.get("drc:oio_titel"),
+            "beschrijving": properties.get("drc:oio_beschrijving"),
+            "registratiedatum": properties.get("drc:oio_registratiedatum"),
+        }
