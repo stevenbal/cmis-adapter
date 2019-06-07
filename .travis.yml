@@ -10,7 +10,7 @@ before_script:
 - docker-compose up -d
 - cd ../
 
-script: pytest --cov=drc_cmis
+script: hatch test -c
 
 after_script:
 - cd alfresco
