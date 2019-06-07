@@ -2,7 +2,7 @@
 Listen to the notifications that are send by the NRC
 """
 from vng_api_common.models import APICredential
-from vng_api_common.notifications.handlers import RoutingHandler, auth, log
+from vng_api_common.notifications.handlers import default
 from zds_client.client import Client
 
 from drc_cmis.client import cmis_client
@@ -26,4 +26,18 @@ class ZakenHandler:
             cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
 
 
-default = RoutingHandler({'autorisaties': auth, 'zaken': ZakenHandler()}, default=log)
+class RoutingHandler:
+
+    def __init__(self, config: dict, default=None):
+        self.config = config
+        self.default = default
+
+    def handle(self, message: dict):
+        handler = self.config.get(message['kanaal'])
+        if handler is not None:
+            handler.handle(message)
+        elif self.default:
+            self.default.handle(message)
+
+
+default = RoutingHandler({'zaken': ZakenHandler()}, default=default)
