@@ -21,11 +21,3 @@ class EnkelvoudigInformatieObjectFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = 'app.EnkelvoudigInformatieObject'
-
-
-class DRCCMISConnectionFactory(factory.DjangoModelFactory):
-    enkelvoudiginformatieobject = factory.SubFactory(EnkelvoudigInformatieObjectFactory)
-    cmis_object_id = '123456'
-
-    class Meta:
-        model = 'drc_cmis.DRCCMISConnection'

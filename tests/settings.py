@@ -12,6 +12,7 @@ IS_HTTPS = False
 INSTALLED_APPS = [
     'drc_cmis',
     'tests.app',
+    'vng_api_common',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -80,3 +81,8 @@ DRC_CMIS_CLIENT_URL = 'http://localhost:8082/alfresco/cmisatom'
 DRC_CMIS_CLIENT_USER = 'admin'
 DRC_CMIS_CLIENT_USER_PASSWORD = 'admin'
 ENKELVOUDIGINFORMATIEOBJECT_MODEL = 'app.EnkelvoudigInformatieObject'
+ABSTRACT_BASE_CLASS = 'tests.app.utils.BaseDRCStorageBackend'
+TEMP_DOCUMENT_CLASS = 'tests.app.utils.TempDocument'
+HOST_URL = 'testserver'
+ABSTRACT_BASE_CLASS = 'tests.app.backend.AbstractStorageBackend'
+BASE_FOLDER_LOCATION = 'TEST_DRC'

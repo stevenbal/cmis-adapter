@@ -1,17 +1,15 @@
 from django.contrib import admin
 
-# from drc.plugins.models import StorageConfig
 from solo.admin import SingletonModelAdmin
 
-from .models import CMISConfiguration, DRCCMISConnection
+from .models import CMISConfig, CMISFolderLocation
 
 
-class DRCCMISConnectionAdmin(admin.ModelAdmin):
-    list_display = ('enkelvoudiginformatieobject', )
-    search_fields = ('enkelvoudiginformatieobject', )
+@admin.register(CMISConfig)
+class CMISConfigAdmin(SingletonModelAdmin):
+    filter_horizontal = ['locations']
 
 
-# config = StorageConfig.get_solo()
-# if config.cmis_storage:
-admin.site.register(DRCCMISConnection, DRCCMISConnectionAdmin)
-admin.site.register(CMISConfiguration, SingletonModelAdmin)
+@admin.register(CMISFolderLocation)
+class CMISFolderLocationAdmin(admin.ModelAdmin):
+    pass

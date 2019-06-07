@@ -1,5 +1,6 @@
 class DMSException(Exception):
-    pass
+    def __init__(self, message, *args, **kwargs):
+        self.message = message
 
 
 class DocumentExistsError(DMSException):
