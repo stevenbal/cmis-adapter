@@ -3,7 +3,7 @@ python:
 - 3.7
 
 install:
-- -rrequirements_dev.txt
+- pip install -r requirements_dev.txt
 
 before_script:
 - cd alfresco
