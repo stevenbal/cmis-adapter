@@ -1,7 +1,17 @@
 Gemma DRC CMIS
 ========================================================
 
------
+.. note:: This package is not ment to be run seperate from gemma-documentregistratiecomponent.
+
+.. image:: https://img.shields.io/pypi/v/drc-cmis.svg?style=for-the-badge
+           :alt: PyPi
+           :target: https://pypi.org/project/drc-cmis/
+.. image:: https://img.shields.io/travis/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
+           :alt: Travis
+           :target: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis
+.. image:: https://img.shields.io/codecov/c/gh/GemeenteUtrecht/gemma-drc-cmis.svg?style=for-the-badge
+           :alt: Codecov
+           :target: https://codecov.io/gh/GemeenteUtrecht/gemma-drc-cmis
 
 .. contents:: **Table of Contents**
     :backlinks: none
