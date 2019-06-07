@@ -22,7 +22,16 @@ class ZakenHandler:
             zaak_url = data.get('resource_url')
             client = Client.from_url(zaak_url)
             client.auth = APICredential.get_auth(zaak_url)
-            client.auth.set_claims(scopes=['zds.scopes.zaken.lezen'])
+            client.auth.set_claims(scopes=[
+                'notificaties.scopes.publiceren',
+                'zds.scopes.statussen.toevoegen',
+                'zds.scopes.zaken.aanmaken',
+                'zds.scopes.zaken.bijwerken',
+                'zds.scopes.zaken.geforceerd-bijwerken',
+                'zds.scopes.zaken.heropenen',
+                'zds.scopes.zaken.lezen',
+                'zds.scopes.zaken.verwijderen',
+            ])
             zaak_data = client.retrieve('zaak', url=zaak_url)
             print(zaak_data)
             cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
