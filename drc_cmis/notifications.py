@@ -16,7 +16,6 @@ class ZakenHandler:
             client.auth = APICredential.get_auth(zaaktype_url)
             client.auth.set_claims(scopes=['zds.scopes.zaaktypes.lezen'])
             zaaktype_data = client.retrieve('zaaktype', url=zaaktype_url)
-            print(zaaktype_data)
             zaaktype_folder = cmis_client.get_or_create_zaaktype_folder(zaaktype_data)
 
             zaak_url = data.get('resource_url')
@@ -31,9 +30,8 @@ class ZakenHandler:
                 'zds.scopes.zaken.heropenen',
                 'zds.scopes.zaken.lezen',
                 'zds.scopes.zaken.verwijderen',
-            ])
+            ], zaaktypes=[zaaktype_url])
             zaak_data = client.retrieve('zaak', url=zaak_url)
-            print(zaak_data)
             cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
 
 

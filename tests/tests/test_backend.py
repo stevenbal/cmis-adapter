@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from django.test import TestCase
 
 from rest_framework.exceptions import ErrorDetail
@@ -23,20 +25,20 @@ class CMISStorageTests(DMSMixin, TestCase):
 
     def test_create_document(self):
         eio = EnkelvoudigInformatieObjectFactory()
-        document = self.backend.create_document(eio.__dict__.copy(), None)
+        document = self.backend.create_document(eio.__dict__.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
 
     def test_create_document_error_update_conflict(self):
         eio = EnkelvoudigInformatieObjectFactory()
         eio_dict = eio.__dict__
 
-        document = self.backend.create_document(eio_dict.copy(), None)
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
 
         eio_dict['identificatie'] = 'test'
 
         with self.assertRaises(BackendException) as exception:
-            self.backend.create_document(eio_dict.copy(), None)
+            self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertEqual(exception.exception.detail, {None: ErrorDetail(string='Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam', code='invalid')})
 
     def test_create_document_error_identification_exists(self):
@@ -44,24 +46,27 @@ class CMISStorageTests(DMSMixin, TestCase):
         eio_dict = eio.__dict__
         eio_dict['identificatie'] = 'test'
 
-        document = self.backend.create_document(eio_dict.copy(), None)
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
 
         eio_dict['titel'] = 'gewoon_een_andere_titel'
         eio_dict['identificatie'] = 'test'
 
         with self.assertRaises(BackendException) as exception:
-            self.backend.create_document(eio_dict.copy(), None)
+            self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertEqual(exception.exception.detail, {None: ErrorDetail(string=f"Document identificatie {eio.identificatie} is niet uniek", code='invalid')})
 
     def test_get_documents(self):
-        # TODO: Find out why no document can be found.
         eio = EnkelvoudigInformatieObjectFactory()
-        doc = self.backend.create_document(eio.__dict__, None)
+        doc = self.backend.create_document(eio.__dict__, BytesIO(b'some content'))
         self.assertIsNotNone(doc)
 
+        # Because we need to give alfresco some time to index the document there is a timeout
+        import time
+        time.sleep(25)
+
         documents = self.backend.get_documents()
-        self.assertEqual(len(documents), 0)  # ! Should be 1
+        self.assertEqual(len(documents), 1)
 
     def test_get_documents_empty(self):
         documents = self.backend.get_documents()
@@ -72,7 +77,21 @@ class CMISStorageTests(DMSMixin, TestCase):
         eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
         eio_dict = eio.__dict__
 
-        document = self.backend.create_document(eio_dict.copy(), None)
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(document)
+        self.assertEqual(document['identificatie'], 'test')
+
+        eio_dict['titel'] = 'test-titel-die-unique-is'
+
+        updated_document = self.backend.update_enkelvoudiginformatieobject(eio_dict.copy(), eio_dict['identificatie'], BytesIO(b'some content2'))
+
+        self.assertNotEqual(document['titel'], updated_document['titel'])
+
+    def test_update_enkelvoudiginformatieobject_no_stream(self):
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
         self.assertEqual(document['identificatie'], 'test')
 
@@ -102,7 +121,7 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.assertEqual(document['identificatie'], 'test')
 
         documents = self.backend.get_document_cases()
-        self.assertEqual(len(documents), 0)
+        self.assertEqual(len(documents), 5)
 
     def test_create_case_link(self):
         # Create zaaktype_folder
@@ -113,9 +132,63 @@ class CMISStorageTests(DMSMixin, TestCase):
         })
 
         # Create zaak_folder
-        zaak_folder = cmis_client.get_or_create_zaak_folder({
+        cmis_client.get_or_create_zaak_folder({
             'url': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid',
             'identificatie': '1bcfd0d6-c817-428c-a3f4-4047038c184d',
+            'zaaktype': 'https://ref.tst.vng.cloud/ztc/api/v1/catalogussen/f7afd156-c8f5-4666-b8b5-28a4a9b5dfc7/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1',
+            'startdatum': '2023-12-06',
+            'einddatum': None,
+            'registratiedatum': '2019-04-17',
+            'bronorganisatie': '509381406',
+        }, zaaktype_folder)
+
+        # Create document
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(document)
+
+        self.backend.create_case_link({
+            'informatieobject': document['url'],
+            'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
+        })
+
+    def test_create_case_link_without_case_folder(self):
+        # Create document
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        document = self.backend.create_document(eio_dict.copy(), None)
+        self.assertIsNotNone(document)
+
+        self.backend.create_case_link({
+            'informatieobject': document['url'],
+            'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
+        })
+
+    def test_create_case_link_create_copy(self):
+        # Create zaaktype_folder
+        zaaktype_folder = cmis_client.get_or_create_zaaktype_folder({
+            'url': 'https://ref.tst.vng.cloud/ztc/api/v1/catalogussen/f7afd156-c8f5-4666-b8b5-28a4a9b5dfc7/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1',
+            'identificatie': 1,
+            'omschrijving': 'Melding Openbare Ruimte',
+        })
+
+        # Create zaak_folders
+        cmis_client.get_or_create_zaak_folder({
+            'url': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid',
+            'identificatie': '1bcfd0d6-c817-428c-a3f4-4047038c184d',
+            'zaaktype': 'https://ref.tst.vng.cloud/ztc/api/v1/catalogussen/f7afd156-c8f5-4666-b8b5-28a4a9b5dfc7/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1',
+            'startdatum': '2023-12-06',
+            'einddatum': None,
+            'registratiedatum': '2019-04-17',
+            'bronorganisatie': '509381406',
+        }, zaaktype_folder)
+
+        cmis_client.get_or_create_zaak_folder({
+            'url': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid2',
+            'identificatie': '1bcfd0d6-c817-428c-a3f4-4047038c184b',
             'zaaktype': 'https://ref.tst.vng.cloud/ztc/api/v1/catalogussen/f7afd156-c8f5-4666-b8b5-28a4a9b5dfc7/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1',
             'startdatum': '2023-12-06',
             'einddatum': None,
@@ -133,6 +206,11 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.backend.create_case_link({
             'informatieobject': document['url'],
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
+        })
+
+        self.backend.create_case_link({
+            'informatieobject': document['url'],
+            'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid2'
         })
 
     # def test_get_folder(self):

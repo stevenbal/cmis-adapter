@@ -25,7 +25,9 @@ class CMISDRCClient:
     """
     DRC client implementation using the CMIS protocol.
     """
-    documents_query = CMISQuery("SELECT * FROM cmis:document as D WHERE %s")
+    all_documents_query = CMISQuery("SELECT * FROM cmis:document")
+    all_drc_documents_query = CMISQuery("SELECT * FROM drc:document")
+    documents_query = CMISQuery("SELECT * FROM drc:document WHERE %s")
     document_cases_query = CMISQuery("SELECT * FROM drc:document WHERE drc:oio_zaak_url IS NOT NULL")
     document_via_identification_query = CMISQuery("SELECT * FROM drc:document WHERE drc:identificatie = '%s'")
     document_query = CMISQuery("SELECT * FROM cmis:document WHERE cmis:objectId = 'workspace://SpacesStore/%s;1.0'")
@@ -138,14 +140,13 @@ class CMISDRCClient:
             folder_query = ""
             for index, folder in enumerate(folders):
                 cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
-                folder_query += f"IN_TREE(D, '{cmis_folder.properties.get('cmis:objectId')}') "
+                folder_query += f"IN_TREE('{cmis_folder.properties.get('cmis:objectId')}') "
                 if index + 1 < len(folders):
                     folder_query += "OR "
             query = self.documents_query(folder_query)
 
         # Remove the /'s from the string
         query = codecs.escape_decode(query)[0].decode()
-
         result_set = self._get_repo.query(query)
         unpacked_result_set = [item for item in result_set]
         cmis_documents = [doc.getLatestVersion() for doc in unpacked_result_set]
@@ -212,6 +213,15 @@ class CMISDRCClient:
     def move_to_case(self, cmis_doc, folder):
         parent = [parent for parent in cmis_doc.getObjectParents()][0]
         cmis_doc.move(parent, folder)
+
+    def copy_document(self, cmis_doc, folder, data):
+        properties = cmis_doc.properties
+        new_properties = self._build_case_properties(data)
+        properties.update(**new_properties)
+        print(properties)
+        # TODO: Make this an actual copy function.
+
+        return cmis_client._repo.createDocumentFromSource(cmis_doc.getObjectId(), folder, properties)
 
     def get_folder_from_case_url(self, zaak_url):
         query = self.find_folder_query(zaak_url)

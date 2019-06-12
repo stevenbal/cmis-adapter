@@ -110,3 +110,4 @@ alfresco2/
 alfresco/volumes/data/
 alfresco/volumes/logs/
 tests/database.db
+XDG_CACHE_HOME/Microsoft/Python Language Server/stubs.v1/8AFQmRvpkZD_PNdIrNHq0zY7UydeptBC1K5Q1PUGHdc=/python.pyi
