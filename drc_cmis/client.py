@@ -14,6 +14,7 @@ from drc_cmis import settings
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError
 )
+from .mapper import mapper, reverse_mapper
 from .query import CMISQuery
 
 # from .utils import upload_to
@@ -28,10 +29,10 @@ class CMISDRCClient:
     all_documents_query = CMISQuery("SELECT * FROM cmis:document")
     all_drc_documents_query = CMISQuery("SELECT * FROM drc:document")
     documents_query = CMISQuery("SELECT * FROM drc:document WHERE %s")
-    document_cases_query = CMISQuery("SELECT * FROM drc:document WHERE drc:oio_zaak_url IS NOT NULL")
-    document_via_identification_query = CMISQuery("SELECT * FROM drc:document WHERE drc:identificatie = '%s'")
+    document_cases_query = CMISQuery("SELECT * FROM drc:document WHERE drc:connectie__zaakurl IS NOT NULL")
+    document_via_identification_query = CMISQuery("SELECT * FROM drc:document WHERE drc:document__identificatie = '%s'")
     document_query = CMISQuery("SELECT * FROM cmis:document WHERE cmis:objectId = 'workspace://SpacesStore/%s;1.0'")
-    find_folder_query = CMISQuery("SELECT * FROM drc:zaakfolder WHERE drc:zaak_url='%s'")
+    find_folder_query = CMISQuery("SELECT * FROM drc:zaakfolder WHERE drc:zaak__url='%s'")
 
     _repo = None
     _root_folder = None
@@ -70,8 +71,8 @@ class CMISDRCClient:
         """
         properties = {
             "cmis:objectTypeId": "F:drc:zaaktypefolder",
-            "drc:zaaktype_url": zaaktype.get('url'),
-            "drc:zaaktype_identificatie": zaaktype.get('identificatie'),
+            "drc:zaaktype__url": zaaktype.get('url'),
+            "drc:zaaktype__identificatie": zaaktype.get('identificatie'),
         }
 
         folder_name = f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}"
@@ -85,14 +86,10 @@ class CMISDRCClient:
 
         properties = {
             "cmis:objectTypeId": "F:drc:zaakfolder",
-            "drc:zaak_url": zaak.get('url'),
-            "drc:zaak_identificatie": zaak.get('identificatie'),
-            "drc:zaak_zaaktype_url": zaak.get('zaaktype'),
-            "drc:zaak_startdatum": zaak.get("startdatum"),
-            "drc:zaak_einddatum": zaak.get("einddatum"),
-            "drc:zaak_deelzakenindicatie": "",
-            "drc:zaak_registratiedatum": zaak.get("registratiedatum"),
-            "drc:zaak_bronorganisatie": zaak.get("bronorganisatie"),
+            "drc:zaak__url": zaak.get('url'),
+            "drc:zaak__identificatie": zaak.get('identificatie'),
+            "drc:zaak__zaaktypeurl": zaak.get('zaaktype'),
+            "drc:zaak__bronorganisatie": zaak.get("bronorganisatie"),
         }
         cmis_folder = self._get_or_create_folder(f"zaak-{zaak.get('identificatie')}", zaaktype_folder, properties)
         return cmis_folder
@@ -124,7 +121,7 @@ class CMISDRCClient:
             parentFolder=day_folder,
         )
 
-    def get_cmis_documents(self, filter_case=False):
+    def get_cmis_documents(self, filter_case=False, filters=None):
         """
         Gives a list of cmis documents.
 
@@ -132,7 +129,16 @@ class CMISDRCClient:
         """
         from .models import CMISConfig
 
-        if filter_case:
+        if filters:
+            filter_string = ''
+            for key, value in filters.items():
+                if value:
+                    filter_string = f"{mapper(key)} = '{value}' AND"
+
+            if filter_string.endswith(' AND'):
+                filter_string = filter_string[:-4]
+            query = self.documents_query(filter_string)
+        elif filter_case:
             query = self.document_cases_query()
         else:
             config = CMISConfig.get_solo()
@@ -147,6 +153,7 @@ class CMISDRCClient:
 
         # Remove the /'s from the string
         query = codecs.escape_decode(query)[0].decode()
+        print(query)
         result_set = self._get_repo.query(query)
         unpacked_result_set = [item for item in result_set]
         cmis_documents = [doc.getLatestVersion() for doc in unpacked_result_set]
@@ -172,7 +179,7 @@ class CMISDRCClient:
         doc = doc.getLatestVersion()
         return doc
 
-    def update_document(self, identificatie, data, stream=None):
+    def update_cmis_document(self, identificatie, data, stream=None):
         cmis_doc = self.get_cmis_document(identificatie, self.document_via_identification_query)
 
         # build up the properties
@@ -193,6 +200,17 @@ class CMISDRCClient:
         if stream is not None:
             cmis_doc.setContentStream(stream, None)
 
+        return cmis_doc
+
+    def delete_cmis_document(self, identificatie):
+        cmis_doc = self.get_cmis_document(identificatie, self.document_via_identification_query)
+        new_properties = {'drc:document__verwijderd': True}
+
+        try:
+            cmis_doc.updateProperties(new_properties)
+        except UpdateConflictException as exc:
+            # Node locked!
+            raise DocumentConflictException from exc
         return cmis_doc
 
     def update_case_connection(self, cmis_doc, data):
@@ -258,39 +276,43 @@ class CMISDRCClient:
         return None
 
     def _build_properties(self, identificatie, data):
-        return {
-            "cmis:objectTypeId": 'D:drc:document',  # Set the type of document that is uploaded.
-            "cmis:name": data.get('titel'),
-            "drc:identificatie": identificatie,
-            "drc:bronorganisatie": data.get('bronorganisatie'),
-            "drc:creatiedatum": data.get('creatiedatum'),
-            "drc:vertrouwelijkaanduiding": data.get('vertrouwelijkaanduiding', ''),
-            "drc:auteur": data.get('auteur'),
-            "drc:status": data.get('status', ''),
-            "drc:beschrijving": data.get('beschrijving', ''),
-            "drc:ontvangstdatum": data.get('ontvangstdatum'),
-            "drc:verzenddatum": data.get('verzenddatum'),
-            "drc:indicatie_gebruiksrecht": data.get('indicatie_gebruiksrecht', ''),
-            "drc:ondertekening_soort": data.get('ondertekening_soort', ''),
-            "drc:ondertekening_datum": data.get('ondertekening_datum'),
-            "drc:informatieobjecttype": data.get('informatieobjecttype', ''),
-            "drc:formaat": data.get('formaat', ''),
-            "drc:taal": data.get('taal'),
-            "drc:bestandsnaam": data.get('bestandsnaam', ''),
-            "drc:link": data.get('link', ''),
-            "drc:integriteit_algoritme": data.get('integriteit_algoritme', ''),
-            "drc:integriteit_waarde": data.get('integriteit_waarde', ''),
-            "drc:integriteit_datum": data.get('integriteit_datum'),
-        }
+        base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
+        base_properties["cmis:objectTypeId"] = "D:drc:document"
+        base_properties[mapper("identificatie")] = identificatie
+        return base_properties
+        # {
+        #     "cmis:objectTypeId": 'D:drc:document',  # Set the type of document that is uploaded.
+        #     "cmis:name": data.get('titel'),
+        #     "drc:document__identificatie": identificatie,
+        #     "drc:document__bronorganisatie": data.get('bronorganisatie'),
+        #     "drc:document__creatiedatum": data.get('creatiedatum'),
+        #     "drc:document__vertrouwelijkaanduiding": data.get('vertrouwelijkaanduiding', ''),
+        #     "drc:document__auteur": data.get('auteur'),
+        #     "drc:document__status": data.get('status', ''),
+        #     "drc:document__beschrijving": data.get('beschrijving', ''),
+        #     "drc:document__ontvangstdatum": data.get('ontvangstdatum'),
+        #     "drc:document__verzenddatum": data.get('verzenddatum'),
+        #     "drc:document__indicatiegebruiksrecht": data.get('indicatie_gebruiksrecht', ''),
+        #     "drc:document__ondertekeningsoort": data.get('ondertekening_soort', ''),
+        #     "drc:document__ondertekeningdatum": data.get('ondertekening_datum'),
+        #     "drc:document__informatieobjecttype": data.get('informatieobjecttype', ''),
+        #     "drc:document__formaat": data.get('formaat', ''),
+        #     "drc:document__taal": data.get('taal'),
+        #     "drc:document__bestandsnaam": data.get('bestandsnaam', ''),
+        #     "drc:document__link": data.get('link', ''),
+        #     "drc:document__integriteitalgoritme": data.get('integriteit_algoritme', ''),
+        #     "drc:document__integriteitwaarde": data.get('integriteit_waarde', ''),
+        #     "drc:document__integriteitdatum": data.get('integriteit_datum'),
+        # }
 
     def _build_case_properties(self, data):
         return {
-            "drc:oio_zaak_url": data.get('object'),
-            "drc:oio_object_type": data.get('objectType'),
-            "drc:oio_aard_relatie_weergave": data.get('aardRelatieWeergave'),
-            "drc:oio_titel": data.get('titel'),
-            "drc:oio_beschrijving": data.get('beschrijving'),
-            "drc:oio_registratiedatum": timezone.now().date(),
+            "drc:connectie__zaakurl": data.get('object'),
+            "drc:connectie__objecttype": data.get('objectType'),
+            "drc:connectie__aardrelatieweergave": data.get('aardRelatieWeergave'),
+            "drc:connectie__titel": data.get('titel'),
+            "drc:connectie__beschrijving": data.get('beschrijving'),
+            "drc:connectie__registratiedatum": timezone.now().date(),
         }
 
     def _check_document_exists(self, identificatie):

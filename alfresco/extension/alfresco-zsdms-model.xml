@@ -1,303 +1,327 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<model xmlns="http://www.alfresco.org/model/dictionary/1.0" name="hlm:drcdocuments">
-    <description>Alfresco Content Model voor Document Registratie Component</description>
-    <version>1.0</version>
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://www.alfresco.org/model/dictionary/1.0" name="drc:drc-document">
+    <description>Hier komt een beschrijving te staan</description>
+    <author>Gemeente Utrecht</author>
     <imports>
-        <import prefix="d" uri="http://www.alfresco.org/model/dictionary/1.0" />
-        <import prefix="cm" uri="http://www.alfresco.org/model/content/1.0" />
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm"/>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d"/>
     </imports>
-
     <namespaces>
-        <namespace prefix="hlm" uri="http://haarlem.nl/model/1.0" />
-        <namespace prefix="tmlo" uri="http://haarlem.nl/tmlo/1.0" />
-        <namespace prefix="drc" uri="http://www.egem.nl/king/zsdms" />
+        <namespace uri="http://utrecht.nl/model/1.0" prefix="drc"/>
     </namespaces>
-
-    <!--  Algemene opmerkingen:
-        -   Datums zijn voorlopig als 'd:date' opgenomen en niet als 'd:datetime'.
-            Tijdstippen worden dus niet opgeslagen in de gedeclareerde velden.
-            De Systeem data (cm:created en cm:modified) zijn wel van het type d:datetime.
-        -   De velden cm:title en drc:zaakidentificatie zijn opgenomen in aspecten.
-            Een eventuele cmis query die deze properties op wil vragen, moet een join doen met deze aspecten (resp. cm:title en drc:zaakidentificatieAspect).
-    -->
+    <data-types/>
     <constraints/>
-
     <types>
-        <type name="drc:zaaktypefolder">
-            <title>Zaaktype folder</title>
-            <description>Zaaktype folder</description>
-            <parent>cm:folder</parent>
-            <properties>
-                <property name="drc:zaaktype_identificatie">
-                    <title>drc - Zaaktype - Identificatie</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaaktype_url">
-                    <title>drc - Zaaktype - Url</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-            </properties>
-        </type>
         <type name="drc:zaakfolder">
-            <title>Zaak folder</title>
-            <description>Zaakfolder</description>
+            <title>DRC Zaakfolder</title>
+            <description>Dit is een zaakfolder voor het DRC</description>
             <parent>cm:folder</parent>
             <properties>
-                <property name="drc:zaak_identificatie">
-                    <title>drc - Zaak - Identificatie</title>
+                <property name="drc:zaak__url">
+                    <title>DRC - Zaak - Url</title>
+                    <description>Dit is de url van een zaak. Deze waarde moet uniek zijn.</description>
                     <type>d:text</type>
+                    <mandatory>true</mandatory>
                     <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
                     </index>
                 </property>
-                <property name="drc:zaak_url">
-                    <title>drc - Zaak - Url</title>
+                <property name="drc:zaak__zaaktypeurl">
+                    <title>DRC - Zaak - Zaaktype url</title>
+                    <description>Dit is de url naar het zaaktype waar een zaak toe behoord. Deze waarde hoeft niet uniek te zijn.</description>
                     <type>d:text</type>
+                    <mandatory>true</mandatory>
                     <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
                     </index>
                 </property>
-                <property name="drc:zaak_zaaktype_url">
-                    <title>drc - Zaak - Zaaktype url</title>
+                <property name="drc:zaak__identificatie">
+                    <title>DRC - Zaak - Identificatie</title>
                     <type>d:text</type>
+                    <mandatory>true</mandatory>
                     <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
                     </index>
                 </property>
-                <property name="drc:zaak_startdatum">
-                    <title>drc - Zaak - Startdatum</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaak_einddatum">
-                    <title>drc - Zaak - Einddatum</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaak_deelzakenindicatie">
-                    <title>drc - Zaak - Indicatie deelzaken</title>
+                <property name="drc:zaak__bronorganisatie">
+                    <title>DRC - Zaak - Bronorganisatie</title>
                     <type>d:text</type>
+                    <mandatory>true</mandatory>
                     <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaak_registratiedatum">
-                    <title>drc - Zaak - Registratiedatum</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
-                    </index>
-                </property>
-                <property name="drc:zaak_bronorganisatie">
-                    <title>drc - Zaak - bronorganisatie</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
                     </index>
                 </property>
             </properties>
-            <mandatory-aspects>
-                <aspect>drc:zaakidentificatieAspect</aspect>
-            </mandatory-aspects>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
         </type>
         <type name="drc:document">
-            <title>Document</title>
-            <description>Document</description>
+            <title>DRC Document</title>
+            <description>Dit is het document dat de data zal bevatten waarmee het gemma document registratie component mee kan werken.</description>
             <parent>cm:content</parent>
-
             <properties>
-                <!-- document titel (cm:title) is een bestaand veld uit het alfrescomodel.
-                     Het is impliciet beschikbaar gemaakt door het aspect cm:titled toe te voegen aan de lijst met verplichte aspecten van het type drc:document-->
-                <!-- de bestandsnaam komt overeen met het systeemveld cm:name -->
-                <property name="drc:identificatie">
-                    <title>DRC - Identificatie</title>
+                <property name="drc:connectie__beschrijving">
+                    <title>DRC - Connectie - Beschrijving</title>
                     <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
                     </index>
                 </property>
-                <property name="drc:bronorganisatie">
-                    <title>DRC - Bronorganisatie</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                <property name="drc:document__verzenddatum">
+                    <title>DRC - Document - Verzenddatum</title>
+                    <type>d:date</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
                     </index>
                 </property>
-                <property name="drc:creatiedatum">
-                    <title>DRC - Creatie datum</title>
-                    <type>d:date</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                <property name="drc:connectie__aardrelatieweergave">
+                    <title>DRC - Connectie - Aard relatie weergave</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
                     </index>
                 </property>
-                <property name="drc:vertrouwelijkaanduiding">
-                    <title>DRC - Vertrouwelijkaanduiding</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                <property name="drc:document__ontvangstdatum">
+                    <title>DRC - Document - Ontvangstdatum</title>
+                    <type>d:date</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
                     </index>
                 </property>
-                <property name="drc:auteur">
-                    <title>DRC - Auteur</title>
+                <property name="drc:document__informatieobjecttype">
+                    <title>DRC - Document - Informatieobjecttype</title>
                     <type>d:text</type>
-                </property>
-                <property name="drc:status">
-                    <title>DRC - Status</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:beschrijving">
-                    <title>DRC - Beschrijving</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:ontvangstdatum">
-                    <title>DRC - Ontvangst datum</title>
-                    <type>d:date</type>
-                </property>
-                <property name="drc:verzenddatum">
-                    <title>DRC - Verzend datum</title>
-                    <type>d:date</type>
-                </property>
-                <property name="drc:indicatie_gebruiksrecht">
-                    <title>DRC - Indicatie gebruiksrecht</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:ondertekening_soort">
-                    <title>DRC - Ondertekening soort</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:ondertekening_datum">
-                    <title>DRC - Ondertekening datum</title>
-                    <type>d:date</type>
-                </property>
-                <property name="drc:informatieobjecttype">
-                    <title>DRC - Informatie object type</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:formaat">
-                    <title>DRC - Formaat</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:taal">
-                    <title>DRC - Taal</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:bestandsnaam">
-                    <title>DRC - Bestandsnaam</title>
-                    <type>d:text</type>
+                    <mandatory>false</mandatory>
                     <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
                     </index>
                 </property>
-                <property name="drc:link">
-                    <title>DRC - link</title>
+                <property name="drc:document__beschrijving">
+                    <title>DRC - Document  - Beschrijving</title>
                     <type>d:text</type>
-                </property>
-                <property name="drc:integriteit_algoritme">
-                    <title>DRC - integriteit_algoritme</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:integriteit_waarde">
-                    <title>DRC - integriteit_waarde</title>
-                    <type>d:text</type>
-                </property>
-                <property name="drc:integriteit_datum">
-                    <title>DRC - integriteit_datum</title>
-                    <type>d:date</type>
-                </property>
-                <property name="drc:oio_zaak_url">
-                    <title>DRC - oio zaak_url</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>true</tokenised>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
                     </index>
                 </property>
-                <property name="drc:oio_object_type">
-                    <title>DRC - oio object_type</title>
+                <property name="drc:document__bestandsnaam">
+                    <title>DRC - Document - Bestandsnaam</title>
                     <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
+                    </index>
                 </property>
-                <property name="drc:oio_aard_relatie_weergave">
-                    <title>DRC - oio aard_relatie_weergave</title>
+                <property name="drc:document__identificatie">
+                    <title>DRC - Document - Identificatie</title>
                     <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
+                    </index>
                 </property>
-                <property name="drc:oio_titel">
-                    <title>DRC - oio titel</title>
+                <property name="drc:document__status">
+                    <title>DRC - Document - Status</title>
                     <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
                 </property>
-                <property name="drc:oio_beschrijving">
-                    <title>DRC - oio beschrijving</title>
+                <property name="drc:document__vertrouwelijkaanduiding">
+                    <title>DRC - Document - Vertrouwelijkaanduiding</title>
                     <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
                 </property>
-                <property name="drc:oio_registratiedatum">
-                    <title>DRC - oio registratiedatum</title>
+                <property name="drc:connectie__registratiedatum">
+                    <title>DRC - Connectie - Registratiedatum</title>
                     <type>d:date</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__integriteitwaarde">
+                    <title>DRC - Document - Integriteit waarde</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:connectie__titel">
+                    <title>DRC - Connectie - Titel</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__taal">
+                    <title>DRC - Document - Taal</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__indicatiegebruiksrecht">
+                    <title>DRC - Document - Indicatie gebruiksrecht</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__bronorganisatie">
+                    <title>DRC - Document - Bronorganisatie</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
+                    </index>
+                </property>
+                <property name="drc:document__link">
+                    <title>DRC - Document - Link</title>
+                    <description>Dit is een link naar een extern systeem.</description>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                        <facetable>false</facetable>
+                    </index>
+                </property>
+                <property name="drc:document__verwijderd">
+                    <title>DRC - Document - Verwijderd</title>
+                    <type>d:boolean</type>
+                    <mandatory>false</mandatory>
+                    <default>false</default>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__formaat">
+                    <title>DRC - Document - Formaat</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__creatiedatum">
+                    <title>DRC - Document - Creatiedatum</title>
+                    <type>d:date</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__integriteitdatum">
+                    <title>DRC - Document - Integriteit datum</title>
+                    <type>d:date</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:connectie__objecttype">
+                    <title>DRC - Connectie - Objecttype</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__ondertekeningdatum">
+                    <title>DRC - Document - Ondertekening datum</title>
+                    <type>d:date</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:connectie__zaakurl">
+                    <title>DRC - Connectie - Zaak url</title>
+                    <description>Dit is een koppeling tussen een zaak en een document.</description>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="true">
+                        <tokenised>FALSE</tokenised>
+                        <facetable>true</facetable>
+                    </index>
+                </property>
+                <property name="drc:document__integriteitalgoritme">
+                    <title>DRC - Document - Integriteit algoritme</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__ondertekeningsoort">
+                    <title>DRC - Document - Ondertekening soort</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:document__auteur">
+                    <title>DRC - Document - Auteur</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
                 </property>
             </properties>
-            <!-- Identificatiekenmerk (noderef) word door alfresco automatisch gegenereerd en staat in  het veld sys:node-uuid
-                 In combinatie met de prefix 'workspace://SpacesStore/' levert dit de zg. nodeRef -->
-            <!-- tmlo:datumAanmaak word door alfresco bijgehouden in het veld cm:created  -->
-            <mandatory-aspects>
-                <aspect>cm:titled</aspect>
-            </mandatory-aspects>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
+        </type>
+        <type name="drc:zaaktypefolder">
+            <title>DRC Zaaktypefolder</title>
+            <description>Dit is een Zaaktype folder. Hierin zullen alle zaakfolders in terecht komen.</description>
+            <parent>cm:folder</parent>
+            <properties>
+                <property name="drc:zaaktype__identificatie">
+                    <title>DRC - Zaaktype - Identificatie</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:zaaktype__url">
+                    <title>DRC - Zaaktype - Url</title>
+                    <description>De url van het zaaktype. Deze moet altijd uniek zijn.</description>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+            </properties>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
         </type>
     </types>
-
-    <aspects>
-        <aspect name="drc:zaakidentificatieAspect">
-            <title>Zaakidentificatie Aspect</title>
-            <description>Zaakidentificatie Aspect</description>
-            <properties>
-                <property name="drc:zaakidentificatie">
-                    <title>Zaak identificatie</title>
-                    <type>d:text</type>
-                    <index enabled="true">
-                        <atomic>true</atomic>
-                        <stored>false</stored>
-                        <tokenised>false</tokenised>
-                    </index>
-                </property>
-            </properties>
-        </aspect>
-    </aspects>
+    <aspects/>
 </model>

@@ -3,12 +3,6 @@ from django.utils.translation import ugettext_lazy as _
 from djchoices import ChoiceItem, DjangoChoices
 
 
-class CMISObjectType(DjangoChoices):
-    zaken = ChoiceItem("F:drc:zaken", _("Zaken hoofd folder"))
-    zaak_folder = ChoiceItem("F:drc:zaak", _("Zaak folder"))
-    edc = ChoiceItem("D:drc:document", _("Enkelvoudig document"))
-
-
 class CMISCapabilities(DjangoChoices):
     """
     http://docs.oasis-open.org/cmis/CMIS/v1.0/cmis-spec-v1.0.html

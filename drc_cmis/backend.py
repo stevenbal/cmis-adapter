@@ -19,6 +19,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
     This class is based on:
     drc.backend.abstract.BaseDRCStorageBackend
     """
+
+    # DOCUMENTS ====================================================================================
+    # CREATE
     def create_document(self, validated_data, inhoud):
         identificatie = validated_data.pop('identificatie')
 
@@ -32,8 +35,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentExistsError as e:
             raise self.exception_class({None: e.message}, create=True)
 
-    def get_documents(self):
-        cmis_documents = cmis_client.get_cmis_documents()
+    # READ
+    def get_documents(self, filters=None):
+        """
+        Fetch all the documents from CMIS and create a dict that is compatible with the serializer.
+        """
+        cmis_documents = cmis_client.get_cmis_documents(filters=filters)
         documents_data = []
         for cmis_doc in cmis_documents:
             dict_document = create_dict_from_cmis_doc(cmis_doc)
@@ -42,25 +49,22 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         return documents_data
 
-    def update_enkelvoudiginformatieobject(self, validated_data, identificatie, inhoud):
-        cmis_document = cmis_client.update_document(identificatie, validated_data, inhoud)
-        return create_dict_from_cmis_doc(cmis_document)
-
     def get_document(self, uuid):
         cmis_document = cmis_client.get_cmis_document(identificatie=uuid)
         return create_dict_from_cmis_doc(cmis_document)
 
-    def get_document_cases(self):
-        cmis_documents = cmis_client.get_cmis_documents(filter_case=True)
+    # UPDATE
+    def update_document(self, validated_data, identificatie, inhoud):
+        cmis_document = cmis_client.update_cmis_document(identificatie, validated_data, inhoud)
+        return create_dict_from_cmis_doc(cmis_document)
 
-        documents_data = []
-        for cmis_doc in cmis_documents:
-            dict_document = create_case_dict_from_cmis_doc(cmis_doc)
-            if dict_document:
-                documents_data.append(dict_document)
+    # DELETE
+    def delete_document(self, uuid):
+        cmis_document = cmis_client.delete_cmis_document(identificatie=uuid)
+        return create_dict_from_cmis_doc(cmis_document)
 
-        return documents_data
-
+    # CONNECTIONS ==================================================================================
+    # CREATE
     def create_case_link(self, validated_data):
         """
         There are 2 possible paths here,
@@ -71,7 +75,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         cmis_doc = cmis_client.get_cmis_document(identificatie=document_id)
         folder = cmis_client.get_folder_from_case_url(validated_data.get('object'))
 
-        if not cmis_doc.properties.get('drc:oio_zaak_url'):
+        if not cmis_doc.properties.get('drc:connectie__zaakurl'):
             cmis_client.update_case_connection(cmis_doc, validated_data)
             if folder:
                 cmis_client.move_to_case(cmis_doc, folder)
@@ -79,3 +83,23 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
                 return
         else:
             cmis_client.copy_document(cmis_doc, folder, validated_data)
+
+    # READ
+    def get_document_cases(self):
+        """
+        Get all documents that have a case url.
+        """
+        cmis_documents = cmis_client.get_cmis_documents(filter_case=True)
+        documents_data = []
+        for cmis_doc in cmis_documents:
+            dict_document = create_case_dict_from_cmis_doc(cmis_doc)
+            if dict_document:
+                documents_data.append(dict_document)
+
+        return documents_data
+
+    # UPDATE
+    # TODO
+
+    # DELETE
+    # TODO

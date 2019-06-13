@@ -23,6 +23,7 @@ class CMISStorageTests(DMSMixin, TestCase):
         config = CMISConfig.get_solo()
         config.locations.add(location)
 
+    # CREATE DOCUMENT TESTS
     def test_create_document(self):
         eio = EnkelvoudigInformatieObjectFactory()
         document = self.backend.create_document(eio.__dict__.copy(), BytesIO(b'some content'))
@@ -56,6 +57,7 @@ class CMISStorageTests(DMSMixin, TestCase):
             self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertEqual(exception.exception.detail, {None: ErrorDetail(string=f"Document identificatie {eio.identificatie} is niet uniek", code='invalid')})
 
+    # GET DOCUMENT TESTS
     def test_get_documents(self):
         eio = EnkelvoudigInformatieObjectFactory()
         doc = self.backend.create_document(eio.__dict__, BytesIO(b'some content'))
@@ -72,34 +74,6 @@ class CMISStorageTests(DMSMixin, TestCase):
         documents = self.backend.get_documents()
 
         self.assertEqual(len(documents), 0)
-
-    def test_update_enkelvoudiginformatieobject(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
-        eio_dict = eio.__dict__
-
-        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
-        self.assertIsNotNone(document)
-        self.assertEqual(document['identificatie'], 'test')
-
-        eio_dict['titel'] = 'test-titel-die-unique-is'
-
-        updated_document = self.backend.update_enkelvoudiginformatieobject(eio_dict.copy(), eio_dict['identificatie'], BytesIO(b'some content2'))
-
-        self.assertNotEqual(document['titel'], updated_document['titel'])
-
-    def test_update_enkelvoudiginformatieobject_no_stream(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
-        eio_dict = eio.__dict__
-
-        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
-        self.assertIsNotNone(document)
-        self.assertEqual(document['identificatie'], 'test')
-
-        eio_dict['titel'] = 'test-titel-die-unique-is'
-
-        updated_document = self.backend.update_enkelvoudiginformatieobject(eio_dict.copy(), eio_dict['identificatie'], None)
-
-        self.assertNotEqual(document['titel'], updated_document['titel'])
 
     def test_get_document(self):
         eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
@@ -121,8 +95,51 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.assertEqual(document['identificatie'], 'test')
 
         documents = self.backend.get_document_cases()
-        self.assertEqual(len(documents), 5)
+        self.assertGreaterEqual(len(documents), 1)
 
+    # UPDATE DOCUMENT TESTS
+    def test_update_document(self):
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(document)
+        self.assertEqual(document['identificatie'], 'test')
+
+        eio_dict['titel'] = 'test-titel-die-unique-is'
+
+        updated_document = self.backend.update_document(eio_dict.copy(), eio_dict['identificatie'], BytesIO(b'some content2'))
+
+        self.assertNotEqual(document['titel'], updated_document['titel'])
+
+    def test_update_document_no_stream(self):
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(document)
+        self.assertEqual(document['identificatie'], 'test')
+
+        eio_dict['titel'] = 'test-titel-die-unique-is'
+
+        updated_document = self.backend.update_document(eio_dict.copy(), eio_dict['identificatie'], None)
+
+        self.assertNotEqual(document['titel'], updated_document['titel'])
+
+    # DELETE DOCUMENT TESTS
+    def test_delete_documents(self):
+        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio_dict = eio.__dict__
+
+        cmis_doc = cmis_client.create_document(eio.identificatie, eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(cmis_doc)
+        self.assertFalse(cmis_doc.properties.get('drc:document__verwijderd'))
+
+        self.backend.delete_document('test')
+        cmis_doc.reload()
+        self.assertTrue(cmis_doc.properties.get('drc:document__verwijderd'))
+
+    # CONNECT DOCUMENT TESTS
     def test_create_case_link(self):
         # Create zaaktype_folder
         zaaktype_folder = cmis_client.get_or_create_zaaktype_folder({
