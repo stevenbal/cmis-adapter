@@ -112,3 +112,4 @@ alfresco/volumes/logs/
 tests/database.db
 XDG_CACHE_HOME/
 DEV.md
+pip-wheel-metadata/

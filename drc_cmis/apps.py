@@ -38,12 +38,7 @@ def check_cmis(app_configs, **kwargs):
     try:
         capabilities = cmis_client._repo.capabilities
     except Exception:
-        errors.append(
-            Error(
-                "Could not communicate with the DMS.",
-                hint="Make sure the authentication and host settings are correct.",
-            )
-        )
+        errors.append(Error("Could not communicate with the DMS.", hint="Make sure the authentication and host settings are correct."))
         return errors
     else:
         multifiling = capabilities.get(CMISCapabilities.multifiling, None)

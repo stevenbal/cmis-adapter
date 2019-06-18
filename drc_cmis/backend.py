@@ -6,7 +6,7 @@ from django.utils.module_loading import import_string
 from cmislib.exceptions import UpdateConflictException
 
 from .client import cmis_client
-from .convert import create_case_dict_from_cmis_doc, create_dict_from_cmis_doc
+from .convert import create_case_dict_from_cmis_doc, create_dataclass_from_cmis_doc
 from .exceptions import DocumentExistsError
 
 logger = logging.getLogger(__name__)
@@ -23,14 +23,14 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
     # DOCUMENTS ====================================================================================
     # CREATE
     def create_document(self, validated_data, inhoud):
-        identificatie = validated_data.pop('identificatie')
+        identificatie = validated_data.pop("identificatie")
 
         try:
             cmis_doc = cmis_client.create_document(identificatie, validated_data, inhoud)
-            dict_doc = create_dict_from_cmis_doc(cmis_doc)
+            dict_doc = create_dataclass_from_cmis_doc(cmis_doc, self.dataclass)
             return dict_doc
         except UpdateConflictException:
-            error_message = 'Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam'
+            error_message = "Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam"
             raise self.exception_class({None: error_message}, create=True)
         except DocumentExistsError as e:
             raise self.exception_class({None: e.message}, create=True)
@@ -43,7 +43,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         cmis_documents = cmis_client.get_cmis_documents(filters=filters)
         documents_data = []
         for cmis_doc in cmis_documents:
-            dict_document = create_dict_from_cmis_doc(cmis_doc)
+            dict_document = create_dataclass_from_cmis_doc(cmis_doc, self.dataclass)
             if dict_document:
                 documents_data.append(dict_document)
 
@@ -51,17 +51,17 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
     def get_document(self, uuid):
         cmis_document = cmis_client.get_cmis_document(identificatie=uuid)
-        return create_dict_from_cmis_doc(cmis_document)
+        return create_dataclass_from_cmis_doc(cmis_document, self.dataclass)
 
     # UPDATE
     def update_document(self, validated_data, identificatie, inhoud):
         cmis_document = cmis_client.update_cmis_document(identificatie, validated_data, inhoud)
-        return create_dict_from_cmis_doc(cmis_document)
+        return create_dataclass_from_cmis_doc(cmis_document, self.dataclass)
 
     # DELETE
     def delete_document(self, uuid):
         cmis_document = cmis_client.delete_cmis_document(identificatie=uuid)
-        return create_dict_from_cmis_doc(cmis_document)
+        return create_dataclass_from_cmis_doc(cmis_document, self.dataclass)
 
     # CONNECTIONS ==================================================================================
     # CREATE
@@ -71,11 +71,11 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         1. There is no case connected to the document yet. So the document can be connected to the case.
         2. There is a case connected to the document, so we need to create a copy of the document.
         """
-        document_id = validated_data.get('informatieobject').split('/')[-1]
+        document_id = validated_data.get("informatieobject").split("/")[-1]
         cmis_doc = cmis_client.get_cmis_document(identificatie=document_id)
-        folder = cmis_client.get_folder_from_case_url(validated_data.get('object'))
+        folder = cmis_client.get_folder_from_case_url(validated_data.get("object"))
 
-        if not cmis_doc.properties.get('drc:connectie__zaakurl'):
+        if not cmis_doc.properties.get("drc:connectie__zaakurl"):
             cmis_client.update_case_connection(cmis_doc, validated_data)
             if folder:
                 cmis_client.move_to_case(cmis_doc, folder)

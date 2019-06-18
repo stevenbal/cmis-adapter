@@ -81,10 +81,10 @@ class CMISStorageTests(DMSMixin, TestCase):
 
         document = self.backend.create_document(eio_dict.copy(), None)
         self.assertIsNotNone(document)
-        self.assertEqual(document['identificatie'], 'test')
+        self.assertEqual(document.identificatie, 'test')
 
-        fetched_document = self.backend.get_document(document['url'].split('/')[-1])
-        self.assertEqual(document['titel'], fetched_document['titel'])
+        fetched_document = self.backend.get_document(document.url.split('/')[-1])
+        self.assertEqual(document.titel, fetched_document.titel)
 
     # TODO: Fix this call
     # def test_get_document_cases(self):
@@ -93,7 +93,7 @@ class CMISStorageTests(DMSMixin, TestCase):
 
     #     document = self.backend.create_document(eio_dict.copy(), None)
     #     self.assertIsNotNone(document)
-    #     self.assertEqual(document['identificatie'], 'test')
+    #     self.assertEqual(document.identificatie, 'test')
 
     #     documents = self.backend.get_document_cases()
     #     self.assertGreaterEqual(len(documents), 1)
@@ -105,13 +105,13 @@ class CMISStorageTests(DMSMixin, TestCase):
 
         document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
-        self.assertEqual(document['identificatie'], 'test')
+        self.assertEqual(document.identificatie, 'test')
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
 
         updated_document = self.backend.update_document(eio_dict.copy(), eio_dict['identificatie'], BytesIO(b'some content2'))
 
-        self.assertNotEqual(document['titel'], updated_document['titel'])
+        self.assertNotEqual(document.titel, updated_document.titel)
 
     def test_update_document_no_stream(self):
         eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
@@ -119,13 +119,13 @@ class CMISStorageTests(DMSMixin, TestCase):
 
         document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
-        self.assertEqual(document['identificatie'], 'test')
+        self.assertEqual(document.identificatie, 'test')
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
 
         updated_document = self.backend.update_document(eio_dict.copy(), eio_dict['identificatie'], None)
 
-        self.assertNotEqual(document['titel'], updated_document['titel'])
+        self.assertNotEqual(document.titel, updated_document.titel)
 
     # DELETE DOCUMENT TESTS
     def test_delete_documents(self):
@@ -168,7 +168,7 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.assertIsNotNone(document)
 
         self.backend.create_case_link({
-            'informatieobject': document['url'],
+            'informatieobject': document.url,
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
         })
 
@@ -181,7 +181,7 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.assertIsNotNone(document)
 
         self.backend.create_case_link({
-            'informatieobject': document['url'],
+            'informatieobject': document.url,
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
         })
 
@@ -222,12 +222,12 @@ class CMISStorageTests(DMSMixin, TestCase):
         self.assertIsNotNone(document)
 
         self.backend.create_case_link({
-            'informatieobject': document['url'],
+            'informatieobject': document.url,
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid'
         })
 
         self.backend.create_case_link({
-            'informatieobject': document['url'],
+            'informatieobject': document.url,
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid2'
         })
 

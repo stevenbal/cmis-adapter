@@ -5,21 +5,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('drc_cmis', '0001_initial_new'),
-    ]
+    dependencies = [("drc_cmis", "0001_initial_new")]
 
     operations = [
         migrations.CreateModel(
-            name='CMISFolderLocation',
+            name="CMISFolderLocation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('location', models.CharField(default='', max_length=200)),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("location", models.CharField(default="", max_length=200)),
             ],
         ),
-        migrations.AddField(
-            model_name='cmisconfig',
-            name='locations',
-            field=models.ManyToManyField(to='drc_cmis.CMISFolderLocation'),
-        ),
+        migrations.AddField(model_name="cmisconfig", name="locations", field=models.ManyToManyField(to="drc_cmis.CMISFolderLocation")),
     ]

@@ -8,9 +8,7 @@ class CMISCapabilities(DjangoChoices):
     http://docs.oasis-open.org/cmis/CMIS/v1.0/cmis-spec-v1.0.html
     """
 
-    changes = ChoiceItem(
-        "Changes", _('Indicates what level of changes (if any) the repository exposes via the "change log" service.')
-    )
+    changes = ChoiceItem("Changes", _('Indicates what level of changes (if any) the repository exposes via the "change log" service.'))
     all_versions_searchable = ChoiceItem(
         "AllVersionsSearchable",
         _(
@@ -18,8 +16,7 @@ class CMISCapabilities(DjangoChoices):
         ),
     )
     content_stream_updatability = ChoiceItem(
-        "ContentStreamUpdatability",
-        _("Indicates the support a repository has for updating a document's content stream."),
+        "ContentStreamUpdatability", _("Indicates the support a repository has for updating a document's content stream.")
     )
     pwc_updatable = ChoiceItem(
         "PWCUpdatable", _('Ability for an application to update the "Private Working Copy" of a checked-out document.')
@@ -31,20 +28,16 @@ class CMISCapabilities(DjangoChoices):
         ),
     )
     unfiling = ChoiceItem(
-        "Unfiling",
-        _("Ability for an application to leave a document or other file-able object not filed in any folder."),
+        "Unfiling", _("Ability for an application to leave a document or other file-able object not filed in any folder.")
     )
     multifiling = ChoiceItem(
-        "Multifiling",
-        _("Ability for an application to file a document or other file-able object in more than one folder."),
+        "Multifiling", _("Ability for an application to file a document or other file-able object in more than one folder.")
     )
     version_specific_filing = ChoiceItem(
         "VersionSpecificFiling",
         _("Ability for an application to file individual versions (i.e., not all versions) of a document in a folder."),
     )
-    renditions = ChoiceItem(
-        "Renditions", _("Indicates whether or not the repository exposes renditions of document or folder objects.")
-    )
+    renditions = ChoiceItem("Renditions", _("Indicates whether or not the repository exposes renditions of document or folder objects."))
     query = ChoiceItem("Query", _("Indicates the types of queries that the Repository has the ability to fulfill."))
     get_folder_tree = ChoiceItem(
         "GetFolderTree", _("Ability for an application to retrieve the folder tree via the getFolderTree service.")

@@ -11,9 +11,7 @@ from cmislib.exceptions import UpdateConflictException
 from drc_cmis import settings
 
 # from .choices import CMISObjectType
-from .exceptions import (
-    DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError
-)
+from .exceptions import DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError
 from .mapper import mapper, reverse_mapper
 from .query import CMISQuery
 
@@ -26,6 +24,7 @@ class CMISDRCClient:
     """
     DRC client implementation using the CMIS protocol.
     """
+
     all_documents_query = CMISQuery("SELECT * FROM cmis:document")
     all_drc_documents_query = CMISQuery("SELECT * FROM drc:document")
     documents_query = CMISQuery("SELECT * FROM drc:document WHERE %s")
@@ -45,6 +44,7 @@ class CMISDRCClient:
         """
         if not self._repo:
             from .models import CMISConfig
+
             config = CMISConfig.get_solo()
             _client = CmisClient(config.client_url, config.client_user, config.client_password)
             self._repo = _client.getDefaultRepository()
@@ -71,8 +71,8 @@ class CMISDRCClient:
         """
         properties = {
             "cmis:objectTypeId": "F:drc:zaaktypefolder",
-            "drc:zaaktype__url": zaaktype.get('url'),
-            "drc:zaaktype__identificatie": zaaktype.get('identificatie'),
+            mapper("url", "zaaktype"): zaaktype.get("url"),
+            mapper("identificatie", "zaaktype"): zaaktype.get("identificatie"),
         }
 
         folder_name = f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}"
@@ -86,10 +86,10 @@ class CMISDRCClient:
 
         properties = {
             "cmis:objectTypeId": "F:drc:zaakfolder",
-            "drc:zaak__url": zaak.get('url'),
-            "drc:zaak__identificatie": zaak.get('identificatie'),
-            "drc:zaak__zaaktypeurl": zaak.get('zaaktype'),
-            "drc:zaak__bronorganisatie": zaak.get("bronorganisatie"),
+            mapper("url", "zaak"): zaak.get("url"),
+            mapper("identificatie", "zaak"): zaak.get("identificatie"),
+            mapper("zaaktype", "zaak"): zaak.get("zaaktype"),
+            mapper("bronorganisatie", "zaak"): zaak.get("bronorganisatie"),
         }
         cmis_folder = self._get_or_create_folder(f"zaak-{zaak.get('identificatie')}", zaaktype_folder, properties)
         return cmis_folder
@@ -117,8 +117,7 @@ class CMISDRCClient:
         properties = self._build_properties(identificatie, data)
 
         return self._get_repo.createDocument(
-            name=data.get('titel'), properties=properties, contentFile=stream, contentType=None,
-            parentFolder=day_folder,
+            name=data.get("titel"), properties=properties, contentFile=stream, contentType=None, parentFolder=day_folder
         )
 
     def get_cmis_documents(self, filter_case=False, filters=None):
@@ -130,19 +129,19 @@ class CMISDRCClient:
         from .models import CMISConfig
 
         if filters:
-            filter_string = ''
+            filter_string = ""
             for key, value in filters.items():
                 if value:
                     filter_string = f"{mapper(key)} = '{value}' AND"
 
-            if filter_string.endswith(' AND'):
+            if filter_string.endswith(" AND"):
                 filter_string = filter_string[:-4]
             query = self.documents_query(filter_string)
         elif filter_case:
             query = self.document_cases_query()
         else:
             config = CMISConfig.get_solo()
-            folders = config.locations.values_list('location', flat=True)
+            folders = config.locations.values_list("location", flat=True)
             folder_query = ""
             for index, folder in enumerate(folders):
                 cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
@@ -185,11 +184,7 @@ class CMISDRCClient:
         # build up the properties
         current_properties = cmis_doc.properties
         new_properties = self._build_properties(identificatie, data)
-        diff_properties = {
-            key: value
-            for key, value in new_properties.items()
-            if current_properties.get(key) != new_properties.get(key)
-        }
+        diff_properties = {key: value for key, value in new_properties.items() if current_properties.get(key) != new_properties.get(key)}
 
         try:
             cmis_doc.updateProperties(diff_properties)
@@ -204,7 +199,7 @@ class CMISDRCClient:
 
     def delete_cmis_document(self, identificatie):
         cmis_doc = self.get_cmis_document(identificatie, self.document_via_identification_query)
-        new_properties = {'drc:document__verwijderd': True}
+        new_properties = {mapper("verwijderd"): True}
 
         try:
             cmis_doc.updateProperties(new_properties)
@@ -216,11 +211,7 @@ class CMISDRCClient:
     def update_case_connection(self, cmis_doc, data):
         current_properties = cmis_doc.properties
         new_properties = self._build_case_properties(data)
-        diff_properties = {
-            key: value
-            for key, value in new_properties.items()
-            if current_properties.get(key) != new_properties.get(key)
-        }
+        diff_properties = {key: value for key, value in new_properties.items() if current_properties.get(key) != new_properties.get(key)}
 
         try:
             cmis_doc.updateProperties(diff_properties)
@@ -280,39 +271,15 @@ class CMISDRCClient:
         base_properties["cmis:objectTypeId"] = "D:drc:document"
         base_properties[mapper("identificatie")] = identificatie
         return base_properties
-        # {
-        #     "cmis:objectTypeId": 'D:drc:document',  # Set the type of document that is uploaded.
-        #     "cmis:name": data.get('titel'),
-        #     "drc:document__identificatie": identificatie,
-        #     "drc:document__bronorganisatie": data.get('bronorganisatie'),
-        #     "drc:document__creatiedatum": data.get('creatiedatum'),
-        #     "drc:document__vertrouwelijkaanduiding": data.get('vertrouwelijkaanduiding', ''),
-        #     "drc:document__auteur": data.get('auteur'),
-        #     "drc:document__status": data.get('status', ''),
-        #     "drc:document__beschrijving": data.get('beschrijving', ''),
-        #     "drc:document__ontvangstdatum": data.get('ontvangstdatum'),
-        #     "drc:document__verzenddatum": data.get('verzenddatum'),
-        #     "drc:document__indicatiegebruiksrecht": data.get('indicatie_gebruiksrecht', ''),
-        #     "drc:document__ondertekeningsoort": data.get('ondertekening_soort', ''),
-        #     "drc:document__ondertekeningdatum": data.get('ondertekening_datum'),
-        #     "drc:document__informatieobjecttype": data.get('informatieobjecttype', ''),
-        #     "drc:document__formaat": data.get('formaat', ''),
-        #     "drc:document__taal": data.get('taal'),
-        #     "drc:document__bestandsnaam": data.get('bestandsnaam', ''),
-        #     "drc:document__link": data.get('link', ''),
-        #     "drc:document__integriteitalgoritme": data.get('integriteit_algoritme', ''),
-        #     "drc:document__integriteitwaarde": data.get('integriteit_waarde', ''),
-        #     "drc:document__integriteitdatum": data.get('integriteit_datum'),
-        # }
 
     def _build_case_properties(self, data):
         return {
-            "drc:connectie__zaakurl": data.get('object'),
-            "drc:connectie__objecttype": data.get('objectType'),
-            "drc:connectie__aardrelatieweergave": data.get('aardRelatieWeergave'),
-            "drc:connectie__titel": data.get('titel'),
-            "drc:connectie__beschrijving": data.get('beschrijving'),
-            "drc:connectie__registratiedatum": timezone.now().date(),
+            mapper("object", "connection"): data.get("object"),
+            mapper("objectType", "connection"): data.get("objectType"),
+            mapper("aardRelatieWeergave", "connection"): data.get("aardRelatieWeergave"),
+            mapper("titel", "connection"): data.get("titel"),
+            mapper("beschrijving", "connection"): data.get("beschrijving"),
+            mapper("registratieDatum", "connection"): timezone.now().date(),
         }
 
     def _check_document_exists(self, identificatie):
@@ -323,122 +290,6 @@ class CMISDRCClient:
         else:
             error_string = "Document identificatie {} is niet uniek".format(identificatie)
             raise DocumentExistsError(error_string)
-
-    # ! Not used yet.
-    # ! Fix
-    # def get_folder_name(self, zaak_url, folder_config):
-    #     name = ""
-    #     if folder_config.type == CMISObjectType.zaak_folder:
-    #         name = slugify(zaak_url)
-    #     else:
-    #         if not folder_config.name:
-    #             raise ValueError(("Could not determine a folder name for zaak {}").format(slugify(zaak_url)))
-    #     return folder_config.name or name
-
-    # def _get_zaakfolder(self, zaak_url):
-    #     bits = [self.get_folder_name(zaak_url, folder_config) for folder_config in upload_to(zaak_url)]
-    #     path = "/" + ("/").join(bits)
-    #     return self._get_repo.getObjectByPath(path)
-
-    # def _build_cmis_doc_properties(self, connection, filename=None):
-    #     properties = connection.get_cmis_properties()
-    #     properties["cmis:objectTypeId"] = CMISObjectType.edc
-    #     if filename is not None:
-    #         properties["cmis:name"] = filename
-    #     return properties
-
-    # def creeer_zaakfolder(self, zaak_url):
-    #     """
-    #     Maak de zaak folder aan in het DRC.
-
-    #     :param zaak_url: Een link naar de zaak.
-    #     :return: :class:`cmslib.atompub_binding.AtomPubFolder` object - de
-    #       cmslib representatie van de (aangemaakte) zaakmap.
-    #     """
-    #     upload_to_folder = upload_to(zaak_url)
-    #     for folder_config in upload_to_folder:
-    #         if folder_config.type == CMISObjectType.zaken:
-    #             folder_config.type = "cmis:folder"
-
-    #     parent = None
-    #     for folder_config in upload_to_folder:
-    #         properties = {"cmis:objectTypeId": folder_config.type} if folder_config.type else {}
-    #         name = self.get_folder_name(zaak_url, folder_config)
-    #         parent, _ = self._get_or_create_folder(name, properties, parent=parent)
-
-    #     zaak_folder = parent
-    #     return zaak_folder
-
-    # def geef_inhoud(self, document):
-    #     """
-    #     Retrieve the document via its identifier from the DRC.
-
-    #     :param document: EnkelvoudigInformatieObject instance
-    #     :return: tuple of (filename, BytesIO()) with the stream filename and the binary content
-    #     """
-    #     try:
-    #         doc = self.get_cmis_document(document)
-    #     except DocumentDoesNotExistError:
-    #         return (None, BytesIO())
-
-    #     filename = doc.properties["cmis:name"]
-    #     empty = doc.properties["cmis:contentStreamId"] is None
-    #     if empty:
-    #         return (filename, BytesIO())
-    #     return (filename, doc.getContentStream())
-
-    # def relateer_aan_zaak(self, document, zaak_url):
-    #     """
-    #     Wijs het document aan :param:`zaak` toe.
-
-    #     Verplaatst het document van de huidige folder naar de zaakfolder.
-    #     """
-    #     cmis_doc = self.get_cmis_document(document)
-    #     zaakfolder = self._get_zaakfolder(zaak_url)
-    #     parent = [parent for parent in cmis_doc.getObjectParents()][0]
-    #     cmis_doc.move(parent, zaakfolder)
-
-    # def checkout(self, document):
-    #     """
-    #     Checkout (lock) the requested document and return the PWC ID + check out username.
-
-    #     :param document: :class:`EnkelvoudigInformatieObject` instance.
-    #     """
-    #     cmis_doc = self.get_cmis_document(document)
-    #     try:
-    #         pwc = cmis_doc.checkout()
-    #     except UpdateConflictException as exc:
-    #         raise DocumentLockedException("Document was already checked out") from exc
-
-    #     pwc.reload()
-    #     checkout_id = pwc.properties["cmis:versionSeriesCheckedOutId"]
-    #     checkout_by = pwc.properties["cmis:versionSeriesCheckedOutBy"]
-    #     return (checkout_id, checkout_by)
-
-    # def cancel_checkout(self, document, checkout_id):
-    #     cmis_doc = self.get_cmis_document(document, checkout_id=checkout_id)
-    #     cmis_doc.cancelCheckout()
-
-    # def ontkoppel_zaakdocument(self, document, zaak_url):
-    #     cmis_doc = self.get_cmis_document(document)
-    #     cmis_folder = self._get_zaakfolder(zaak_url)
-    #     trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
-    #     cmis_doc.move(cmis_folder, trash_folder)
-
-    # def gooi_in_prullenbak(self, document):
-    #     cmis_doc = self.get_cmis_document(document)
-    #     trash_folder, _ = self._get_or_create_folder(self.TRASH_FOLDER)
-    #     default_folder, _ = self._get_or_create_folder(self.TEMP_FOLDER_NAME)
-    #     cmis_doc.move(default_folder, trash_folder)
-
-    # def is_locked(self, document):
-    #     cmis_doc = self.get_cmis_document(document)
-    #     pwc = cmis_doc.getPrivateWorkingCopy()
-    #     return pwc is not None
-
-    # def verwijder_document(self, document):
-    #     cmis_doc = self.get_cmis_document(document)
-    #     cmis_doc.delete()
 
 
 cmis_client = CMISDRCClient()

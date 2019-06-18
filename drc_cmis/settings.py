@@ -4,7 +4,6 @@ from django.conf import settings
 
 
 class _Settings(object):
-
     @property
     def ENKELVOUDIGINFORMATIEOBJECT_MODEL(self):
         return getattr(settings, "ENKELVOUDIGINFORMATIEOBJECT_MODEL", "datamodel.EnkelvoudigInformatieObject")

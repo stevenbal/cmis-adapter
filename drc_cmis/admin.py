@@ -7,7 +7,7 @@ from .models import CMISConfig, CMISFolderLocation
 
 @admin.register(CMISConfig)
 class CMISConfigAdmin(SingletonModelAdmin):
-    filter_horizontal = ['locations']
+    filter_horizontal = ["locations"]
 
 
 @admin.register(CMISFolderLocation)
