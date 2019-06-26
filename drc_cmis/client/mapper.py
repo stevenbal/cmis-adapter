@@ -37,11 +37,11 @@ DOCUMENT_MAP = {
 
 CONNECTION_MAP = {
     "object": "drc:connectie__zaakurl",
-    "objectType": "drc:connectie__objecttype",
-    "aardRelatieWeergave": "drc:connectie__aardrelatieweergave",
+    "object_type": "drc:connectie__objecttype",
+    "aard_relatie": "drc:connectie__aardrelatieweergave",
     "titel": "drc:connectie__titel",
     "beschrijving": "drc:connectie__beschrijving",
-    "registratieDatum": "drc:connectie__registratiedatum",
+    "registratiedatum": "drc:connectie__registratiedatum",
 }
 
 REVERSE_ZAAKTYPE_MAP = {value: key for key, value in ZAAKTYPE_MAP.items()}

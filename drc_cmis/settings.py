@@ -5,10 +5,6 @@ from django.conf import settings
 
 class _Settings(object):
     @property
-    def ENKELVOUDIGINFORMATIEOBJECT_MODEL(self):
-        return getattr(settings, "ENKELVOUDIGINFORMATIEOBJECT_MODEL", "datamodel.EnkelvoudigInformatieObject")
-
-    @property
     def BASE_FOLDER_LOCATION(self):
         return getattr(settings, "BASE_FOLDER_LOCATION", "DRC")
 

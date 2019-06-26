@@ -1,6 +1,6 @@
 from rest_framework.exceptions import ValidationError
 
-from .data import EnkelvoudigInformatieObject
+from .data import EnkelvoudigInformatieObject, ObjectInformatieObject
 
 
 class BackendException(ValidationError):
@@ -16,4 +16,5 @@ class BackendException(ValidationError):
 
 class AbstractStorageBackend:
     exception_class = BackendException
-    dataclass = EnkelvoudigInformatieObject
+    eio_dataclass = EnkelvoudigInformatieObject
+    oio_dataclass = ObjectInformatieObject

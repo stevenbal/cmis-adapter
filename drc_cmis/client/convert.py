@@ -7,7 +7,7 @@ from django.urls import reverse
 from .mapper import reverse_mapper
 
 
-def create_dataclass_from_cmis_doc(cmis_doc, dataclass):
+def create_enkelvoudiginformatieobject(cmis_doc, dataclass):
     properties = cmis_doc.getProperties()
 
     try:
@@ -16,7 +16,8 @@ def create_dataclass_from_cmis_doc(cmis_doc, dataclass):
         return None
     else:
         cmis_id = properties.get("cmis:versionSeriesId").split("/")[-1]
-        url = f"{settings.HOST_URL}{reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})}"
+        path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})
+        url = f"{settings.HOST_URL}{path}"
         download_url = f"{settings.HOST_URL}{reverse('cmis:cmis_download', kwargs={'uuid': cmis_id})}"
 
         obj_dict = {reverse_mapper(key): value for key, value in properties.items() if reverse_mapper(key)}
@@ -35,20 +36,24 @@ def create_dataclass_from_cmis_doc(cmis_doc, dataclass):
         return dataclass(**obj_dict)
 
 
-def create_case_dict_from_cmis_doc(cmis_doc):
+def create_objectinformatieobject(cmis_doc, dataclass):
     properties = cmis_doc.getProperties()
 
-    cmis_id = properties.get("cmis:versionSeriesId").split("/")[-1]
-    url = "{}{}".format(settings.HOST_URL, reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id}))
-    eio_url = "{}{}".format(settings.HOST_URL, reverse("enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id}))
-
-    return {
-        "url": url,
-        "informatieobject": eio_url,
-        "object": properties.get("drc:connectie__zaakurl"),
-        "object_type": properties.get("drc:connectie__objecttype"),
-        "aard_relatie_weergave": properties.get("drc:connectie__aardrelatieweergave"),
-        "titel": properties.get("drc:connectie__titel"),
-        "beschrijving": properties.get("drc:connectie__beschrijving"),
-        "registratiedatum": properties.get("drc:connectie__registratiedatum"),
+    obj_dict = {
+        reverse_mapper(key, "connection"): value
+        for key, value in properties.items()
+        if reverse_mapper(key, "connection")
     }
+
+    cmis_id = properties.get("cmis:versionSeriesId").split("/")[-1]
+    url = "{}{}".format(
+        settings.HOST_URL, reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id})
+    )
+    eio_url = "{}{}".format(
+        settings.HOST_URL, reverse("enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id})
+    )
+
+    obj_dict["url"] = url
+    obj_dict["informatieobject"] = eio_url
+
+    return dataclass(**obj_dict)
