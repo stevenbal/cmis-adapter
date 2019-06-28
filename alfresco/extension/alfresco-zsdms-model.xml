@@ -188,13 +188,22 @@
                         <tokenised>TRUE</tokenised>
                     </index>
                 </property>
+                <property name="drc:document__titel">
+                    <title>DRC - Document - Titel</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                        <facetable>true</facetable>
+                    </index>
+                </property>
                 <property name="drc:document__bronorganisatie">
                     <title>DRC - Document - Bronorganisatie</title>
                     <type>d:text</type>
                     <mandatory>true</mandatory>
                     <index enabled="true">
                         <tokenised>TRUE</tokenised>
-                        <facetable>false</facetable>
+                        <facetable>true</facetable>
                     </index>
                 </property>
                 <property name="drc:document__link">

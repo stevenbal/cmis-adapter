@@ -13,7 +13,7 @@ DOCUMENT_MAP = {
     "identificatie": "drc:document__identificatie",
     "bronorganisatie": "drc:document__bronorganisatie",
     "creatiedatum": "drc:document__creatiedatum",
-    "titel": "cmis:name",
+    "titel": "drc:document__titel",
     "vertrouwelijkheidaanduiding": "drc:document__vertrouwelijkaanduiding",
     "auteur": "drc:document__auteur",
     "status": "drc:document__status",

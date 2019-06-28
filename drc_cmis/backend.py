@@ -75,7 +75,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         Get a document by cmis identification.
 
         Args:
-            identification (str): The cmis object id (only the uuid part)
+            identification (str): The cmis object id (only the uuid part).
 
         Returns:
             dataclass: An enkelvoudig informatieobject dataclass.
@@ -148,10 +148,10 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         2. There is a case connected to the document, so we need to create a copy of the document.
 
         Args:
-            variable (type): description
+            data (dict): A dict containing the values returned from the serializer.
 
         Returns:
-            dataclass: An object informatieobject dataclass
+            dataclass: An object informatieobject dataclass.
 
         """
 
@@ -162,13 +162,23 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         cmis_doc = cmis_client.get_cmis_document(document_id)
         folder = cmis_client.get_folder_from_case_url(data.get("object"))
 
-        if not cmis_doc.properties.get("drc:connectie__zaakurl"):
+        zaak_url = cmis_doc.properties.get("drc:connectie__zaakurl")
+        print('= OIO ==================================================')
+
+        print(zaak_url)
+        print(data.get("object"))
+        if not zaak_url:
+            print('No Case_url')
             cmis_doc = cmis_client.update_case_connection(cmis_doc, data)
             if folder:
                 cmis_client.move_to_case(cmis_doc, folder)
+        elif zaak_url == data.get("object"):
+            print('Skip, because they are the same.')
+            pass
         else:
+            print('Start copying')
             cmis_client.copy_document(cmis_doc, folder, data)
-
+        print('= END OIO ==================================================')
         objectinformatieobject = create_objectinformatieobject(cmis_doc, self.oio_dataclass)
         return objectinformatieobject
 
@@ -177,7 +187,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         Get all connections between case folders and documents.
 
         Returns:
-            dataclass: A list of object informatieobject dataclass
+            dataclass: A list of object informatieobject dataclass.
 
         """
 
@@ -198,7 +208,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             identification (str): the CMIS id from the connected document.
 
         Returns:
-            dataclass: A object informatieobject dataclass
+            dataclass: A object informatieobject dataclass.
 
         Raises:
             BackendException: If the document can not be found.
@@ -224,7 +234,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             data (dict): The data that needs to be updated.
 
         Returns:
-            dataclass: A object informatieobject dataclass
+            dataclass: A object informatieobject dataclass.
 
         Raises:
             BackendException: If the document can not be found.
@@ -247,7 +257,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             identification (str): The CMIS id of the document.
 
         Returns:
-            dataclass: A object informatieobject dataclass
+            dataclass: A object informatieobject dataclass.
 
         Raises:
             BackendException: If the document can not be found.
