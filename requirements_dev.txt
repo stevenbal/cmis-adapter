@@ -27,4 +27,4 @@ black
 isort
 pep8
 pylint
-responses=0.10.6
+responses==0.10.6
