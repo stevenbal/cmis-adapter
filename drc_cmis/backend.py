@@ -8,7 +8,8 @@ from cmislib.exceptions import UpdateConflictException
 
 from .client import cmis_client
 from .client.convert import (
-    create_enkelvoudiginformatieobject, create_objectinformatieobject
+    make_enkelvoudiginformatieobject_dataclass,
+    make_objectinformatieobject_dataclass
 )
 from .client.exceptions import DocumentDoesNotExistError, DocumentExistsError
 
@@ -43,7 +44,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         try:
             cmis_doc = cmis_client.create_document(identification, data, content)
-            dict_doc = create_enkelvoudiginformatieobject(cmis_doc, self.eio_dataclass)
+            dict_doc = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
             return dict_doc
         except UpdateConflictException:
             error_message = "Document is niet uniek. Dit kan liggen aan de titel, inhoud of documentnaam"
@@ -65,8 +66,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         cmis_documents = cmis_client.get_cmis_documents(filters=filters)
         documents_data = []
         for cmis_doc in cmis_documents:
-            dict_document = create_enkelvoudiginformatieobject(cmis_doc, self.eio_dataclass)
-            documents_data.append(dict_document)
+            dict_document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
+            if dict_document:
+                documents_data.append(dict_document)
 
         return documents_data
 
@@ -90,7 +92,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            return create_enkelvoudiginformatieobject(cmis_document, self.eio_dataclass)
+            return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
 
     def update_document(self, identification, data, content):
         """
@@ -114,7 +116,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            return create_enkelvoudiginformatieobject(cmis_document, self.eio_dataclass)
+            return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
 
     def delete_document(self, identification):
         """
@@ -136,7 +138,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            return create_enkelvoudiginformatieobject(cmis_document, self.eio_dataclass)
+            return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass, skip_deleted=True)
 
     def create_document_case_connection(self, data):
         """
@@ -163,23 +165,16 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         folder = cmis_client.get_folder_from_case_url(data.get("object"))
 
         zaak_url = cmis_doc.properties.get("drc:connectie__zaakurl")
-        print('= OIO ==================================================')
-
-        print(zaak_url)
-        print(data.get("object"))
         if not zaak_url:
-            print('No Case_url')
             cmis_doc = cmis_client.update_case_connection(cmis_doc, data)
             if folder:
                 cmis_client.move_to_case(cmis_doc, folder)
         elif zaak_url == data.get("object"):
-            print('Skip, because they are the same.')
             pass
         else:
-            print('Start copying')
-            cmis_client.copy_document(cmis_doc, folder, data)
-        print('= END OIO ==================================================')
-        objectinformatieobject = create_objectinformatieobject(cmis_doc, self.oio_dataclass)
+            cmis_doc = cmis_client.copy_document(cmis_doc, folder, data)
+
+        objectinformatieobject = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
         return objectinformatieobject
 
     def get_document_case_connections(self):
@@ -194,7 +189,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         cmis_documents = cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"})
         documents_data = []
         for cmis_doc in cmis_documents:
-            dict_document = create_objectinformatieobject(cmis_doc, self.oio_dataclass)
+            dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
 
@@ -222,7 +217,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            objectinformatieobject = create_objectinformatieobject(cmis_document, self.oio_dataclass)
+            objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             return objectinformatieobject
 
     def update_document_case_connection(self, identification, data):
@@ -246,7 +241,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            objectinformatieobject = create_objectinformatieobject(cmis_document, self.oio_dataclass)
+            objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             return objectinformatieobject
 
     def delete_document_case_connection(self, identification):
@@ -269,5 +264,5 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
-            objectinformatieobject = create_objectinformatieobject(cmis_document, self.oio_dataclass)
+            objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             return objectinformatieobject

@@ -65,6 +65,14 @@
             <description>Dit is het document dat de data zal bevatten waarmee het gemma document registratie component mee kan werken.</description>
             <parent>cm:content</parent>
             <properties>
+                <property name="drc:kopie_van">
+                    <title>DRC - Kopie van</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
                 <property name="drc:connectie__beschrijving">
                     <title>DRC - Connectie - Beschrijving</title>
                     <type>d:text</type>

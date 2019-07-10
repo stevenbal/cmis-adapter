@@ -11,7 +11,8 @@ from cmislib.exceptions import UpdateConflictException
 from drc_cmis import settings
 
 from .exceptions import (
-    DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError
+    DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
+    DocumentLockedException
 )
 from .mapper import mapper
 from .query import CMISQuery
@@ -196,7 +197,12 @@ class CMISDRCClient:
         return doc
 
     def update_cmis_document(self, identification, data, content=None):
-        cmis_doc = self.get_cmis_document(identification, self.document_via_identification_query)
+        cmis_doc = self.get_cmis_document(identification)
+
+        try:
+            pwc = cmis_doc.checkout()
+        except UpdateConflictException as exc:
+            raise DocumentLockedException("Document was already checked out") from exc
 
         # build up the properties
         current_properties = cmis_doc.properties
@@ -208,15 +214,19 @@ class CMISDRCClient:
         }
 
         try:
-            cmis_doc.updateProperties(diff_properties)
+            pwc.updateProperties(diff_properties)
         except UpdateConflictException as exc:
             # Node locked!
             raise DocumentConflictException from exc
 
         if content is not None:
-            cmis_doc.setContentStream(content, None)
+            pwc.setContentStream(content, None)
 
-        return cmis_doc
+        updated_cmis_doc = pwc.checkin("Geupdate via het DRC")
+        logger.error(updated_cmis_doc)
+        logger.error(dir(updated_cmis_doc))
+        updated_cmis_doc.reload()
+        return updated_cmis_doc
 
     def delete_cmis_document(self, identification):
         """
@@ -231,7 +241,7 @@ class CMISDRCClient:
         Raises:
             DocumentConflictException: If the document could not be updated.
         """
-        cmis_doc = self.get_cmis_document(identification, self.document_via_identification_query)
+        cmis_doc = self.get_cmis_document(identification)
         new_properties = {mapper("verwijderd"): True}
 
         try:
@@ -252,11 +262,12 @@ class CMISDRCClient:
             if current_properties.get(key) != new_properties.get(key)
         }
 
-        try:
-            cmis_doc.updateProperties(diff_properties)
-        except UpdateConflictException as exc:
-            # Node locked!
-            raise DocumentConflictException from exc
+        if diff_properties:
+            try:
+                cmis_doc.updateProperties(diff_properties)
+            except UpdateConflictException as exc:
+                # Node locked!
+                raise DocumentConflictException from exc
         return cmis_doc
 
     def delete_case_connection(self, identification):
@@ -286,11 +297,12 @@ class CMISDRCClient:
             if current_properties.get(key) != new_properties.get(key)
         }
 
-        try:
-            cmis_doc.updateProperties(diff_properties)
-        except UpdateConflictException as exc:
-            # Node locked!
-            raise DocumentConflictException from exc
+        if diff_properties:
+            try:
+                cmis_doc.updateProperties(diff_properties)
+            except UpdateConflictException as exc:
+                # Node locked!
+                raise DocumentConflictException from exc
         return cmis_doc
 
     def move_to_case(self, cmis_doc, folder):
@@ -299,7 +311,8 @@ class CMISDRCClient:
 
     def copy_document(self, cmis_doc, folder, data):
         """
-        We will no longer copy documents. We will create a list of extra data to the documents.
+        The copy from source is not supported via the atom pub bindings.
+        So we create a new document with the same values.
         """
         properties = {}
 
@@ -323,10 +336,11 @@ class CMISDRCClient:
             'drc:document__ontvangstdatum': cmis_doc.properties.get('drc:document__ontvangstdatum'),
             'drc:document__status': cmis_doc.properties.get('drc:document__status'),
             'drc:document__taal': cmis_doc.properties.get('drc:document__taal'),
-            'drc:document__titel': cmis_doc.properties.get('drc:document__titel'),
+            'drc:document__titel': cmis_doc.properties.get('drc:document__titel') + " - copy",
             'drc:document__vertrouwelijkaanduiding': cmis_doc.properties.get('drc:document__vertrouwelijkaanduiding'),
             'drc:document__verwijderd': cmis_doc.properties.get('drc:document__verwijderd'),
             'drc:document__verzenddatum': cmis_doc.properties.get('drc:document__verzenddatum'),
+            'drc:kopie_van': cmis_doc.id,  # Keep tack of where this is copied from.
         })
 
         new_properties = self._build_case_properties(data)
@@ -342,14 +356,15 @@ class CMISDRCClient:
         file_name = f"{cmis_doc.properties.get(mapper('titel'))}-{self.get_random_string()}"
         properties['cmis:name'] = file_name
 
-        # TODO: Make this an actual copy function.
-        return cmis_client._repo.createDocument(
+        new_doc = self._get_repo.createDocument(
             name=file_name,
             properties=properties,
             contentFile=cmis_doc.getContentStream(),
-            contentType=None,
+            contentType=cmis_doc.properties.get('cmis:contentStreamMimeType'),
             parentFolder=folder,
         )
+
+        return new_doc
 
     def get_random_string(self, number=6):
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=number))

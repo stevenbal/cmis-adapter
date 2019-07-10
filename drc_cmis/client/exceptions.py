@@ -11,10 +11,6 @@ class DocumentDoesNotExistError(DMSException):
     pass
 
 
-class SyncException(DMSException):
-    pass
-
-
 class DocumentConflictException(DMSException):
     pass
 
