@@ -3,10 +3,12 @@ from io import BytesIO
 from django.test import TestCase
 
 from tests.app.backend import BackendException
+from tests.app.data import EnkelvoudigInformatieObject
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
 from drc_cmis.client import cmis_client
+from drc_cmis.client.convert import make_enkelvoudiginformatieobject_dataclass
 from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 from .factories import EnkelvoudigInformatieObjectFactory
@@ -31,9 +33,10 @@ class CMISDeleteDocumentTests(DMSMixin, TestCase):
         eio_dict = eio.__dict__
 
         cmis_doc = cmis_client.create_document(eio.identificatie, eio_dict.copy(), BytesIO(b'some content'))
+        document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, EnkelvoudigInformatieObject)
         self.assertIsNotNone(cmis_doc)
         self.assertFalse(cmis_doc.properties.get('drc:document__verwijderd'))
 
-        self.backend.delete_document('test')
+        self.backend.delete_document(document.url.split('/')[-1])
         cmis_doc.reload()
         self.assertTrue(cmis_doc.properties.get('drc:document__verwijderd'))

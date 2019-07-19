@@ -6,6 +6,7 @@ from django_webtest import WebTest
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
+from drc_cmis.client import cmis_client
 from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 from .factories import EnkelvoudigInformatieObjectFactory
@@ -26,14 +27,14 @@ class CmisDownloadViewTests(DMSMixin, WebTest):
         document = self.backend.create_document(eio.__dict__.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
 
+        cmis_doc = cmis_client.get_cmis_document(document.url.split('/')[-1])
         response = self.app.get(document.inhoud.replace('testserver', ''))
         self.assertEqual(response.status_code, 200)
-        # self.assertEqual(response.content_disposition, f'attachment; filename={document.titel}.bin')  # TODO: HAve a look here
+        self.assertEqual(response.content_disposition, f'attachment; filename={cmis_doc.properties.get("cmis:name")}.bin')
         self.assertEqual(response.content, b'some content')
 
     def test_download_non_existing_document(self):
         eio = EnkelvoudigInformatieObjectFactory()
         document = self.backend.create_document(eio.__dict__.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
-
-        response = self.app.get(document.inhoud.replace('testserver', '').replace('.bin', 'extra.bin'), status=404)
+        self.app.get(document.inhoud.replace('testserver', '').replace('.bin', 'extra.bin'), status=404)

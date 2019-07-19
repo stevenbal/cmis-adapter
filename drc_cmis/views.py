@@ -1,4 +1,4 @@
-from django.http import Http404, HttpResponse, StreamingHttpResponse
+from django.http import Http404, StreamingHttpResponse
 from django.utils.encoding import escape_uri_path
 from django.views.generic import View
 

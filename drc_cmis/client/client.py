@@ -135,11 +135,13 @@ class CMISDRCClient:
         day_folder = self._get_or_create_folder(str(now.day), month_folder)
         properties = self._build_properties(identification, data)
 
+        # Make sure that the content is set.
+        content.seek(0)
         return self._get_repo.createDocument(
             name=properties.get("cmis:name"),
             properties=properties,
             contentFile=content,
-            contentType=self._get_mimetype(content),
+            contentType=None,
             parentFolder=day_folder,
         )
 
@@ -170,7 +172,6 @@ class CMISDRCClient:
         query = self.documents_in_folders_query(filter_string)
         # Remove the /'s from the string
         query = codecs.escape_decode(query)[0].decode()
-        print(query)
         result_set = self._get_repo.query(query)
         unpacked_result_set = [item for item in result_set]
         return [doc.getLatestVersion() for doc in unpacked_result_set]
@@ -221,7 +222,7 @@ class CMISDRCClient:
             raise DocumentConflictException from exc
 
         if content is not None:
-            pwc.setContentStream(content, self._get_mimetype(content))
+            pwc.setContentStream(content, None)
 
         updated_cmis_doc = pwc.checkin("Geupdate via het DRC")
         logger.error(updated_cmis_doc)
@@ -361,7 +362,7 @@ class CMISDRCClient:
             name=file_name,
             properties=properties,
             contentFile=cmis_doc.getContentStream(),
-            contentType=self._get_mimetype(content),
+            contentType=None,
             parentFolder=folder,
         )
 
@@ -398,7 +399,6 @@ class CMISDRCClient:
         return parent.createFolder(name, properties=properties or {})
 
     def _get_folder(self, name, parent):
-        print(parent.getChildren())
         existing = next((child for child in parent.getChildren() if str(child.name) == str(name)), None)
         if existing is not None:
             return existing
@@ -452,9 +452,6 @@ class CMISDRCClient:
         else:
             error_string = "Document identificatie {} is niet uniek".format(identification)
             raise DocumentExistsError(error_string)
-
-    def _get_mimetype(self, content):
-        return magic.from_buffer(content.read(), mime=True)
 
 
 cmis_client = CMISDRCClient()
