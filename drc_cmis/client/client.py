@@ -5,6 +5,7 @@ import string
 from datetime import datetime
 from io import BytesIO
 
+import magic
 from cmislib import CmisClient
 from cmislib.exceptions import UpdateConflictException
 
@@ -138,7 +139,7 @@ class CMISDRCClient:
             name=properties.get("cmis:name"),
             properties=properties,
             contentFile=content,
-            contentType=None,
+            contentType=self._get_mimetype(content),
             parentFolder=day_folder,
         )
 
@@ -220,7 +221,7 @@ class CMISDRCClient:
             raise DocumentConflictException from exc
 
         if content is not None:
-            pwc.setContentStream(content, None)
+            pwc.setContentStream(content, self._get_mimetype(content))
 
         updated_cmis_doc = pwc.checkin("Geupdate via het DRC")
         logger.error(updated_cmis_doc)
@@ -360,7 +361,7 @@ class CMISDRCClient:
             name=file_name,
             properties=properties,
             contentFile=cmis_doc.getContentStream(),
-            contentType=cmis_doc.properties.get('cmis:contentStreamMimeType'),
+            contentType=self._get_mimetype(content),
             parentFolder=folder,
         )
 
@@ -381,7 +382,6 @@ class CMISDRCClient:
         return None
 
     # Private functions.
-    # TODO: Paste private functions.
     def _get_or_create_folder(self, name, parent, properties=None):
         """
         Get or create the folder with :param:`name` in :param:`parent`.
@@ -452,6 +452,9 @@ class CMISDRCClient:
         else:
             error_string = "Document identificatie {} is niet uniek".format(identification)
             raise DocumentExistsError(error_string)
+
+    def _get_mimetype(self, content):
+        return magic.from_buffer(content.read(), mime=True)
 
 
 cmis_client = CMISDRCClient()
