@@ -5,7 +5,6 @@ import string
 from datetime import datetime
 from io import BytesIO
 
-import magic
 from cmislib import CmisClient
 from cmislib.exceptions import UpdateConflictException
 
