@@ -5,10 +5,13 @@ import string
 from datetime import datetime
 from io import BytesIO
 
+import requests
 from cmislib import CmisClient
+from cmislib.browser.binding import BrowserBinding
 from cmislib.exceptions import UpdateConflictException
 
 from drc_cmis import settings
+from drc_cmis.cmis.drc_document import Document
 
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
@@ -41,35 +44,44 @@ class CMISDRCClient:
     _root_folder = None
     _base_folder = None
 
-    @property
-    def _get_repo(self):
-        """
-        Connect to the CMIS repository
-        """
-        if not self._repo:
-            from drc_cmis.models import CMISConfig
+    def setup(self):
+        from drc_cmis.models import CMISConfig
+        config = CMISConfig.get_solo()
 
-            config = CMISConfig.get_solo()
-            _client = CmisClient(config.client_url, config.client_user, config.client_password)
-            self._repo = _client.getDefaultRepository()
-        return self._repo
+        self.url = config.client_url
+        self.user = config.client_user
+        self.password = config.client_password
 
-    @property
-    def _get_root_folder(self):
-        """
-        Get the root folder of the CMIS repository
+    # @property
+    # def _get_repo(self):
+    #     """
+    #     Connect to the CMIS repository
+    #     """
+    #     if not self._repo:
+    #         from drc_cmis.models import CMISConfig
 
-        """
+    #         config = CMISConfig.get_solo()
+    #         binding = BrowserBinding()
+    #         _client = CmisClient(config.client_url, config.client_user, config.client_password, binding=binding)
+    #         self._repo = _client.getDefaultRepository()
+    #     return self._repo
 
-        if not self._root_folder:
-            self._root_folder = self._get_repo.getObjectByPath("/")
-        return self._root_folder
+    # @property
+    # def _get_root_folder(self):
+    #     """
+    #     Get the root folder of the CMIS repository
 
-    @property
-    def _get_base_folder(self):
-        if not self._base_folder:
-            self._base_folder = self._get_or_create_folder(settings.BASE_FOLDER_LOCATION, self._get_root_folder)
-        return self._base_folder
+    #     """
+
+    #     if not self._root_folder:
+    #         self._root_folder = self._get_repo.getObjectByPath("/")
+    #     return self._root_folder
+
+    # @property
+    # def _get_base_folder(self):
+    #     if not self._base_folder:
+    #         self._base_folder = self._get_or_create_folder(settings.BASE_FOLDER_LOCATION, self._get_root_folder)
+    #     return self._base_folder
 
     # ZRC Notification client calls.
     def get_or_create_zaaktype_folder(self, zaaktype):
@@ -144,7 +156,20 @@ class CMISDRCClient:
             parentFolder=day_folder,
         )
 
-    def get_cmis_documents(self, filters=None):
+    def _request(self, data):
+        self.setup()
+        print(self.url)
+        response = requests.post(self.url, data=data, auth=(self.user, self.password))
+        if not response.ok:
+            print(response.json())
+            raise Exception('Error with the query')
+        return response.json()
+
+
+        # http://localhost:8080/alfresco/api/-default-/public/cmis/versions/1.1/browser?cmisaction=query&statement=select cmis:name from cmis:document where in_folder('a29f27d7-3bdc-41c6-81a7-559d1a8b2ec3')
+        # http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser?cmisaction=query&statement=select * from drc:document
+
+    def get_cmis_documents(self, filters=None, page=1, results_per_page=100):
         """
         Gives a list of cmis documents.
 
@@ -155,25 +180,44 @@ class CMISDRCClient:
             AtomPubDocument: A list of CMIS documents.
 
         """
-
         from drc_cmis.models import CMISConfig
-
-        config = CMISConfig.get_solo()
+        print('entered here as well')
+        # config = CMISConfig.get_solo()
         filter_string = self._build_filter(filters)
-        folders = config.locations.values_list("location", flat=True)
+        # folders = config.locations.values_list("location", flat=True)
+        # print('folders')
+        # for index, folder in enumerate(folders):
+        #     print(index, folder)
+        #     cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
+        #     filter_string += f"IN_TREE('{cmis_folder.properties.get('cmis:objectId')}') "
+        #     if index + 1 < len(folders):
+        #         filter_string += "OR "
+        # print('done foldering')
 
-        for index, folder in enumerate(folders):
-            cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
-            filter_string += f"IN_TREE('{cmis_folder.properties.get('cmis:objectId')}') "
-            if index + 1 < len(folders):
-                filter_string += "OR "
+        results_per_page = 100
+        max_items = results_per_page
+        skip_count = page * results_per_page - results_per_page
 
-        query = self.documents_in_folders_query(filter_string)
-        # Remove the /'s from the string
-        query = codecs.escape_decode(query)[0].decode()
-        result_set = self._get_repo.query(query)
-        unpacked_result_set = [item for item in result_set]
-        return [doc.getLatestVersion() for doc in unpacked_result_set]
+        data = {
+            "cmisaction": "query",
+            "statement": "select * from drc:document",
+            "maxItems": max_items,
+            "skipCount": skip_count,
+        }
+
+        json_response = self._request(data)
+
+        results = []
+        for item in json_response['results']:
+            results.append(Document(item))
+
+        return {
+            'has_next': json_response['hasMoreItems'],
+            'total_count': json_response['numItems'],
+            'has_prev': skip_count > 0,
+            'results': results,
+        }
+
 
     def get_cmis_document(self, identification, document_query=None, filters=None):
         """
