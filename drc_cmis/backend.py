@@ -52,7 +52,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentExistsError as e:
             raise self.exception_class({None: e.message}, create=True)
 
-    def get_documents(self, filters=None, page=1, results_per_page=100):
+    def get_documents(self, page=1, page_size=100, filters=None):
         """
         Fetch all the documents from CMIS backend.
 
@@ -63,15 +63,19 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             dataclass: A list of enkelvoudig informatieobject dataclass.
 
         """
-        print('entered here')
-        cmis_documents = cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=results_per_page)
+        cmis_documents = cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
         documents_data = []
         for cmis_doc in cmis_documents['results']:
             dict_document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
 
-        return documents_data
+        paginated_result = self.pagination_dataclass(
+            count=cmis_documents['total_count'],
+            results=documents_data,
+        )
+
+        return paginated_result
 
     def get_document(self, identification):
         """

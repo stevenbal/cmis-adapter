@@ -1,7 +1,8 @@
-drc: ../gemma-documentregistratiecomponent/env/bin/python ../gemma-documentregistratiecomponent/src/manage.py runserver 8000
+#drc: ../gemma-documentregistratiecomponent/env/bin/python ../gemma-documentregistratiecomponent/src/manage.py runserver 8000
+ac: ../gemma-autorisatiecomponent/env/bin/python ../gemma-autorisatiecomponent/src/manage.py runserver 8001
 zrc: ../gemma-zaakregistratiecomponent/env/bin/python ../gemma-zaakregistratiecomponent/src/manage.py runserver 8003
 nrc: ../gemma-notificatiecomponent/env/bin/python ../gemma-notificatiecomponent/src/manage.py runserver 8005
-alfresco: docker-compose -f alfresco/docker-compose.yml up
+#alfresco: docker-compose -f alfresco/docker-compose.yml up
 
 bing: ../BInG/env/bin/python ../BInG/src/manage.py runserver 8002
 utrechtdemo: ../utrecht-demo/env/bin/python ../utrecht-demo/src/manage.py runserver 8004
