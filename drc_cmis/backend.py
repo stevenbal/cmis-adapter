@@ -145,6 +145,10 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         else:
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass, skip_deleted=True)
 
+    ################################################################################################
+    # Splits #######################################################################################
+    ################################################################################################
+
     def create_document_case_connection(self, data):
         """
         Create the connection between a document and a case folder.
@@ -191,9 +195,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         """
 
-        cmis_documents = cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"})
+        cmis_documents = cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"}, page=0)
         documents_data = []
-        for cmis_doc in cmis_documents:
+        for cmis_doc in cmis_documents.get('results'):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)

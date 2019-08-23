@@ -91,7 +91,7 @@ def make_enkelvoudiginformatieobject_dataclass_old(cmis_doc, dataclass, skip_del
 
 
 def make_objectinformatieobject_dataclass(cmis_doc, dataclass):
-    properties = cmis_doc.getProperties()
+    properties = cmis_doc.properties
 
     obj_dict = {
         reverse_mapper(key, "connection"): value
@@ -99,12 +99,11 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass):
         if reverse_mapper(key, "connection")
     }
 
-    cmis_id = properties.get("cmis:versionSeriesId").split("/")[-1]
     url = "{}{}".format(
-        settings.HOST_URL, reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id})
+        settings.HOST_URL, reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     )
     eio_url = "{}{}".format(
-        settings.HOST_URL, reverse("enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id})
+        settings.HOST_URL, reverse("enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     )
 
     obj_dict["url"] = url

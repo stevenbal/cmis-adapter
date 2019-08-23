@@ -17,3 +17,7 @@ class DocumentConflictException(DMSException):
 
 class DocumentLockedException(DMSException):
     pass
+
+
+class GetFirstException(Exception):
+    pass

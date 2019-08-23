@@ -1,8 +1,6 @@
 import requests
 
-
-class GetFirstException(Exception):
-    pass
+from drc_cmis.client.exceptions import GetFirstException
 
 
 class CMISRequest:
@@ -11,16 +9,32 @@ class CMISRequest:
         config = CMISConfig.get_solo()
 
         self.url = config.client_url
+        self.root_url = f"{self.url}/root"
         self.user = config.client_user
         self.password = config.client_password
+        # assert False, self.root_url
 
-    def _request(self, data):
+    def _get(self, url, params=None):
         self.setup()
-        print(self.url, data)
-        response = requests.post(self.url, data=data, auth=(self.user, self.password))
+
+        response = requests.get(url, params=params, auth=(self.user, self.password))
         if not response.ok:
-            print(response.json())
             raise Exception('Error with the query')
+
+        if response.headers.get('Content-Type').startswith('application/json'):
+            return response.json()
+        return response.text
+
+    def _request(self, data, url=None, files=None):
+        self.setup()
+        if not url:
+            url = self.url
+
+        print(url, data)
+        response = requests.post(url, data=data, auth=(self.user, self.password), files=files)
+        if not response.ok:
+            error = response.json()
+            raise Exception(error.get('message'))
         return response.json()
 
     def _get_first(self, json, return_type):

@@ -15,7 +15,7 @@ from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
-    DocumentLockedException
+    DocumentLockedException, GetFirstException
 )
 from .mapper import mapper
 from .query import CMISQuery
@@ -44,42 +44,15 @@ class CMISDRCClient(CMISRequest):
     _root_folder = None
     _base_folder = None
 
-    # @property
-    # def _get_repo(self):
-    #     """
-    #     Connect to the CMIS repository
-    #     """
-    #     if not self._repo:
-    #         from drc_cmis.models import CMISConfig
-
-    #         config = CMISConfig.get_solo()
-    #         binding = BrowserBinding()
-    #         _client = CmisClient(config.client_url, config.client_user, config.client_password, binding=binding)
-    #         self._repo = _client.getDefaultRepository()
-    #     return self._repo
-
-    @property
-    def _get_root_folder(self):
-        """
-        Get the root folder of the CMIS repository
-
-        """
-
-        if not self._root_folder:
-            query = "SELECT * FROM cmis:folder WHERE cmis:name = 'Company Home'"
-            data = {
-                "cmisaction": "query",
-                "statement": query,
-            }
-            json_response = self._request(data)
-
-            self._root_folder = self._get_first(json_response, Folder)
-        return self._root_folder
-
     @property
     def _get_base_folder(self):
         if not self._base_folder:
-            self._base_folder = self._get_or_create_folder(settings.BASE_FOLDER_LOCATION, self._get_root_folder)
+            self.setup()
+            base = self._get(self.root_url)
+            for folder_response in base['objects']:
+                folder = Folder(folder_response['object'])
+                if folder.name == 'DRC':
+                    self._base_folder = folder
         return self._base_folder
 
     # ZRC Notification client calls.
@@ -147,12 +120,10 @@ class CMISDRCClient(CMISRequest):
 
         # Make sure that the content is set.
         content.seek(0)
-        return self._get_repo.createDocument(
-            name=properties.get("cmis:name"),
+        return day_folder.create_document(
+            name=properties.pop("cmis:name"),
             properties=properties,
-            contentFile=content,
-            contentType=None,
-            parentFolder=day_folder,
+            content_file=content,
         )
 
     def get_cmis_documents(self, filters=None, page=1, results_per_page=100):
@@ -166,23 +137,7 @@ class CMISDRCClient(CMISRequest):
             AtomPubDocument: A list of CMIS documents.
 
         """
-        from drc_cmis.models import CMISConfig
-        config = CMISConfig.get_solo()
         filter_string = self._build_filter(filters, strip_end=True)
-        # folders = config.locations.values_list("location", flat=True)
-        # print('folders')
-        # for index, folder in enumerate(folders):
-        #     print(index, folder)
-        #     cmis_folder = self._get_or_create_folder(folder, self._get_root_folder)
-        #     filter_string += f"IN_TREE('{cmis_folder.properties.get('cmis:objectId')}') "
-        #     if index + 1 < len(folders):
-        #         filter_string += "OR "
-        # print('done foldering')
-
-        results_per_page = results_per_page
-        max_items = results_per_page
-        skip_count = page * results_per_page - results_per_page
-
         query = "SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
         if filter_string:
             query += f' AND {filter_string}'
@@ -190,16 +145,19 @@ class CMISDRCClient(CMISRequest):
         data = {
             "cmisaction": "query",
             "statement": query,
-            "maxItems": max_items,
-            "skipCount": skip_count,
         }
 
+        skip_count = 0
+        if page:
+            results_per_page = results_per_page
+            max_items = results_per_page
+            skip_count = page * results_per_page - results_per_page
+
+            data["maxItems"] = max_items
+            data["skipCount"] = skip_count
+
         json_response = self._request(data)
-
-        results = []
-        for item in json_response['results']:
-            results.append(Document(item))
-
+        results = self._get_all(json_response, Document)
         return {
             'has_next': json_response['hasMoreItems'],
             'total_count': json_response['numItems'],
@@ -214,8 +172,12 @@ class CMISDRCClient(CMISRequest):
         :param identification.
         :return: :class:`AtomPubDocument` object
         """
+        import traceback
+        import sys
+        traceback.print_exc()
+        print(sys.exc_info()[0])
         if not document_query:
-            document_query = self.document_via_cmis_id_query
+            document_query = self.document_via_identification_query
 
         filter_string = self._build_filter(filters, filter_string="AND ", strip_end=True)
         query = document_query(identification, filter_string)
@@ -226,11 +188,15 @@ class CMISDRCClient(CMISRequest):
         }
 
         json_response = self._request(data)
-        if len(json_response['results']) == 0:
+        try:
+            return self._get_first(json_response, Document)
+        except GetFirstException:
+            import traceback
+            import sys
+            traceback.print_exc()
+            print(sys.exc_info()[0])
             error_string = "Document met identificatie {} bestaat niet in het CMIS connection".format(identification)
             raise DocumentDoesNotExistError(error_string)
-
-        return Document(json_response['results'][0])
 
     def update_cmis_document(self, identification, data, content=None):
         cmis_doc = self.get_cmis_document(identification)
@@ -243,25 +209,25 @@ class CMISDRCClient(CMISRequest):
         # build up the properties
         current_properties = cmis_doc.properties
         new_properties = self._build_properties(identification, data)
+
         diff_properties = {
             key: value
             for key, value in new_properties.items()
-            if current_properties.get(key) != new_properties.get(key)
+            if current_properties.get(key) != value
         }
 
         try:
-            pwc.updateProperties(diff_properties)
+            pwc.update_properties(diff_properties)
         except UpdateConflictException as exc:
             # Node locked!
             raise DocumentConflictException from exc
 
+        major = False
         if content is not None:
-            pwc.setContentStream(content, None)
+            major = True
+            pwc.setContentStream(content)
 
-        updated_cmis_doc = pwc.checkin("Geupdate via het DRC")
-        logger.error(updated_cmis_doc)
-        logger.error(dir(updated_cmis_doc))
-        updated_cmis_doc.reload()
+        updated_cmis_doc = pwc.checkin("Geupdate via het DRC", major)
         return updated_cmis_doc
 
     def delete_cmis_document(self, identification):
@@ -281,11 +247,13 @@ class CMISDRCClient(CMISRequest):
         new_properties = {mapper("verwijderd"): True}
 
         try:
-            cmis_doc.updateProperties(new_properties)
+            cmis_doc.update_properties(new_properties)
         except UpdateConflictException as exc:
             # Node locked!
             raise DocumentConflictException from exc
         return cmis_doc
+
+    # Split ########################################################################################
 
     def update_case_connection(self, identification, data):
         cmis_doc = self.get_cmis_document(identification)
@@ -300,7 +268,7 @@ class CMISDRCClient(CMISRequest):
 
         if diff_properties:
             try:
-                cmis_doc.updateProperties(diff_properties)
+                cmis_doc.update_properties(diff_properties)
             except UpdateConflictException as exc:
                 # Node locked!
                 raise DocumentConflictException from exc
@@ -353,29 +321,29 @@ class CMISDRCClient(CMISRequest):
         properties = {}
 
         properties.update(**{
-            'cmis:objectTypeId': cmis_doc.properties.get('cmis:objectTypeId'),
-            'drc:document__auteur': cmis_doc.properties.get('drc:document__auteur'),
-            'drc:document__beschrijving': cmis_doc.properties.get('drc:document__beschrijving'),
-            'drc:document__bestandsnaam': cmis_doc.properties.get('drc:document__bestandsnaam'),
-            'drc:document__bronorganisatie': cmis_doc.properties.get('drc:document__bronorganisatie'),
-            'drc:document__creatiedatum': cmis_doc.properties.get('drc:document__creatiedatum'),
-            'drc:document__formaat': cmis_doc.properties.get('drc:document__formaat'),
-            'drc:document__identificatie': cmis_doc.properties.get('drc:document__identificatie'),
-            'drc:document__indicatiegebruiksrecht': cmis_doc.properties.get('drc:document__indicatiegebruiksrecht'),
-            'drc:document__informatieobjecttype': cmis_doc.properties.get('drc:document__informatieobjecttype'),
-            'drc:document__integriteitalgoritme': cmis_doc.properties.get('drc:document__integriteitalgoritme'),
-            'drc:document__integriteitdatum': cmis_doc.properties.get('drc:document__integriteitdatum'),
-            'drc:document__integriteitwaarde': cmis_doc.properties.get('drc:document__integriteitwaarde'),
-            'drc:document__link': cmis_doc.properties.get('drc:document__link'),
-            'drc:document__ondertekeningdatum': cmis_doc.properties.get('drc:document__ondertekeningdatum'),
-            'drc:document__ondertekeningsoort': cmis_doc.properties.get('drc:document__ondertekeningsoort'),
-            'drc:document__ontvangstdatum': cmis_doc.properties.get('drc:document__ontvangstdatum'),
-            'drc:document__status': cmis_doc.properties.get('drc:document__status'),
-            'drc:document__taal': cmis_doc.properties.get('drc:document__taal'),
-            'drc:document__titel': cmis_doc.properties.get('drc:document__titel') + " - copy",
-            'drc:document__vertrouwelijkaanduiding': cmis_doc.properties.get('drc:document__vertrouwelijkaanduiding'),
-            'drc:document__verwijderd': cmis_doc.properties.get('drc:document__verwijderd'),
-            'drc:document__verzenddatum': cmis_doc.properties.get('drc:document__verzenddatum'),
+            'cmis:objectTypeId': cmis_doc.objectTypeId,
+            'drc:document__auteur': cmis_doc.auteur,
+            'drc:document__beschrijving': cmis_doc.beschrijving,
+            'drc:document__bestandsnaam': cmis_doc.bestandsnaam,
+            'drc:document__bronorganisatie': cmis_doc.bronorganisatie,
+            'drc:document__creatiedatum': cmis_doc.creatiedatum,
+            'drc:document__formaat': cmis_doc.formaat,
+            'drc:document__identificatie': cmis_doc.identificatie,
+            'drc:document__indicatiegebruiksrecht': cmis_doc.indicatiegebruiksrecht,
+            'drc:document__informatieobjecttype': cmis_doc.informatieobjecttype,
+            'drc:document__integriteitalgoritme': cmis_doc.integriteitalgoritme,
+            'drc:document__integriteitdatum': cmis_doc.integriteitdatum,
+            'drc:document__integriteitwaarde': cmis_doc.integriteitwaarde,
+            'drc:document__link': cmis_doc.link,
+            'drc:document__ondertekeningdatum': cmis_doc.ondertekeningdatum,
+            'drc:document__ondertekeningsoort': cmis_doc.ondertekeningsoort,
+            'drc:document__ontvangstdatum': cmis_doc.ontvangstdatum,
+            'drc:document__status': cmis_doc.status,
+            'drc:document__taal': cmis_doc.taal,
+            'drc:document__titel': f"{cmis_doc.titel} - copy",
+            'drc:document__vertrouwelijkaanduiding': cmis_doc.vertrouwelijkaanduiding,
+            'drc:document__verwijderd': cmis_doc.verwijderd,
+            'drc:document__verzenddatum': cmis_doc.verzenddatum,
             'drc:kopie_van': cmis_doc.id,  # Keep tack of where this is copied from.
         })
 
@@ -389,15 +357,14 @@ class CMISDRCClient(CMISRequest):
             folder = self._get_or_create_folder(str(now.day), month_folder)
 
         # Update the cmis:name to make it more unique
-        file_name = f"{cmis_doc.properties.get(mapper('titel'))}-{self.get_random_string()}"
+        file_name = f"{cmis_doc.titel}-{self.get_random_string()}"
         properties['cmis:name'] = file_name
 
-        new_doc = self._get_repo.createDocument(
+        stream = cmis_doc.getContentStream()
+        new_doc = folder.create_document(
             name=file_name,
             properties=properties,
-            contentFile=cmis_doc.getContentStream(),
-            contentType=None,
-            parentFolder=folder,
+            content_file=stream,
         )
 
         return new_doc
@@ -407,14 +374,18 @@ class CMISDRCClient(CMISRequest):
 
     def get_folder_from_case_url(self, zaak_url):
         query = self.find_folder_by_case_url_query(zaak_url)
-        result_set = self._get_repo.query(query)
-        unpacked_result_set = [item for item in result_set.getResults()]
-        if unpacked_result_set:
-            folder = unpacked_result_set[0]
-            # ! A reload is done because there are some important values missing from the objects.
-            folder.reload()
-            return folder
-        return None
+        self.setup()
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self._get(self.root_url, data)
+
+        if len(json_response['objects']) == 0:
+            return None
+        return Folder(json_response['objects'][0]['object'])
 
     # Private functions.
     def _get_or_create_folder(self, name, parent, properties=None):
