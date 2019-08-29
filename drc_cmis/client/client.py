@@ -47,8 +47,7 @@ class CMISDRCClient(CMISRequest):
     @property
     def _get_base_folder(self):
         if not self._base_folder:
-            self.setup()
-            base = self._get(self.root_url)
+            base = self.get_request(self.root_folder_url)
             for folder_response in base['objects']:
                 folder = Folder(folder_response['object'])
                 if folder.name == 'DRC':
@@ -156,8 +155,8 @@ class CMISDRCClient(CMISRequest):
             data["maxItems"] = max_items
             data["skipCount"] = skip_count
 
-        json_response = self._request(data)
-        results = self._get_all(json_response, Document)
+        json_response = self.post_request(self.base_url, data)
+        results = self.get_all_resutls(json_response, Document)
         return {
             'has_next': json_response['hasMoreItems'],
             'total_count': json_response['numItems'],
@@ -165,18 +164,15 @@ class CMISDRCClient(CMISRequest):
             'results': results,
         }
 
-    def get_cmis_document(self, identification, document_query=None, filters=None):
+    def get_cmis_document(self, identification, via_identification=None, filters=None):
         """
         Given a cmis document instance.
 
         :param identification.
         :return: :class:`AtomPubDocument` object
         """
-        import traceback
-        import sys
-        traceback.print_exc()
-        print(sys.exc_info()[0])
-        if not document_query:
+        document_query = self.document_via_cmis_id_query
+        if via_identification:
             document_query = self.document_via_identification_query
 
         filter_string = self._build_filter(filters, filter_string="AND ", strip_end=True)
@@ -187,19 +183,15 @@ class CMISDRCClient(CMISRequest):
             "statement": query,
         }
 
-        json_response = self._request(data)
+        json_response = self.post_request(self.base_url, data)
         try:
-            return self._get_first(json_response, Document)
+            return self.get_first_result(json_response, Document)
         except GetFirstException:
-            import traceback
-            import sys
-            traceback.print_exc()
-            print(sys.exc_info()[0])
             error_string = "Document met identificatie {} bestaat niet in het CMIS connection".format(identification)
             raise DocumentDoesNotExistError(error_string)
 
-    def update_cmis_document(self, identification, data, content=None):
-        cmis_doc = self.get_cmis_document(identification)
+    def update_cmis_document(self, uuid, data, content=None):
+        cmis_doc = self.get_cmis_document(uuid)
 
         try:
             pwc = cmis_doc.checkout()
@@ -208,7 +200,7 @@ class CMISDRCClient(CMISRequest):
 
         # build up the properties
         current_properties = cmis_doc.properties
-        new_properties = self._build_properties(identification, data)
+        new_properties = self._build_properties(cmis_doc.identification, data)
 
         diff_properties = {
             key: value
@@ -225,17 +217,17 @@ class CMISDRCClient(CMISRequest):
         major = False
         if content is not None:
             major = True
-            pwc.setContentStream(content)
+            pwc.set_content_stream(content)
 
         updated_cmis_doc = pwc.checkin("Geupdate via het DRC", major)
         return updated_cmis_doc
 
-    def delete_cmis_document(self, identification):
+    def delete_cmis_document(self, uuid):
         """
         Update the property that the document is deleted.
 
         Arguments:
-            identification (str): The identification of the document.
+            uuid (str): The uuid of the document.
 
         Returns:
             AtomPubDocument: A CMIS document.
@@ -243,7 +235,7 @@ class CMISDRCClient(CMISRequest):
         Raises:
             DocumentConflictException: If the document could not be updated.
         """
-        cmis_doc = self.get_cmis_document(identification)
+        cmis_doc = self.get_cmis_document(uuid)
         new_properties = {mapper("verwijderd"): True}
 
         try:
@@ -255,8 +247,8 @@ class CMISDRCClient(CMISRequest):
 
     # Split ########################################################################################
 
-    def update_case_connection(self, identification, data):
-        cmis_doc = self.get_cmis_document(identification)
+    def update_case_connection(self, uuid, data):
+        cmis_doc = self.get_cmis_document(uuid)
 
         current_properties = cmis_doc.properties
         new_properties = self._build_case_properties(data, allow_empty=False)
@@ -274,13 +266,13 @@ class CMISDRCClient(CMISRequest):
                 raise DocumentConflictException from exc
         return cmis_doc
 
-    def delete_case_connection(self, identification):
-        cmis_doc = self.get_cmis_document(identification)
+    def delete_case_connection(self, uuid):
+        cmis_doc = self.get_cmis_document(uuid)
+        parents = cmis_doc.get_object_parents()
+        connection_count = len(parents)
 
-        connection_count = len(list(cmis_doc.getObjectParents()))
         in_zaakfolder = False
-
-        for parent in list(cmis_doc.getObjectParents()):
+        for parent in parents:
             if parent.properties.get("cmis:objectTypeId") == "F:drc:zaakfolder":
                 in_zaakfolder = True
 
@@ -294,7 +286,7 @@ class CMISDRCClient(CMISRequest):
 
         # Clear properties
         current_properties = cmis_doc.properties
-        new_properties = self._build_case_properties({})
+        new_properties = self._build_case_properties({}, allow_empty=True)
         diff_properties = {
             key: value
             for key, value in new_properties.items()
@@ -303,14 +295,14 @@ class CMISDRCClient(CMISRequest):
 
         if diff_properties:
             try:
-                cmis_doc.updateProperties(diff_properties)
+                cmis_doc.update_properties(diff_properties)
             except UpdateConflictException as exc:
                 # Node locked!
                 raise DocumentConflictException from exc
         return cmis_doc
 
     def move_to_case(self, cmis_doc, folder):
-        parent = [parent for parent in cmis_doc.getObjectParents()][0]
+        parent = [parent for parent in cmis_doc.get_object_parents()][0]
         cmis_doc.move(parent, folder)
 
     def copy_document(self, cmis_doc, folder, data):
@@ -360,7 +352,7 @@ class CMISDRCClient(CMISRequest):
         file_name = f"{cmis_doc.titel}-{self.get_random_string()}"
         properties['cmis:name'] = file_name
 
-        stream = cmis_doc.getContentStream()
+        stream = cmis_doc.get_content_stream()
         new_doc = folder.create_document(
             name=file_name,
             properties=properties,
@@ -374,14 +366,13 @@ class CMISDRCClient(CMISRequest):
 
     def get_folder_from_case_url(self, zaak_url):
         query = self.find_folder_by_case_url_query(zaak_url)
-        self.setup()
 
         data = {
             "cmisaction": "query",
             "statement": query,
         }
 
-        json_response = self._get(self.root_url, data)
+        json_response = self.get_request(self.root_folder_url, data)
 
         if len(json_response['objects']) == 0:
             return None
@@ -401,10 +392,10 @@ class CMISDRCClient(CMISRequest):
         existing = self._get_folder(name, parent)
         if existing:
             return existing
-        return parent.createFolder(name, properties=properties or {})
+        return parent.create_folder(name, properties=properties or {})
 
     def _get_folder(self, name, parent):
-        existing = next((child for child in parent.getChildren() if str(child.name) == str(name)), None)
+        existing = next((child for child in parent.get_children() if str(child.name) == str(name)), None)
         if existing is not None:
             return existing
         return None
@@ -451,12 +442,9 @@ class CMISDRCClient(CMISRequest):
 
     def _check_document_exists(self, identification):
         try:
-            self.get_cmis_document(identification, self.document_via_identification_query)
+            self.get_cmis_document(identification, via_identification=True)
         except DocumentDoesNotExistError:
             pass
         else:
             error_string = "Document identificatie {} is niet uniek".format(identification)
             raise DocumentExistsError(error_string)
-
-
-cmis_client = CMISDRCClient()

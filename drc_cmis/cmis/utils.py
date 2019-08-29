@@ -4,19 +4,19 @@ from drc_cmis.client.exceptions import GetFirstException
 
 
 class CMISRequest:
-    def setup(self):
+    def __init__(self):
         from drc_cmis.models import CMISConfig
         config = CMISConfig.get_solo()
 
-        self.url = config.client_url
-        self.root_url = f"{self.url}/root"
+        self.base_url = config.client_url
+        self.root_folder_url = f"{self.base_url}/root"
         self.user = config.client_user
         self.password = config.client_password
-        # assert False, self.root_url
 
-    def _get(self, url, params=None):
-        self.setup()
-
+    def get_request(self, url, params=None):
+        print('= GET_REQUEST ==================================================')
+        print(url, params)
+        print('= END GET_REQUEST ==================================================')
         response = requests.get(url, params=params, auth=(self.user, self.password))
         if not response.ok:
             raise Exception('Error with the query')
@@ -25,28 +25,30 @@ class CMISRequest:
             return response.json()
         return response.text
 
-    def _request(self, data, url=None, files=None):
-        self.setup()
-        if not url:
-            url = self.url
-
+    def post_request(self, url, data, files=None):
+        print('= POST_REQUEST ==================================================')
         print(url, data)
+        print('= END POST_REQUEST ==================================================')
         response = requests.post(url, data=data, auth=(self.user, self.password), files=files)
         if not response.ok:
             error = response.json()
             raise Exception(error.get('message'))
         return response.json()
 
-    def _get_first(self, json, return_type):
-        if len(json['results']) == 0:
+    def get_first_result(self, json, return_type):
+        if len(json.get('results')) == 0:
             raise GetFirstException()
-            # error_string = "Document met identificatie {} bestaat niet in het CMIS connection".format(identification)
-            # raise DocumentDoesNotExistError(error_string)
 
-        return return_type(json['results'][0])
+        return return_type(json.get('results')[0])
 
-    def _get_all(self, json, return_type):
+    def get_all_resutls(self, json, return_type):
         results = []
-        for item in json['results']:
+        for item in json.get('results'):
             results.append(return_type(item))
         return results
+
+    def get_all_objects(self, json, return_type):
+        objects = []
+        for item in json:
+            objects.append(return_type(item.get('object')))
+        return objects

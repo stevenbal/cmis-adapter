@@ -1,1 +1,1 @@
-from .client import cmis_client  # noqa
+from .client import CMISDRCClient  # noqa

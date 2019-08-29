@@ -1,48 +1,54 @@
-import base64
 import mimetypes
-from datetime import date, datetime
-from io import StringIO
+from datetime import date
+from io import BytesIO
 
 from drc_cmis.client.mapper import DOCUMENT_MAP
 
 from .utils import CMISRequest
 
 
-class Document(CMISRequest):
+class CMISBaseObject(CMISRequest):
     def __init__(self, data):
+        super().__init__()
         self.data = data
         self.properties = dict(data.get('properties'))
-        self.setup()
 
+    def reload(self):
+        params = {
+            "objectId": self.objectId,
+            "cmisselector": "object",
+        }
+
+        json_response = self.get_request(self.root_folder_url, params=params)
+        self.data = json_response
+        self.properties = json_response.get('properties')
+
+    def get_object_parents(self):
+        params = {
+            "objectId": self.objectId,
+            "cmisselector": "parents",
+        }
+
+        json_response = self.get_request(self.root_folder_url, params=params)
+        return self.get_all_objects(json_response, Folder)
+
+
+class Document(CMISBaseObject):
     def __getattr__(self, name):
         return self.properties.get(DOCUMENT_MAP.get(name, f"cmis:{name}"), {}).get('value')
 
     def checkout(self):
-        props = {"objectId": self.objectId, "cmisaction": "checkOut"}
-        # print(self.root_url)
-        self.setup()
-        json_response = self._request(props, self.root_url)
+        data = {"objectId": self.objectId, "cmisaction": "checkOut"}
+        json_response = self.post_request(self.root_folder_url, data=data)
         return Document(json_response)
 
-    def reload(self, **kwargs):
-        if self._extArgs:
-            self._extArgs.update(kwargs)
-        else:
-            self._extArgs = kwargs
-
-        self.setup()
-        url = f"{self.root_url}?objectId={self.objectId}&cmisselector=object"
-        json_response = self._get(url)
-        self.data = json_response
-        self.properties = json_response.get('properties')
-
     def update_properties(self, properties):
-        # get the root folder URL
-        updateUrl = f"{self.root_url}?objectId={self.objectId}"
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "update",
+        }
 
-        props = {"cmisaction": "update"}
-
-        propCount = 0
+        prop_count = 0
         for prop_key, prop_value in properties.items():
             # Skip property because update is not allowed
             if prop_key == 'cmis:objectTypeId':
@@ -51,31 +57,30 @@ class Document(CMISRequest):
             if isinstance(prop_value, date):
                 prop_value = prop_value.strftime('%Y-%m-%dT%H:%I:%S.000Z')
 
-            props["propertyId[%s]" % propCount] = prop_key
-            props["propertyValue[%s]" % propCount] = prop_value
-            propCount += 1
+            data["propertyId[%s]" % prop_count] = prop_key
+            data["propertyValue[%s]" % prop_count] = prop_value
+            prop_count += 1
 
         # invoke the URL
-        json_response = self._request(props, updateUrl)
+        json_response = self.post_request(self.root_folder_url, data=data)
         self.data = json_response
         self.properties = json_response.get('properties')
 
         return self
 
-    def checkin(self, checkinComment, major=True):
+    def checkin(self, checkin_comment, major=True):
         props = {
             "objectId": self.objectId,
             "cmisaction": "checkIn",
-            "checkinComment": checkinComment,
+            "checkinComment": checkin_comment,
             "major": major,
         }
 
         # invoke the URL
-        json_response = self._request(props, self.root_url)
+        json_response = self.post_request(self.root_folder_url, props)
         return Document(json_response)
 
-    def setContentStream(self, content_file):
-        url = self.root_url
+    def set_content_stream(self, content_file):
         data = {
             "objectId": self.objectId,
             "cmisaction": "setContent",
@@ -91,76 +96,74 @@ class Document(CMISRequest):
 
         files = {self.name: (self.name, content_file, mimetype)}
 
-        json_response = self._request(data, url, files=files)
-
+        json_response = self.post_request(self.root_folder_url, data=data, files=files)
         return Document(json_response)
 
-    def getContentStream(self):
-        data = {
+    def get_content_stream(self):
+        params = {
             "objectId": self.objectId,
             "cmisaction": "content",
         }
-        self.setup()
-        json_response = self._get(self.root_url, data)
-        return StringIO(json_response)
+        json_response = self.get_request(self.root_folder_url, params=params)
+        return BytesIO(json_response.encode('utf-8'))
 
 
-class Folder(CMISRequest):
-    def __init__(self, data):
-        self.data = data
-        self.properties = dict(data.get('properties'))
-
+class Folder(CMISBaseObject):
     def __getattr__(self, name):
         return self.properties.get(f"cmis:{name}", {}).get('value')
 
-    def getChildren(self):
+    def get_children(self):
         data = {
             "cmisaction": "query",
             "statement": f"SELECT * FROM cmis:folder WHERE IN_FOLDER('{self.objectId}')",
         }
-        json_response = self._request(data)
-        return self._get_all(json_response, Folder)
+        json_response = self.post_request(self.base_url, data=data)
+        return self.get_all_resutls(json_response, Folder)
 
-    def createFolder(self, name, properties={}, **kwargs):
-        props = {"objectId": self.objectId,
-                 "cmisaction": "createFolder",
-                 "propertyId[0]": "cmis:name",
-                 "propertyValue[0]": name}
+    def create_folder(self, name, properties={}, **kwargs):
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "createFolder",
+            "propertyId[0]": "cmis:name",
+            "propertyValue[0]": name
+        }
 
-        props["propertyId[1]"] = "cmis:objectTypeId"
+        data["propertyId[1]"] = "cmis:objectTypeId"
         if 'cmis:objectTypeId' in properties.keys():
-            props["propertyValue[1]"] = properties['cmis:objectTypeId']
+            data["propertyValue[1]"] = properties['cmis:objectTypeId']
         else:
-            props["propertyValue[1]"] = "cmis:folder"
+            data["propertyValue[1]"] = "cmis:folder"
 
         prop_count = 2
         for prop in properties:
-            props[f"propertyId[{prop_count}]"] = prop.key
-            props[f"propertyValue[{prop_count}]"] = prop
+            data[f"propertyId[{prop_count}]"] = prop.key
+            data[f"propertyValue[{prop_count}]"] = prop
             prop_count += 1
 
-        json_response = self._request(props, self.root_url)
+        json_response = self.post_request(self.root_folder_url, data=data)
         return Folder(json_response)
 
     def create_document(self, name, properties, content_file=None, **kwargs):
-        props = {"objectId": self.objectId,
-                 "cmisaction": "createDocument",
-                 "propertyId[0]": "cmis:name",
-                 "propertyValue[0]": name}
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "createDocument",
+            "propertyId[0]": "cmis:name",
+            "propertyValue[0]": name
+        }
 
-        props["propertyId[1]"] = "cmis:objectTypeId"
+        data["propertyId[1]"] = "cmis:objectTypeId"
         if 'cmis:objectTypeId' in properties.keys():
-            props["propertyValue[1]"] = properties['cmis:objectTypeId']
+            data["propertyValue[1]"] = properties['cmis:objectTypeId']
         else:
-            props["propertyValue[1]"] = "drc:document"
+            data["propertyValue[1]"] = "drc:document"
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
             if isinstance(prop_value, date):
                 prop_value = prop_value.strftime('%Y-%m-%dT%H:%I:%S.000Z')
 
-            props[f"propertyId[{prop_count}]"] = prop_key
-            props[f"propertyValue[{prop_count}]"] = prop_value
+            data[f"propertyId[{prop_count}]"] = prop_key
+            data[f"propertyValue[{prop_count}]"] = prop_value
             prop_count += 1
 
         mimetype = None
@@ -173,5 +176,5 @@ class Folder(CMISRequest):
 
         files = {name: (name, content_file, mimetype)}
 
-        json_response = self._request(props, self.root_url, files=files)
-        return Folder(json_response)
+        json_response = self.post_request(self.root_folder_url, data=data, files=files)
+        return Document(json_response)

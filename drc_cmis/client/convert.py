@@ -24,9 +24,9 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         # Return None if document is deleted.
         return None
 
-    path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.identificatie})
+    path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
     url = f"{settings.HOST_URL}{path}"
-    download_url = f"{settings.HOST_URL}{reverse('cmis:cmis_download', kwargs={'uuid': cmis_doc.identificatie})}"
+    download_url = f"{settings.HOST_URL}{reverse('cmis:cmis_download', kwargs={'uuid': cmis_doc.versionSeriesId})}"
 
     return dataclass(
         url=url,
@@ -64,7 +64,7 @@ def make_enkelvoudiginformatieobject_dataclass_old(cmis_doc, dataclass, skip_del
         return None
 
     try:
-        inhoud = base64.b64encode(cmis_doc.getContentStream().read()).decode("utf-8")
+        inhoud = base64.b64encode(cmis_doc.get_content_stream().read()).decode("utf-8")
     except AssertionError:
         return None
     else:
@@ -98,7 +98,7 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass):
         for key, value in properties.items()
         if reverse_mapper(key, "connection")
     }
-
+    print(cmis_doc.properties)
     url = "{}{}".format(
         settings.HOST_URL, reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     )

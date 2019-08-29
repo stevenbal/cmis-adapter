@@ -6,7 +6,7 @@ from django.utils.module_loading import import_string
 
 from cmislib.exceptions import UpdateConflictException
 
-from .client import cmis_client
+from .client import CMISDRCClient
 from .client.convert import (
     make_enkelvoudiginformatieobject_dataclass,
     make_objectinformatieobject_dataclass
@@ -23,6 +23,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
     This class is based on:
         drc.backend.abstract.BaseDRCStorageBackend
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cmis_client = CMISDRCClient()
 
     def create_document(self, data, content):
         """
@@ -43,7 +46,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         identification = data.pop("identificatie")
 
         try:
-            cmis_doc = cmis_client.create_document(identification, data, content)
+            cmis_doc = self.cmis_client.create_document(identification, data, content)
             dict_doc = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
             return dict_doc
         except UpdateConflictException:
@@ -63,7 +66,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             dataclass: A list of enkelvoudig informatieobject dataclass.
 
         """
-        cmis_documents = cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
+        cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
         documents_data = []
         for cmis_doc in cmis_documents['results']:
             dict_document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
@@ -77,12 +80,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         return paginated_result
 
-    def get_document(self, identification):
+    def get_document(self, uuid):
         """
-        Get a document by cmis identification.
+        Get a document by cmis versionId.
 
         Args:
-            identification (str): The cmis object id (only the uuid part).
+            uuid (str): The cmis version id (only the uuid part).
 
         Returns:
             dataclass: An enkelvoudig informatieobject dataclass.
@@ -91,20 +94,29 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             BackendException: Raised a backend exception if the document does not exists.
 
         """
-
         try:
-            cmis_document = cmis_client.get_cmis_document(identification)
+            cmis_document = self.cmis_client.get_cmis_document(uuid)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
 
-    def update_document(self, identification, data, content):
+    def get_document_content(self, uuid):
+        try:
+            cmis_document = self.cmis_client.get_cmis_document(uuid)
+        except DocumentDoesNotExistError as e:
+            raise self.exception_class({None: e.message}, create=True)
+        else:
+            content = cmis_document.get_content_stream()
+            content.seek(0)
+            return content.read(), cmis_document.name
+
+    def update_document(self, uuid, data, content):
         """
         Update the document that is saved in the drc.
 
         Args:
-            identification (str): The identification from the document.
+            uuid (str): The uuid from the document.
             data (dict): A dict with the fields that need to be updated.
             content (BytesStream): The content of the document.
 
@@ -117,18 +129,18 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
 
         try:
-            cmis_document = cmis_client.update_cmis_document(identification, data, content)
+            cmis_document = self.cmis_client.update_cmis_document(uuid, data, content)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
 
-    def delete_document(self, identification):
+    def delete_document(self, uuid):
         """
         A request to delete the document.
 
         Args:
-            identification (str): The identification of the document.
+            uuid (str): The uuid of the document.
 
         Returns:
             dataclass: An enkelvoudig informatieobject dataclass.
@@ -139,7 +151,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
 
         try:
-            cmis_document = cmis_client.delete_cmis_document(identification)
+            cmis_document = self.cmis_client.delete_cmis_document(uuid)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
@@ -170,18 +182,21 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             data["registratiedatum"] = timezone.now()
 
         document_id = data.get("informatieobject").split("/")[-1]
-        cmis_doc = cmis_client.get_cmis_document(document_id)
-        folder = cmis_client.get_folder_from_case_url(data.get("object"))
+        try:
+            cmis_doc = self.cmis_client.get_cmis_document(document_id)
+        except DocumentDoesNotExistError:
+            assert False, "Error hier"
+        folder = self.cmis_client.get_folder_from_case_url(data.get("object"))
 
         zaak_url = cmis_doc.properties.get("drc:connectie__zaakurl")
         if not zaak_url:
-            cmis_doc = cmis_client.update_case_connection(cmis_doc, data)
+            cmis_doc = self.cmis_client.update_case_connection(cmis_doc, data)
             if folder:
-                cmis_client.move_to_case(cmis_doc, folder)
+                self.cmis_client.move_to_case(cmis_doc, folder)
         elif zaak_url == data.get("object"):
             pass
         else:
-            cmis_doc = cmis_client.copy_document(cmis_doc, folder, data)
+            cmis_doc = self.cmis_client.copy_document(cmis_doc, folder, data)
 
         objectinformatieobject = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
         return objectinformatieobject
@@ -194,8 +209,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             dataclass: A list of object informatieobject dataclass.
 
         """
-
-        cmis_documents = cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"}, page=0)
+        cmis_documents = self.cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"}, page=0)
         documents_data = []
         for cmis_doc in cmis_documents.get('results'):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
@@ -204,12 +218,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         return documents_data
 
-    def get_document_case_connection(self, identification):
+    def get_document_case_connection(self, uuid):
         """
-        Get a single connection by identification.
+        Get a single connection by uuid.
 
         Args:
-            identification (str): the CMIS id from the connected document.
+            uuid (str): the CMIS id from the connected document.
 
         Returns:
             dataclass: A object informatieobject dataclass.
@@ -220,8 +234,8 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
 
         try:
-            cmis_document = cmis_client.get_cmis_document(
-                identification, filters={"drc:connectie__zaakurl": "NOT NULL"}
+            cmis_document = self.cmis_client.get_cmis_document(
+                uuid, filters={"drc:connectie__zaakurl": "NOT NULL"}
             )
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
@@ -229,12 +243,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             return objectinformatieobject
 
-    def update_document_case_connection(self, identification, data):
+    def update_document_case_connection(self, uuid, data):
         """
         Update the connection.
 
         Args:
-            identification (str): The CMIS id of the document.
+            uuid (str): The CMIS id of the document.
             data (dict): The data that needs to be updated.
 
         Returns:
@@ -246,19 +260,19 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
 
         try:
-            cmis_document = cmis_client.update_case_connection(identification, data)
+            cmis_document = self.cmis_client.update_case_connection(uuid, data)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
             objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             return objectinformatieobject
 
-    def delete_document_case_connection(self, identification):
+    def delete_document_case_connection(self, uuid):
         """
         Uncouple a document from the case folder.
 
         Args:
-            identification (str): The CMIS id of the document.
+            uuid (str): The CMIS id of the document.
 
         Returns:
             dataclass: A object informatieobject dataclass.
@@ -269,7 +283,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
 
         try:
-            cmis_document = cmis_client.delete_case_connection(identification)
+            cmis_document = self.cmis_client.delete_case_connection(uuid)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:

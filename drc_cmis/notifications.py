@@ -5,10 +5,13 @@ from vng_api_common.models import APICredential
 from vng_api_common.notifications.handlers import default
 from zds_client.client import Client
 
-from drc_cmis.client import cmis_client
+from drc_cmis.client import CMISDRCClient
 
 
 class ZakenHandler:
+    def __init__(self):
+        self.cmis_client = CMISDRCClient()
+
     def handle(self, data: dict) -> None:
         if data.get("actie") == "create" and data.get("resource") == "zaak":
             zaaktype_url = data.get("kenmerken", {}).get("zaaktype")
@@ -23,7 +26,7 @@ class ZakenHandler:
         client.auth = APICredential.get_auth(zaaktype_url)
         client.auth.set_claims(scopes=["zds.scopes.zaaktypes.lezen"])
         zaaktype_data = client.retrieve("zaaktype", url=zaaktype_url)
-        return cmis_client.get_or_create_zaaktype_folder(zaaktype_data)
+        return self.cmis_client.get_or_create_zaaktype_folder(zaaktype_data)
 
     def create_zaak_folder(self, zaak_url, zaaktype_url, zaaktype_folder):
         client = Client.from_url(zaak_url)
@@ -42,7 +45,7 @@ class ZakenHandler:
             zaaktypes=[zaaktype_url],
         )
         zaak_data = client.retrieve("zaak", url=zaak_url)
-        cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
+        self.cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
 
 
 class RoutingHandler:
