@@ -1,6 +1,8 @@
 from rest_framework.exceptions import ValidationError
 
-from .data import EnkelvoudigInformatieObject, ObjectInformatieObject
+from .data import (
+    EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
+)
 
 
 class BackendException(ValidationError):
@@ -18,3 +20,4 @@ class AbstractStorageBackend:
     exception_class = BackendException
     eio_dataclass = EnkelvoudigInformatieObject
     oio_dataclass = ObjectInformatieObject
+    pagination_dataclass = PaginationObject

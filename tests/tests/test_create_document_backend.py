@@ -4,13 +4,12 @@ from django.test import TestCase
 
 from rest_framework.exceptions import ErrorDetail
 from tests.app.backend import BackendException
+from tests.tests.factories import EnkelvoudigInformatieObjectFactory
+from tests.tests.mixins import DMSMixin
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
 from drc_cmis.models import CMISConfig, CMISFolderLocation
-
-from .factories import EnkelvoudigInformatieObjectFactory
-from .mixins import DMSMixin
 
 
 class CMISCreateDocumentTests(DMSMixin, TestCase):

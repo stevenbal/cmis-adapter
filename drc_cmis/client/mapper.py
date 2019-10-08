@@ -27,6 +27,7 @@ DOCUMENT_MAP = {
     "formaat": "drc:document__formaat",
     "taal": "drc:document__taal",
     "bestandsnaam": "drc:document__bestandsnaam",
+    "bestandsomvang": "cmis:contentStreamLength",
     # "inhoud": "drc:",
     "link": "drc:document__link",
     "integriteit_algoritme": "drc:document__integriteitalgoritme",

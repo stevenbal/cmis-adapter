@@ -14,7 +14,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
     readme = f.read()
 
 REQUIRES = [
-    "django_choices", "django", "cmislib-maykin>=0.7.2.dev0", "django-solo"
+    "django_choices", "django", "cmislib-maykin>=0.7.2.dev0", "django-solo", "iso-8601",
 ]
 
 setup(

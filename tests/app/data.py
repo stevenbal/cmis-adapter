@@ -3,6 +3,14 @@ from datetime import date
 
 
 @dataclass
+class PaginationObject:
+    count: int
+    results: list
+    next: str = None
+    previous: str = None
+
+
+@dataclass
 class EnkelvoudigInformatieObject:
     url: str
     inhoud: str
@@ -28,6 +36,7 @@ class EnkelvoudigInformatieObject:
     integriteit_algoritme: str
     integriteit_waarde: str
     bestandsomvang: str
+    locked: bool
 
 
 @dataclass

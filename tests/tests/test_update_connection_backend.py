@@ -3,14 +3,12 @@ from io import BytesIO
 from django.test import TestCase
 
 from tests.app.backend import BackendException
+from tests.tests.factories import EnkelvoudigInformatieObjectFactory
+from tests.tests.mixins import DMSMixin
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
-from drc_cmis.client import cmis_client
 from drc_cmis.models import CMISConfig, CMISFolderLocation
-
-from .factories import EnkelvoudigInformatieObjectFactory
-from .mixins import DMSMixin
 
 
 class CMISReadConnectionTests(DMSMixin, TestCase):
@@ -28,7 +26,7 @@ class CMISReadConnectionTests(DMSMixin, TestCase):
 
     def test_update_document_case_connection(self):
         # Create document
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio = EnkelvoudigInformatieObjectFactory()
         eio_dict = eio.__dict__
 
         document = self.backend.create_document(eio_dict.copy(), None)

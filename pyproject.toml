@@ -8,7 +8,7 @@ license = 'MIT'
 url = 'https://github.com/gemeenteutrecht/gemma-drc-cmis'
 
 [requires]
-python_version = ['3.6', '3.7']
+python_version = ['3.7']
 
 [build-system]
 requires = ['setuptools', 'wheel']

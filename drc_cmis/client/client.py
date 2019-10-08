@@ -1,21 +1,17 @@
-import codecs
 import logging
 import random
 import string
 from datetime import datetime
 from io import BytesIO
 
-from cmislib import CmisClient
-from cmislib.browser.binding import BrowserBinding
 from cmislib.exceptions import UpdateConflictException
 
-from drc_cmis import settings
 from drc_cmis.cmis.drc_document import Document, Folder
 from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
-    DocumentLockedException, GetFirstException
+    GetFirstException
 )
 from .mapper import mapper
 from .query import CMISQuery
@@ -46,6 +42,7 @@ class CMISDRCClient(CMISRequest):
 
     @property
     def _get_base_folder(self):
+        logger.debug("CMIS_CLIENT: _get_base_folder")
         if not self._base_folder:
             base = self.get_request(self.root_folder_url)
             for folder_response in base['objects']:
@@ -60,7 +57,7 @@ class CMISDRCClient(CMISRequest):
         Create a folder with the prefix 'zaaktype-' to make a zaaktype folder
 
         """
-
+        logger.debug("CMIS_CLIENT: get_or_create_zaaktype_folder")
         properties = {
             "cmis:objectTypeId": "F:drc:zaaktypefolder",
             mapper("url", "zaaktype"): zaaktype.get("url"),
@@ -76,7 +73,7 @@ class CMISDRCClient(CMISRequest):
         Create a folder with the prefix 'zaak-' to make a zaak folder
 
         """
-
+        logger.debug("CMIS_CLIENT: get_or_create_zaak_folder")
         properties = {
             "cmis:objectTypeId": "F:drc:zaakfolder",
             mapper("url", "zaak"): zaak.get("url"),
@@ -104,7 +101,7 @@ class CMISDRCClient(CMISRequest):
             DocumentExistsError: when a document already uses the same identifier.
 
         """
-
+        logger.debug("CMIS_CLIENT: create_document")
         self._check_document_exists(identification)
 
         now = datetime.now()
@@ -136,6 +133,7 @@ class CMISDRCClient(CMISRequest):
             AtomPubDocument: A list of CMIS documents.
 
         """
+        logger.debug("CMIS_CLIENT: get_cmis_documents")
         filter_string = self._build_filter(filters, strip_end=True)
         query = "SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
         if filter_string:
@@ -171,6 +169,7 @@ class CMISDRCClient(CMISRequest):
         :param identification.
         :return: :class:`AtomPubDocument` object
         """
+        logger.debug("CMIS_CLIENT: get_cmis_document")
         document_query = self.document_via_cmis_id_query
         if via_identification:
             document_query = self.document_via_identification_query
@@ -187,16 +186,16 @@ class CMISDRCClient(CMISRequest):
         try:
             return self.get_first_result(json_response, Document)
         except GetFirstException:
-            error_string = "Document met identificatie {} bestaat niet in het CMIS connection".format(identification)
+            error_string = f"Document met identificatie {identification} bestaat niet in het CMIS connection"
             raise DocumentDoesNotExistError(error_string)
 
     def update_cmis_document(self, uuid, data, content=None):
+        logger.debug("CMIS_CLIENT: update_cmis_document")
         cmis_doc = self.get_cmis_document(uuid)
+        if not cmis_doc.versionSeriesCheckedOutId:
+            raise DocumentConflictException("Document is niet gelocked.")
 
-        try:
-            pwc = cmis_doc.checkout()
-        except UpdateConflictException as exc:
-            raise DocumentLockedException("Document was already checked out") from exc
+        pwc = cmis_doc.get_private_working_copy()
 
         # build up the properties
         current_properties = cmis_doc.properties
@@ -214,13 +213,10 @@ class CMISDRCClient(CMISRequest):
             # Node locked!
             raise DocumentConflictException from exc
 
-        major = False
         if content is not None:
-            major = True
             pwc.set_content_stream(content)
 
-        updated_cmis_doc = pwc.checkin("Geupdate via het DRC", major)
-        return updated_cmis_doc
+        return pwc
 
     def delete_cmis_document(self, uuid):
         """
@@ -235,6 +231,7 @@ class CMISDRCClient(CMISRequest):
         Raises:
             DocumentConflictException: If the document could not be updated.
         """
+        logger.debug("CMIS_CLIENT: delete_cmis_document")
         cmis_doc = self.get_cmis_document(uuid)
         new_properties = {mapper("verwijderd"): True}
 
@@ -248,6 +245,7 @@ class CMISDRCClient(CMISRequest):
     # Split ########################################################################################
 
     def update_case_connection(self, uuid, data):
+        logger.debug("CMIS_CLIENT: update_case_connection")
         cmis_doc = self.get_cmis_document(uuid)
 
         current_properties = cmis_doc.properties
@@ -267,6 +265,7 @@ class CMISDRCClient(CMISRequest):
         return cmis_doc
 
     def delete_case_connection(self, uuid):
+        logger.debug("CMIS_CLIENT: delete_case_connection")
         cmis_doc = self.get_cmis_document(uuid)
         parents = cmis_doc.get_object_parents()
         connection_count = len(parents)
@@ -302,6 +301,7 @@ class CMISDRCClient(CMISRequest):
         return cmis_doc
 
     def move_to_case(self, cmis_doc, folder):
+        logger.debug("CMIS_CLIENT: move_to_case")
         parent = [parent for parent in cmis_doc.get_object_parents()][0]
         cmis_doc.move(parent, folder)
 
@@ -310,6 +310,7 @@ class CMISDRCClient(CMISRequest):
         The copy from source is not supported via the atom pub bindings.
         So we create a new document with the same values.
         """
+        logger.debug("CMIS_CLIENT: copy_document")
         properties = {}
 
         properties.update(**{
@@ -362,21 +363,20 @@ class CMISDRCClient(CMISRequest):
         return new_doc
 
     def get_random_string(self, number=6):
+        logger.debug("CMIS_CLIENT: get_random_string")
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=number))
 
     def get_folder_from_case_url(self, zaak_url):
+        logger.debug("CMIS_CLIENT: get_folder_from_case_url")
         query = self.find_folder_by_case_url_query(zaak_url)
-
+        print(query)
         data = {
             "cmisaction": "query",
             "statement": query,
         }
 
-        json_response = self.get_request(self.root_folder_url, data)
-
-        if len(json_response['objects']) == 0:
-            return None
-        return Folder(json_response['objects'][0]['object'])
+        json_response = self.post_request(self.base_url, data)
+        return self.get_first_result(json_response, Folder)
 
     # Private functions.
     def _get_or_create_folder(self, name, parent, properties=None):
@@ -389,18 +389,21 @@ class CMISDRCClient(CMISRequest):
           pass to the folder object
         :return: the folder that was retrieved or created.
         """
+        logger.debug("CMIS_CLIENT: _get_or_create_folder")
         existing = self._get_folder(name, parent)
         if existing:
             return existing
         return parent.create_folder(name, properties=properties or {})
 
     def _get_folder(self, name, parent):
+        logger.debug("CMIS_CLIENT: _get_folder")
         existing = next((child for child in parent.get_children() if str(child.name) == str(name)), None)
         if existing is not None:
             return existing
         return None
 
     def _build_filter(self, filters, filter_string="", strip_end=False):
+        logger.debug("CMIS_CLIENT: _build_filter")
         if filters:
             for key, value in filters.items():
                 if mapper(key):
@@ -417,6 +420,7 @@ class CMISDRCClient(CMISRequest):
         return filter_string
 
     def _build_properties(self, identification, data):
+        logger.debug("CMIS_CLIENT: _build_properties")
         base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
         base_properties["cmis:objectTypeId"] = "D:drc:document"
         base_properties['cmis:name'] = f"{data.get('titel')}-{self.get_random_string()}"
@@ -424,6 +428,7 @@ class CMISDRCClient(CMISRequest):
         return base_properties
 
     def _build_case_properties(self, data, allow_empty=True):
+        logger.debug("CMIS_CLIENT: _build_case_properties")
         props = {}
         if data.get("object") or allow_empty:
             props[mapper("object", "connection")] = data.get("object")
@@ -441,10 +446,11 @@ class CMISDRCClient(CMISRequest):
         return props
 
     def _check_document_exists(self, identification):
+        logger.debug("CMIS_CLIENT: _check_document_exists")
         try:
             self.get_cmis_document(identification, via_identification=True)
         except DocumentDoesNotExistError:
             pass
         else:
-            error_string = "Document identificatie {} is niet uniek".format(identification)
+            error_string = f"Document identificatie {identification} is niet uniek"
             raise DocumentExistsError(error_string)

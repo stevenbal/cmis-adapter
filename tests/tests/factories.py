@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import uuid4
 
 import factory
@@ -8,8 +9,8 @@ fake = Faker()
 
 class EnkelvoudigInformatieObjectFactory(factory.DjangoModelFactory):
     identificatie = factory.Sequence(lambda a: uuid4())
-    bronorganisatie = factory.Sequence(lambda x: '1234{}'.format(x))
-    creatiedatum = factory.Faker('date')
+    bronorganisatie = factory.Sequence(lambda x: f'1234{x}')
+    creatiedatum = date.today()
     titel = factory.Faker('word')
     vertrouwelijkheidaanduiding = factory.Faker('word')
     auteur = factory.Faker('first_name')

@@ -4,7 +4,9 @@ from solo.models import SingletonModel
 
 
 class CMISConfig(SingletonModel):
-    client_url = models.URLField(default="http://localhost:8082/alfresco/cmisatom")
+    client_url = models.URLField(
+        default="http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser"
+    )
     client_user = models.CharField(max_length=200, default="admin")
     client_password = models.CharField(max_length=200, default="admin")
     locations = models.ManyToManyField("drc_cmis.CMISFolderLocation")

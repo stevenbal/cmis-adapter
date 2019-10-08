@@ -3,13 +3,12 @@ from io import BytesIO
 from django.test import TestCase
 
 from tests.app.backend import BackendException
+from tests.tests.factories import EnkelvoudigInformatieObjectFactory
+from tests.tests.mixins import DMSMixin
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
 from drc_cmis.models import CMISConfig, CMISFolderLocation
-
-from .factories import EnkelvoudigInformatieObjectFactory
-from .mixins import DMSMixin
 
 
 class CMISReadDocumentTests(DMSMixin, TestCase):
@@ -31,7 +30,7 @@ class CMISReadDocumentTests(DMSMixin, TestCase):
         time.sleep(25)
 
         documents = self.backend.get_documents()
-        self.assertEqual(len(documents), 1)
+        self.assertEqual(len(documents.results), 1)
 
     def test_get_documents_multiple_search_folders(self):
         location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
@@ -46,12 +45,12 @@ class CMISReadDocumentTests(DMSMixin, TestCase):
         time.sleep(25)
 
         documents = self.backend.get_documents()
-        self.assertEqual(len(documents), 1)
+        self.assertEqual(len(documents.results), 1)
 
     def test_get_documents_empty(self):
         documents = self.backend.get_documents()
 
-        self.assertEqual(len(documents), 0)
+        self.assertEqual(len(documents.results), 0)
 
     def test_get_document(self):
         eio = EnkelvoudigInformatieObjectFactory(identificatie='test')

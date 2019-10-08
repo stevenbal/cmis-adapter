@@ -1,15 +1,16 @@
+from datetime import datetime
 from io import BytesIO
 
 from django.test import TestCase
 
 from tests.app.backend import BackendException
+from tests.tests.factories import EnkelvoudigInformatieObjectFactory
+from tests.tests.mixins import DMSMixin
 
 from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
+from drc_cmis.client.exceptions import DocumentConflictException
 from drc_cmis.models import CMISConfig, CMISFolderLocation
-
-from .factories import EnkelvoudigInformatieObjectFactory
-from .mixins import DMSMixin
 
 
 class CMISUpdateDocumentTests(DMSMixin, TestCase):
@@ -22,7 +23,7 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         config.locations.add(location)
 
     def test_update_document_no_document(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio = EnkelvoudigInformatieObjectFactory()
         eio_dict = eio.__dict__
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
@@ -31,12 +32,15 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
             self.backend.update_document(eio_dict['identificatie'], eio_dict.copy(), BytesIO(b'some content2'))
 
     def test_update_document(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio = EnkelvoudigInformatieObjectFactory()
         eio_dict = eio.__dict__
 
         document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
-        self.assertEqual(document.identificatie, 'test')
+        self.assertEqual(document.identificatie, str(eio.identificatie))
+
+        lock = self.backend.lock_document(document.url.split('/')[-1])
+        self.assertIsNotNone(lock)
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
 
@@ -45,15 +49,28 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         self.assertNotEqual(document.titel, updated_document.titel)
 
     def test_update_document_no_stream(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio = EnkelvoudigInformatieObjectFactory()
         eio_dict = eio.__dict__
-
         document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
         self.assertIsNotNone(document)
-        self.assertEqual(document.identificatie, 'test')
+        self.assertEqual(document.identificatie, str(eio.identificatie))
+
+        lock = self.backend.lock_document(document.url.split('/')[-1])
+        self.assertIsNotNone(lock)
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
-
         updated_document = self.backend.update_document(document.url.split('/')[-1], eio_dict.copy(), None)
 
         self.assertNotEqual(document.titel, updated_document.titel)
+
+    def test_update_document_not_locked(self):
+        eio = EnkelvoudigInformatieObjectFactory()
+        eio_dict = eio.__dict__
+        document = self.backend.create_document(eio_dict.copy(), BytesIO(b'some content'))
+        self.assertIsNotNone(document)
+        self.assertEqual(document.identificatie, str(eio.identificatie))
+
+        eio_dict['titel'] = 'test-titel-die-unique-is'
+
+        with self.assertRaises(DocumentConflictException):
+            self.backend.update_document(document.url.split('/')[-1], eio_dict.copy(), None)

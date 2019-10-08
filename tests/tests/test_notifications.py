@@ -4,27 +4,32 @@ from django.conf import settings
 from django.test import TestCase
 
 import responses
+from tests.tests.mixins import DMSMixin
 from vng_api_common.models import APICredential
 
-from drc_cmis.client import cmis_client
-from drc_cmis.notifications import default
-
-from .mixins import DMSMixin
+from drc_cmis.client import CMISDRCClient
 
 
 class NotificationTests(DMSMixin, TestCase):
+    def setUp(self):
+        self.cmis_client = CMISDRCClient()
+
     def test_notifications_empty_dict(self):
+        from drc_cmis.notifications import default
         with self.assertRaises(KeyError):
             default.handle({})
 
     def test_notifications_default(self):
+        from drc_cmis.notifications import default
         default.handle({"kanaal": "random"})
 
     def test_notifications(self):
+        from drc_cmis.notifications import default
         default.handle({"kanaal": "zaken"})
 
     @responses.activate
     def test_notifications_fully_filled(self):
+        from drc_cmis.notifications import default
         with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'ztc-openapi.yaml'), 'rb') as resp_file:
             responses.add(responses.GET, 'https://ref.tst.vng.cloud/ztc/api/v1/schema/openapi.yaml?v=3', body=resp_file.read(), status=200)
         with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'ztc-zaaktype.json'), 'rb') as resp_file:
@@ -53,11 +58,12 @@ class NotificationTests(DMSMixin, TestCase):
 
         default.handle(data)
 
-        case_folder = cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
+        case_folder = self.cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
         self.assertIsNotNone(case_folder)
 
     @responses.activate
     def test_notifications_no_resource_url(self):
+        from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",
             "hoofdObject": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
@@ -73,11 +79,12 @@ class NotificationTests(DMSMixin, TestCase):
 
         default.handle(data)
 
-        case_folder = cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
+        case_folder = self.cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
         self.assertIsNone(case_folder)
 
     @responses.activate
     def test_notifications_no_zaaktype(self):
+        from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",
             "hoofdObject": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
@@ -93,11 +100,12 @@ class NotificationTests(DMSMixin, TestCase):
 
         default.handle(data)
 
-        case_folder = cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
+        case_folder = self.cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
         self.assertIsNone(case_folder)
 
     @responses.activate
     def test_notifications_no_kenmerken(self):
+        from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",
             "hoofdObject": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
@@ -109,5 +117,5 @@ class NotificationTests(DMSMixin, TestCase):
 
         default.handle(data)
 
-        case_folder = cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
+        case_folder = self.cmis_client.get_folder_from_case_url("https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid")
         self.assertIsNone(case_folder)
