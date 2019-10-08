@@ -38,6 +38,12 @@ class NotificationTests(DMSMixin, TestCase):
             responses.add(responses.GET, 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/schema/openapi.yaml?v=3', body=resp_file.read(), status=200)
         with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'zrc-zaak.json'), 'rb') as resp_file:
             responses.add(responses.GET, 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid', body=resp_file.read(), status=200)
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-get-results.json'), 'rb') as resp_file:
+            responses.add(responses.GET, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser/root', body=resp_file.read(), status=200, content_type='application/json',)
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-results.json'), 'rb') as resp_file:
+            responses.add(responses.POST, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser/root', body=resp_file.read(), status=200)
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-results.json'), 'rb') as resp_file:
+            responses.add(responses.POST, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser', body=resp_file.read(), status=200)
 
         APICredential.objects.create(api_root="https://ref.tst.vng.cloud/zrc/", label="ZRC", client_id="test", secret="test")
         APICredential.objects.create(api_root="https://ref.tst.vng.cloud/ztc/", label="ZTC", client_id="test", secret="test")
@@ -63,6 +69,9 @@ class NotificationTests(DMSMixin, TestCase):
 
     @responses.activate
     def test_notifications_no_resource_url(self):
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-results-empty.json'), 'rb') as resp_file:
+            responses.add(responses.POST, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser', body=resp_file.read(), status=200)
+
         from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",
@@ -84,6 +93,9 @@ class NotificationTests(DMSMixin, TestCase):
 
     @responses.activate
     def test_notifications_no_zaaktype(self):
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-results-empty.json'), 'rb') as resp_file:
+            responses.add(responses.POST, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser', body=resp_file.read(), status=200)
+
         from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",
@@ -105,6 +117,9 @@ class NotificationTests(DMSMixin, TestCase):
 
     @responses.activate
     def test_notifications_no_kenmerken(self):
+        with open(os.path.join(settings.PROJECT_ROOT, 'responses', 'alfresco-results-empty.json'), 'rb') as resp_file:
+            responses.add(responses.POST, 'http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser', body=resp_file.read(), status=200)
+
         from drc_cmis.notifications import default
         data = {
             "kanaal": "zaken",

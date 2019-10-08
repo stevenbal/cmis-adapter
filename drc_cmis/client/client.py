@@ -4,6 +4,8 @@ import string
 from datetime import datetime
 from io import BytesIO
 
+from django.conf import settings
+
 from cmislib.exceptions import UpdateConflictException
 
 from drc_cmis.cmis.drc_document import Document, Folder
@@ -45,10 +47,13 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: _get_base_folder")
         if not self._base_folder:
             base = self.get_request(self.root_folder_url)
-            for folder_response in base['objects']:
+            for folder_response in base.get('objects'):
                 folder = Folder(folder_response['object'])
-                if folder.name == 'DRC':
+                if folder.name == settings.BASE_FOLDER_LOCATION:
                     self._base_folder = folder
+            if not self._base_folder:
+                folder = Folder({})
+                self._base_folder = folder.create_folder(name=settings.BASE_FOLDER_LOCATION)
         return self._base_folder
 
     # ZRC Notification client calls.
@@ -135,7 +140,7 @@ class CMISDRCClient(CMISRequest):
         """
         logger.debug("CMIS_CLIENT: get_cmis_documents")
         filter_string = self._build_filter(filters, strip_end=True)
-        query = "SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
+        query = f"SELECT * FROM drc:document WHERE drc:document__verwijderd='false' AND IN_TREE('{self._get_base_folder.objectId}')"
         if filter_string:
             query += f' AND {filter_string}'
 
@@ -376,7 +381,10 @@ class CMISDRCClient(CMISRequest):
         }
 
         json_response = self.post_request(self.base_url, data)
-        return self.get_first_result(json_response, Folder)
+        try:
+            return self.get_first_result(json_response, Folder)
+        except GetFirstException:
+            return None
 
     # Private functions.
     def _get_or_create_folder(self, name, parent, properties=None):

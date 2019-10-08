@@ -13,7 +13,7 @@ from .client.convert import (
 )
 from .client.exceptions import (
     CmisUpdateConflictException, DocumentDoesNotExistError,
-    DocumentExistsError, DocumentLockedException
+    DocumentExistsError, DocumentLockedException, GetFirstException
 )
 
 logger = logging.getLogger(__name__)
@@ -218,7 +218,10 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         except DocumentDoesNotExistError:
             assert False, "Error hier"
 
-        folder = self.cmis_client.get_folder_from_case_url(data.get("object"))
+        try:
+            folder = self.cmis_client.get_folder_from_case_url(data.get("object"))
+        except GetFirstException:
+            folder = None
         zaak_url = cmis_doc.object
         logger.debug(f"CMIS_BACKEND_VALUE: {zaak_url}")
         if not zaak_url:

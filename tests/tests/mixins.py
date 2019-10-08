@@ -8,14 +8,9 @@ class DMSMixin:
     def setUp(self):
         super().setUp()
         self.cmis_client = CMISDRCClient()
-        self.addCleanup(lambda: self._removeTree(f"/{settings.BASE_FOLDER_LOCATION}"))
+        self._removeTree()
         self.cmis_client._base_folder = None
 
-    def _removeTree(self, path):
-        try:
-            root_folder = self.cmis_client._repo.getObjectByPath(path)
-        except ObjectNotFoundException:
-            return
-        except AttributeError:
-            return
-        root_folder.deleteTree()
+    def _removeTree(self):
+        base_folder = self.cmis_client._get_base_folder
+        base_folder.delete_tree()

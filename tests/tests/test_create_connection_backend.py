@@ -62,11 +62,14 @@ class CMISCreateConnectionTests(DMSMixin, TestCase):
         document = self.backend.create_document(eio_dict.copy(), None)
         self.assertIsNotNone(document)
 
-        connection = self.backend.create_document_case_connection({
+        data = {
             'informatieobject': document.url,
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid',
             'registratiedatum': timezone.now()
-        })
+        }
+        print(data)
+        print('-------------------------------------------------------------')
+        connection = self.backend.create_document_case_connection(data)
         self.assertIsNotNone(connection)
 
     def test_create_document_case_connection_create_copy(self):

@@ -35,8 +35,8 @@ class CMISDeleteDocumentTests(DMSMixin, TestCase):
         cmis_doc = self.cmis_client.create_document(eio.identificatie, eio_dict.copy(), BytesIO(b'some content'))
         document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, EnkelvoudigInformatieObject)
         self.assertIsNotNone(cmis_doc)
-        self.assertFalse(cmis_doc.properties.get('drc:document__verwijderd'))
+        self.assertFalse(cmis_doc.verwijderd)
 
         self.backend.delete_document(document.url.split('/')[-1])
         cmis_doc.reload()
-        self.assertTrue(cmis_doc.properties.get('drc:document__verwijderd'))
+        self.assertTrue(cmis_doc.verwijderd)

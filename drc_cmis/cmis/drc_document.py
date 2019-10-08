@@ -16,7 +16,7 @@ class CMISBaseObject(CMISRequest):
     def __init__(self, data):
         super().__init__()
         self.data = data
-        self.properties = dict(data.get('properties'))
+        self.properties = dict(data.get('properties', {}))
 
     def reload(self):
         logger.debug("CMIS: DRC_DOCUMENT: reload")
@@ -211,3 +211,10 @@ class Folder(CMISBaseObject):
         json_response = self.post_request(self.root_folder_url, data=data)
         cmis_doc = Document(json_response)
         return cmis_doc.set_content_stream(content_file)
+
+    def delete_tree(self, **kwargs):
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "deleteTree"
+        }
+        self.post_request(self.root_folder_url, data=data)

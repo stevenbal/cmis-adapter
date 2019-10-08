@@ -77,6 +77,8 @@ class CMISRequest:
         try:
             return response.json()
         except JSONDecodeError:
+            if not response.text:
+                return None
             raise CmisNoValidResponse(
                 status=response.status_code, url=url, message=response.text, code="invalid_response"
             )
