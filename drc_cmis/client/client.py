@@ -374,7 +374,6 @@ class CMISDRCClient(CMISRequest):
     def get_folder_from_case_url(self, zaak_url):
         logger.debug("CMIS_CLIENT: get_folder_from_case_url")
         query = self.find_folder_by_case_url_query(zaak_url)
-        print(query)
         data = {
             "cmisaction": "query",
             "statement": query,

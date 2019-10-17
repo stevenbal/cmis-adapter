@@ -67,8 +67,6 @@ class CMISCreateConnectionTests(DMSMixin, TestCase):
             'object': 'https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid',
             'registratiedatum': timezone.now()
         }
-        print(data)
-        print('-------------------------------------------------------------')
         connection = self.backend.create_document_case_connection(data)
         self.assertIsNotNone(connection)
 

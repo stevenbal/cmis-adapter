@@ -37,7 +37,6 @@ class CMISRequest:
     def post_request(self, url, data, files=None):
         logger.debug(f"POST: {url} | {data}")
         headers = {'Accept': 'application/json'}
-        print(data)
         response = requests.post(url, data=data, auth=(self.user, self.password), files=files, headers=headers)
         if not response.ok:
             error = response.json()

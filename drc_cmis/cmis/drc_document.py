@@ -46,8 +46,8 @@ class CMISBaseObject(CMISRequest):
             "sourceFolderId": sourceFolder.objectId,
             "targetFolderId": targetFolder.objectId
         }
-        print(f"From: {sourceFolder.name} To: {targetFolder.name}")
-        print(f"From: {sourceFolder.objectTypeId} To: {targetFolder.objectTypeId}")
+        logger.debug(f"From: {sourceFolder.name} To: {targetFolder.name}")
+        logger.debug(f"From: {sourceFolder.objectTypeId} To: {targetFolder.objectTypeId}")
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, data=data)
         self.data = json_response
