@@ -237,7 +237,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         logger.debug(f"CMIS_BACKEND: create_document_case_connection {data['registratiedatum']} successful")
         return objectinformatieobject
 
-    def get_document_case_connections(self):
+    def get_document_case_connections(self, filters=None):
         """
         Get all connections between case folders and documents.
 
@@ -246,7 +246,13 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         """
         logger.debug(f"CMIS_BACKEND: get_document_case_connections start")
-        cmis_documents = self.cmis_client.get_cmis_documents(filters={"drc:connectie__zaakurl": "NOT NULL"}, page=0)
+
+        if not filters:
+            filters = {}
+
+        filters["drc:connectie__zaakurl"] = "NOT NULL"
+
+        cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=0)
         documents_data = []
         for cmis_doc in cmis_documents.get('results'):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
