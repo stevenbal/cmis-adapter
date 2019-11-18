@@ -29,7 +29,7 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         eio_dict['titel'] = 'test-titel-die-unique-is'
 
         with self.assertRaises(BackendException):
-            self.backend.update_document(eio_dict['identificatie'], eio_dict.copy(), BytesIO(b'some content2'))
+            self.backend.update_document(eio_dict['identificatie'], 'test_lock', eio_dict.copy(), BytesIO(b'some content2'))
 
     def test_update_document(self):
         eio = EnkelvoudigInformatieObjectFactory()
@@ -44,7 +44,7 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
 
-        updated_document = self.backend.update_document(document.url.split('/')[-1], eio_dict.copy(), BytesIO(b'some content2'))
+        updated_document = self.backend.update_document(document.url.split('/')[-1], lock, eio_dict.copy(), BytesIO(b'some content2'))
 
         self.assertNotEqual(document.titel, updated_document.titel)
 
@@ -59,7 +59,7 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         self.assertIsNotNone(lock)
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
-        updated_document = self.backend.update_document(document.url.split('/')[-1], eio_dict.copy(), None)
+        updated_document = self.backend.update_document(document.url.split('/')[-1], lock, eio_dict.copy(), None)
 
         self.assertNotEqual(document.titel, updated_document.titel)
 
@@ -71,6 +71,5 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         self.assertEqual(document.identificatie, str(eio.identificatie))
 
         eio_dict['titel'] = 'test-titel-die-unique-is'
-
-        with self.assertRaises(DocumentConflictException):
-            self.backend.update_document(document.url.split('/')[-1], eio_dict.copy(), None)
+        with self.assertRaises(BackendException):
+            self.backend.update_document(document.url.split('/')[-1], 'fake_lock', eio_dict.copy(), None)

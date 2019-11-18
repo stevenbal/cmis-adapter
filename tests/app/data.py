@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 
 @dataclass
@@ -36,6 +36,8 @@ class EnkelvoudigInformatieObject:
     integriteit_algoritme: str
     integriteit_waarde: str
     bestandsomvang: str
+    begin_registratie: datetime
+    versie: str
     locked: bool
 
 
