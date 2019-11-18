@@ -307,6 +307,14 @@
                         <tokenised>TRUE</tokenised>
                     </index>
                 </property>
+                <property name="drc:document__begin_registratie">
+                    <title>DRC - Document - Begin registratie</title>
+                    <type>d:datetime</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
             </properties>
             <associations/>
             <overrides/>

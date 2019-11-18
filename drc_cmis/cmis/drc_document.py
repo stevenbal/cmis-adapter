@@ -78,7 +78,6 @@ class Document(CMISBaseObject):
             "objectId": self.objectId,
             "cmisaction": "update",
         }
-
         prop_count = 0
         for prop_key, prop_value in properties.items():
             # Skip property because update is not allowed
@@ -145,6 +144,19 @@ class Document(CMISBaseObject):
         }
         json_response = self.get_request(self.root_folder_url, params=params)
         return BytesIO(json_response.encode('utf-8'))
+
+    def get_all_versions(self, **kwargs):
+        logger.debug("CMIS: DRC_DOCUMENT: checkout")
+        params = {"objectId": self.objectId, "cmisselector": "versions"}
+        json_response = self.get_request(self.root_folder_url, params=params)
+        return self.parse_versions(json_response)
+
+    def parse_versions(self, json):
+        versions = {}
+        for json_version in json:
+            doc = Document(json_version)
+            versions[doc.versionLabel] = doc
+        return versions
 
 
 class Folder(CMISBaseObject):

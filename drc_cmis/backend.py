@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.utils import timezone
 from django.utils.module_loading import import_string
+from django.utils.translation import ugettext_lazy as _
 
 from cmislib.exceptions import UpdateConflictException
 
@@ -13,7 +14,8 @@ from .client.convert import (
 )
 from .client.exceptions import (
     CmisUpdateConflictException, DocumentDoesNotExistError,
-    DocumentExistsError, DocumentLockedException, GetFirstException
+    DocumentExistsError, DocumentLockConflictException,
+    DocumentLockedException, DocumentNotLockedException, GetFirstException
 )
 
 logger = logging.getLogger(__name__)
@@ -87,7 +89,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         logger.debug(f"CMIS_BACKEND: get_documents successful")
         return paginated_result
 
-    def get_document(self, uuid):
+    def get_document(self, uuid, version=None, filters=None):
         """
         Get a document by cmis versionId.
 
@@ -101,13 +103,20 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             BackendException: Raised a backend exception if the document does not exists.
 
         """
+        print(filters)
         logger.debug(f"CMIS_BACKEND: get_document {uuid} start")
         try:
-            cmis_document = self.cmis_client.get_cmis_document(uuid)
+            cmis_document = self.cmis_client.get_cmis_document(uuid, filters=filters)
         except DocumentDoesNotExistError as e:
-            raise self.exception_class({None: e.message}, create=True)
+            raise self.exception_class({None: e.message}, create=True, code='document-does-not-exist')
         else:
             logger.debug(f"CMIS_BACKEND: get_document {uuid} successful")
+            if version:
+                versions = cmis_document.get_all_versions()
+                if version in versions:
+                    cmis_document = versions.get(version)
+                else:
+                    raise self.exception_class(_("Version does not exists"), update=True, code='version-does-not-exist')
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
 
     def get_document_content(self, uuid):
@@ -122,7 +131,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             logger.debug(f"CMIS_BACKEND: get_document_content {uuid} successful")
             return content.read(), cmis_document.name
 
-    def update_document(self, uuid, data, content):
+    def update_document(self, uuid, lock, data, content):
         """
         Update the document that is saved in the drc.
 
@@ -140,9 +149,13 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         """
         logger.debug(f"CMIS_BACKEND: update_document {uuid} start")
         try:
-            cmis_document = self.cmis_client.update_cmis_document(uuid, data, content)
+            cmis_document = self.cmis_client.update_cmis_document(uuid, lock, data, content)
         except DocumentDoesNotExistError as e:
-            raise self.exception_class({None: e.message}, create=True)
+            raise self.exception_class({None: e.message}, update=True)
+        except DocumentNotLockedException as e:
+            raise self.exception_class({None: e.message}, update=True, code='not-locked')
+        except DocumentLockConflictException as e:
+            raise self.exception_class({None: e.message}, update=True, code='wrong-lock')
         else:
             logger.debug(f"CMIS_BACKEND: update_document {uuid} successful")
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
@@ -176,17 +189,19 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         try:
             pwc = cmis_doc.checkout()
         except CmisUpdateConflictException as exc:
-            raise DocumentLockedException("Document was already checked out") from exc
+            raise self.exception_class(detail="Document was already checked out", code="dubble_lock") from exc
         logger.debug(f"CMIS_BACKEND: lock_document {uuid} successful")
         return pwc.versionSeriesCheckedOutId
 
-    def unlock_document(self, uuid):
-        logger.debug(f"CMIS_BACKEND: unlock_document {uuid} start")
+    def unlock_document(self, uuid, lock, force=False):
+        logger.debug(f"CMIS_BACKEND: unlock_document {uuid} start with: {lock}")
         cmis_doc = self.cmis_client.get_cmis_document(uuid)
         pwc = cmis_doc.get_private_working_copy()
-        new_doc = pwc.checkin("Updated via drc ui")
-        logger.debug(f"CMIS_BACKEND: unlock_document {uuid} successful")
-        return make_enkelvoudiginformatieobject_dataclass(new_doc, self.eio_dataclass, skip_deleted=True)
+        if lock == pwc.versionSeriesCheckedOutId or force:
+            new_doc = pwc.checkin("Updated via drc ui")
+            logger.debug(f"CMIS_BACKEND: unlock_document {uuid} successful")
+            return make_enkelvoudiginformatieobject_dataclass(new_doc, self.eio_dataclass, skip_deleted=True)
+        raise self.exception_class(detail=_("Lock did not match"), update=True, code='unlock-failed')
 
     ################################################################################################
     # Splits #######################################################################################
@@ -215,6 +230,8 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         document_id = data.get("informatieobject").split("/")[-1]
         try:
             cmis_doc = self.cmis_client.get_cmis_document(document_id)
+            if cmis_doc.object == data.get("object"):
+                raise self.exception_class(detail=_("connection is not unique"), code="unique")
         except DocumentDoesNotExistError:
             assert False, "Error hier"
 
@@ -250,10 +267,15 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         if not filters:
             filters = {}
 
-        filters["drc:connectie__zaakurl"] = "NOT NULL"
+        if 'informatieobject' in filters and filters.get('informatieobject'):
+            document = self.get_document_case_connection(filters.get('informatieobject').split('/')[-1])
+            return [document]
 
+        if 'object' not in filters:
+            filters["object"] = "NOT NULL"
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=0)
         documents_data = []
+
         for cmis_doc in cmis_documents.get('results'):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
             if dict_document:

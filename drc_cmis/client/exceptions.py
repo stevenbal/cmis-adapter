@@ -15,6 +15,14 @@ class DocumentConflictException(DMSException):
     pass
 
 
+class DocumentLockConflictException(DMSException):
+    pass
+
+
+class DocumentNotLockedException(DMSException):
+    pass
+
+
 class DocumentLockedException(DMSException):
     pass
 

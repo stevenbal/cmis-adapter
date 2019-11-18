@@ -28,12 +28,14 @@ DOCUMENT_MAP = {
     "taal": "drc:document__taal",
     "bestandsnaam": "drc:document__bestandsnaam",
     "bestandsomvang": "cmis:contentStreamLength",
+    "versie": "cmis:versionLabel",
     # "inhoud": "drc:",
     "link": "drc:document__link",
     "integriteit_algoritme": "drc:document__integriteitalgoritme",
     "integriteit_waarde": "drc:document__integriteitwaarde",
     "integriteit_datum": "drc:document__integriteitdatum",
     "verwijderd": "drc:document__verwijderd",
+    "begin_registratie": "drc:document__begin_registratie",
 }
 
 CONNECTION_MAP = {

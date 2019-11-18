@@ -13,6 +13,7 @@ from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
     DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
+    DocumentLockConflictException, DocumentNotLockedException,
     GetFirstException
 )
 from .mapper import mapper
@@ -194,11 +195,13 @@ class CMISDRCClient(CMISRequest):
             error_string = f"Document met identificatie {identification} bestaat niet in het CMIS connection"
             raise DocumentDoesNotExistError(error_string)
 
-    def update_cmis_document(self, uuid, data, content=None):
+    def update_cmis_document(self, uuid, lock, data, content=None):
         logger.debug("CMIS_CLIENT: update_cmis_document")
         cmis_doc = self.get_cmis_document(uuid)
         if not cmis_doc.versionSeriesCheckedOutId:
-            raise DocumentConflictException("Document is niet gelocked.")
+            raise DocumentNotLockedException("Document is niet gelocked.")
+        if lock != cmis_doc.versionSeriesCheckedOutId:
+            raise DocumentLockConflictException("Wrong lock given")
 
         pwc = cmis_doc.get_private_working_copy()
 
@@ -415,6 +418,8 @@ class CMISDRCClient(CMISRequest):
             for key, value in filters.items():
                 if mapper(key):
                     key = mapper(key)
+                elif mapper(key, type="connection"):
+                    key = mapper(key, type="connection")
 
                 if value and value in ["NULL", "NOT NULL"]:
                     filter_string += f"{key} IS {value} AND "
@@ -432,6 +437,9 @@ class CMISDRCClient(CMISRequest):
         base_properties["cmis:objectTypeId"] = "D:drc:document"
         base_properties['cmis:name'] = f"{data.get('titel')}-{self.get_random_string()}"
         base_properties[mapper("identificatie")] = identification
+
+        if "cmis:versionLabel" in base_properties:
+            del base_properties['cmis:versionLabel']
         return base_properties
 
     def _build_case_properties(self, data, allow_empty=True):

@@ -19,6 +19,11 @@ def to_date(value):
     return None
 
 
+def to_datetime(value):
+    tmp_datetime = parseDateTimeValue(value)
+    return tmp_datetime
+
+
 def parseDateTimeValue(value):
     """
     Utility function to return a datetime from a string.
@@ -44,7 +49,6 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId}
     )
     download_url = f"{settings.HOST_URL}{download_link}"
-
     return dataclass(
         url=url,
         inhoud=download_url,
@@ -70,6 +74,8 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         integriteit_algoritme=cmis_doc.integriteit_algoritme,
         integriteit_waarde=cmis_doc.integriteit_waarde,
         bestandsomvang=cmis_doc.bestandsomvang,
+        begin_registratie=to_datetime(cmis_doc.begin_registratie),
+        versie=cmis_doc.versie,
         locked=bool(cmis_doc.versionSeriesCheckedOutId),
     )
 
@@ -116,12 +122,12 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass, skip_deleted=Fals
     path = reverse('objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
     url = f"{settings.HOST_URL}{path}"
 
-    eio_path = reverse('objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
+    eio_path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
     eio_url = f"{settings.HOST_URL}{path}"
 
     return dataclass(
         url=url,
-        informatieobject=cmis_doc.eio_url,
+        informatieobject=eio_url,
         object=cmis_doc.object,
         object_type=cmis_doc.object_type,
         aard_relatie=cmis_doc.aard_relatie,
