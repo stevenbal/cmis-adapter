@@ -75,7 +75,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         """
         logger.debug(f"CMIS_BACKEND: get_documents start")
-        if 'versie' in filters:
+        if filters and 'versie' in filters:
             filters['versie'] = self._fix_version(filters['versie'])
 
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
@@ -110,7 +110,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         logger.debug(f"CMIS_BACKEND: get_document {uuid} start")
         version = self._fix_version(version)
 
-        if 'versie' in filters:
+        if filters and 'versie' in filters:
             filters['versie'] = self._fix_version(filters['versie'])
 
         if 'versie' in filters:
