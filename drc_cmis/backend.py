@@ -111,10 +111,7 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         version = self._fix_version(version)
 
         if filters and 'versie' in filters:
-            filters['versie'] = self._fix_version(filters['versie'])
-
-        if 'versie' in filters:
-            version = filters['versie']
+            version = self._fix_version(filters['versie'])
             del filters['versie']
 
         try:
@@ -370,7 +367,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             return objectinformatieobject
 
     def _fix_version(self, version):
-        return Decimal(version) / Decimal('100.0')
+        if version:
+            return Decimal(version) / Decimal('100.0')
+        return None
 
     def _find_version(self, version, cmis_document):
         versions = cmis_document.get_all_versions()
