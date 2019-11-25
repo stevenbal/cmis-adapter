@@ -1,6 +1,7 @@
 import base64
 import logging
 from datetime import datetime
+from decimal import Decimal
 
 from django.conf import settings
 from django.urls import reverse
@@ -49,6 +50,14 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId}
     )
     download_url = f"{settings.HOST_URL}{download_link}"
+
+    #Versie needs to be an integer. So we need to convert it to an integer.
+    versie = cmis_doc.versie
+    try:
+        int_versie = int(Decimal(versie) * 100)
+    except ValueError as e:
+        int_versie = 0
+
     return dataclass(
         url=url,
         inhoud=download_url,
@@ -75,7 +84,7 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         integriteit_waarde=cmis_doc.integriteit_waarde,
         bestandsomvang=cmis_doc.bestandsomvang,
         begin_registratie=to_datetime(cmis_doc.begin_registratie),
-        versie=cmis_doc.versie,
+        versie=int_versie,
         locked=bool(cmis_doc.versionSeriesCheckedOutId),
     )
 

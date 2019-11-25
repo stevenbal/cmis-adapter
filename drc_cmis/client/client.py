@@ -2,6 +2,7 @@ import logging
 import random
 import string
 from datetime import datetime
+from decimal import Decimal
 from io import BytesIO
 
 from django.conf import settings
@@ -179,15 +180,12 @@ class CMISDRCClient(CMISRequest):
         document_query = self.document_via_cmis_id_query
         if via_identification:
             document_query = self.document_via_identification_query
-
         filter_string = self._build_filter(filters, filter_string="AND ", strip_end=True)
         query = document_query(identification, filter_string)
-
         data = {
             "cmisaction": "query",
             "statement": query,
         }
-
         json_response = self.post_request(self.base_url, data)
         try:
             return self.get_first_result(json_response, Document)
@@ -423,6 +421,8 @@ class CMISDRCClient(CMISRequest):
 
                 if value and value in ["NULL", "NOT NULL"]:
                     filter_string += f"{key} IS {value} AND "
+                elif isinstance(value, Decimal):
+                    filter_string += f"{key} = {value} AND "
                 elif value:
                     filter_string += f"{key} = '{value}' AND "
 

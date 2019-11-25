@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from django.conf import settings
 from django.utils import timezone
@@ -74,6 +75,9 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
 
         """
         logger.debug(f"CMIS_BACKEND: get_documents start")
+        if 'versie' in filters:
+            filters['versie'] = self._fix_version(filters['versie'])
+
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
         documents_data = []
         for cmis_doc in cmis_documents['results']:
@@ -103,8 +107,16 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             BackendException: Raised a backend exception if the document does not exists.
 
         """
-        print(filters)
         logger.debug(f"CMIS_BACKEND: get_document {uuid} start")
+        version = self._fix_version(version)
+
+        if 'versie' in filters:
+            filters['versie'] = self._fix_version(filters['versie'])
+
+        if 'versie' in filters:
+            version = filters['versie']
+            del filters['versie']
+
         try:
             cmis_document = self.cmis_client.get_cmis_document(uuid, filters=filters)
         except DocumentDoesNotExistError as e:
@@ -112,12 +124,11 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
         else:
             logger.debug(f"CMIS_BACKEND: get_document {uuid} successful")
             if version:
-                versions = cmis_document.get_all_versions()
-                if version in versions:
-                    cmis_document = versions.get(version)
-                else:
+                cmis_document = self._find_version(version, cmis_document)
+                if not cmis_document:
                     raise self.exception_class(_("Version does not exists"), update=True, code='version-does-not-exist')
-            return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
+            doc = make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
+            return doc
 
     def get_document_content(self, uuid):
         logger.debug(f"CMIS_BACKEND: get_document_content {uuid} start")
@@ -357,3 +368,12 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             objectinformatieobject = make_objectinformatieobject_dataclass(cmis_document, self.oio_dataclass)
             logger.debug(f"CMIS_BACKEND: delete_document_case_connection {uuid} successful")
             return objectinformatieobject
+
+    def _fix_version(self, version):
+        return Decimal(version) / Decimal('100.0')
+
+    def _find_version(self, version, cmis_document):
+        versions = cmis_document.get_all_versions()
+        if int(version) == version:
+            version = round(version, 1)
+        return versions.get(str(version))
