@@ -1,7 +1,7 @@
 import base64
 import logging
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.urls import reverse
@@ -56,6 +56,8 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
     try:
         int_versie = int(Decimal(versie) * 100)
     except ValueError as e:
+        int_versie = 0
+    except InvalidOperation:
         int_versie = 0
 
     return dataclass(
