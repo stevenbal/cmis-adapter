@@ -134,7 +134,7 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass, skip_deleted=Fals
     url = f"{settings.HOST_URL}{path}"
 
     eio_path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
-    eio_url = f"{settings.HOST_URL}{path}"
+    eio_url = f"{settings.HOST_URL}{eio_path}"
 
     return dataclass(
         url=url,

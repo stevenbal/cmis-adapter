@@ -74,17 +74,19 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             dataclass: A list of enkelvoudig informatieobject dataclass.
 
         """
+        print('get_documents')
         logger.debug(f"CMIS_BACKEND: get_documents start")
         if filters and 'versie' in filters:
             filters['versie'] = self._fix_version(filters['versie'])
 
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
+        print(cmis_documents)
         documents_data = []
         for cmis_doc in cmis_documents['results']:
             dict_document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
-
+        print(documents_data)
         paginated_result = self.pagination_dataclass(
             count=cmis_documents['total_count'],
             results=documents_data,

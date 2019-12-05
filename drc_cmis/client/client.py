@@ -142,10 +142,11 @@ class CMISDRCClient(CMISRequest):
         """
         logger.debug("CMIS_CLIENT: get_cmis_documents")
         filter_string = self._build_filter(filters, strip_end=True)
-        query = f"SELECT * FROM drc:document WHERE drc:document__verwijderd='false' AND IN_TREE('{self._get_base_folder.objectId}')"
+        query = f"SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
         if filter_string:
             query += f' AND {filter_string}'
 
+        print(query)
         data = {
             "cmisaction": "query",
             "statement": query,
@@ -161,6 +162,7 @@ class CMISDRCClient(CMISRequest):
             data["skipCount"] = skip_count
 
         json_response = self.post_request(self.base_url, data)
+        print(json_response)
         results = self.get_all_resutls(json_response, Document)
         return {
             'has_next': json_response['hasMoreItems'],
