@@ -60,6 +60,8 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
     except InvalidOperation:
         int_versie = 0
 
+    cmis_creation_date = cmis_doc.properties["cmis:creationDate"]["value"]
+
     return dataclass(
         url=url,
         inhoud=download_url,
@@ -73,19 +75,19 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         bronorganisatie=cmis_doc.bronorganisatie,
         vertrouwelijkheidaanduiding=cmis_doc.vertrouwelijkheidaanduiding,
         auteur=cmis_doc.auteur,
-        status=cmis_doc.status,
-        beschrijving=cmis_doc.beschrijving,
+        status=cmis_doc.status or "gearchiveerd",  # FIXME -> status must be saved in EIO
+        beschrijving=cmis_doc.beschrijving or "",
         indicatie_gebruiksrecht=cmis_doc.indicatie_gebruiksrecht,
         ondertekening_soort=cmis_doc.ondertekening_soort,
         informatieobjecttype=cmis_doc.informatieobjecttype,
-        formaat=cmis_doc.formaat,
+        formaat=cmis_doc.formaat or "",
         taal=cmis_doc.taal,
-        bestandsnaam=cmis_doc.bestandsnaam,
-        link=cmis_doc.link,
+        bestandsnaam=cmis_doc.bestandsnaam or "",
+        link=cmis_doc.link or "",
         integriteit_algoritme=cmis_doc.integriteit_algoritme,
         integriteit_waarde=cmis_doc.integriteit_waarde,
         bestandsomvang=cmis_doc.bestandsomvang,
-        begin_registratie=to_datetime(cmis_doc.begin_registratie),
+        begin_registratie=to_datetime(cmis_doc.begin_registratie) or to_datetime(cmis_creation_date),
         versie=int_versie,
         locked=bool(cmis_doc.versionSeriesCheckedOutId),
     )
