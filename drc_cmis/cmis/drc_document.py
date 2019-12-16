@@ -136,14 +136,14 @@ class Document(CMISBaseObject):
         json_response = self.post_request(self.root_folder_url, data=data, files=files)
         return Document(json_response)
 
-    def get_content_stream(self):
+    def get_content_stream(self) -> BytesIO:
         logger.debug("CMIS: DRC_DOCUMENT: get_content_stream")
         params = {
             "objectId": self.objectId,
             "cmisaction": "content",
         }
-        json_response = self.get_request(self.root_folder_url, params=params)
-        return BytesIO(json_response.encode('utf-8'))
+        file_content = self.get_request(self.root_folder_url, params=params)
+        return BytesIO(file_content)
 
     def get_all_versions(self, **kwargs):
         logger.debug("CMIS: DRC_DOCUMENT: checkout")

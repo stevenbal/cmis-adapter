@@ -32,7 +32,7 @@ class CMISRequest:
 
         if response.headers.get('Content-Type').startswith('application/json'):
             return response.json()
-        return response.text
+        return response.content
 
     def post_request(self, url, data, files=None):
         logger.debug(f"POST: {url} | {data}")
