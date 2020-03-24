@@ -195,6 +195,28 @@ class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
             logger.debug(f"CMIS_BACKEND: delete_document {uuid} successful")
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass, skip_deleted=True)
 
+    def obliterate_document(self, uuid):
+        """
+        A request to delete permanently the document.
+
+        Args:
+            uuid (str): The uuid of the document.
+
+        Returns:
+            None
+
+        Raises:
+            BackendException: Raised a backend exception if the document does not exists.
+
+        """
+        logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} start")
+        try:
+            cmis_document = self.cmis_client.obliterate_document(uuid)
+        except DocumentDoesNotExistError as e:
+            raise self.exception_class({None: e.message}, create=True)
+        else:
+            logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} successful")
+
     def lock_document(self, uuid):
         logger.debug(f"CMIS_BACKEND: lock_document {uuid} start")
         cmis_doc = self.cmis_client.get_cmis_document(uuid)

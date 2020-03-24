@@ -5,7 +5,8 @@ from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
 
-from django.conf import settings
+# from django.conf import settings
+from drc_cmis import settings
 
 from cmislib.exceptions import UpdateConflictException
 
@@ -249,6 +250,16 @@ class CMISDRCClient(CMISRequest):
             # Node locked!
             raise DocumentConflictException from exc
         return cmis_doc
+
+    def delete_cmis_folders_in_base(self):
+        for child_folder in self._get_base_folder.get_children():
+            child_folder.delete_tree()
+
+    def obliterate_document(self, uuid):
+        logger.debug("CMIS_CLIENT: obliterate_document")
+        cmis_doc = self.get_cmis_document(uuid)
+        cmis_doc.delete_document()
+        logger.debug("CMIS_CLIENT: obliteration successful")
 
     # Split ########################################################################################
 
