@@ -223,7 +223,7 @@ class Folder(CMISBaseObject):
         prop_count = 2
         for prop_key, prop_value in properties.items():
             if isinstance(prop_value, date):
-                prop_value = prop_value.strftime('%Y-%m-%dT%H:%I:%S.000Z')
+                prop_value = prop_value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
             data[f"propertyId[{prop_count}]"] = prop_key
             data[f"propertyValue[{prop_count}]"] = prop_value
