@@ -320,6 +320,48 @@
             <overrides/>
             <mandatory-aspects/>
         </type>
+        <type name="drc:gebruiksrechten">
+            <title>DRC Gebruiksrecht InformatieObject</title>
+            <description>Gebruiksrechten van de documenten</description>
+            <parent>cm:content</parent>
+            <properties>
+                <property name="drc:gebruiksrechten__informatieobject">
+                    <title>DRC - Informatieobject</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:gebruiksrechten__omschrijving_voorwaarden">
+                    <title>DRC - Omschrijving voorwaarden</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:gebruiksrechten__startdatum">
+                    <title>DRC - Start datum</title>
+                    <type>d:datetime</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:gebruiksrechten__einddatum">
+                    <title>DRC - Eind datum</title>
+                    <type>d:datetime</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>                
+            </properties>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
+        </type>
         <type name="drc:zaaktypefolder">
             <title>DRC Zaaktypefolder</title>
             <description>Dit is een Zaaktype folder. Hierin zullen alle zaakfolders in terecht komen.</description>

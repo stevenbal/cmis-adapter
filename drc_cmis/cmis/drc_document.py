@@ -4,9 +4,8 @@ from datetime import date
 from io import BytesIO
 
 from drc_cmis.client.mapper import (
-    CONNECTION_MAP, DOCUMENT_MAP, REVERSE_CONNECTION_MAP, REVERSE_DOCUMENT_MAP
+    CONNECTION_MAP, DOCUMENT_MAP, REVERSE_CONNECTION_MAP, REVERSE_DOCUMENT_MAP, GEBRUIKSRECHTEN_MAP
 )
-
 from .utils import CMISRequest
 
 logger = logging.getLogger(__name__)
@@ -168,6 +167,32 @@ class Document(CMISBaseObject):
         return json_response
 
 
+class Gebruiksrechten(CMISBaseObject):
+
+    def __getattr__(self, name):
+        """
+        :param name: Name of the attribute to retrieve
+        :type name: string
+        :return: the attribute (Note: date times are returned as timestamps)
+        """
+        convert_string = f"drc:{name}"
+        if name in GEBRUIKSRECHTEN_MAP:
+            # Properties characteristic only of this Gebruiksrechten type
+            convert_string = GEBRUIKSRECHTEN_MAP.get(name)
+        else:
+            # General alresco properties
+            convert_string = f"cmis:{name}"
+        return self.properties.get(convert_string, {}).get('value')
+
+    def delete_gebruiksrechten(self):
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "delete"
+        }
+        json_response = self.post_request(self.root_folder_url, data=data)
+        return json_response
+
+
 class Folder(CMISBaseObject):
     def __getattr__(self, name):
         return self.properties.get(f"cmis:{name}", {}).get('value')
@@ -232,6 +257,32 @@ class Folder(CMISBaseObject):
         json_response = self.post_request(self.root_folder_url, data=data)
         cmis_doc = Document(json_response)
         return cmis_doc.set_content_stream(content_file)
+
+    def create_gebruiksrechten(self, name, properties):
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "createDocument",
+            "propertyId[0]": "cmis:name",
+            "propertyValue[0]": name
+        }
+
+        data["propertyId[1]"] = "cmis:objectTypeId"
+        if 'cmis:objectTypeId' in properties.keys():
+            data["propertyValue[1]"] = properties['cmis:objectTypeId']
+        else:
+            data["propertyValue[1]"] = "D:drc:gebruiksrechten"
+
+        prop_count = 2
+        for prop_key, prop_value in properties.items():
+            if isinstance(prop_value, date):
+                prop_value = prop_value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
+            data[f"propertyId[{prop_count}]"] = prop_key
+            data[f"propertyValue[{prop_count}]"] = prop_value
+            prop_count += 1
+
+        json_response = self.post_request(self.root_folder_url, data=data)
+        return Gebruiksrechten(json_response)
 
     def delete_tree(self, **kwargs):
         data = {

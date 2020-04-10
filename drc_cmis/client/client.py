@@ -10,7 +10,7 @@ from drc_cmis import settings
 
 from cmislib.exceptions import UpdateConflictException
 
-from drc_cmis.cmis.drc_document import Document, Folder
+from drc_cmis.cmis.drc_document import Document, Gebruiksrechten, Folder
 from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
@@ -431,6 +431,8 @@ class CMISDRCClient(CMISRequest):
                     key = mapper(key)
                 elif mapper(key, type="connection"):
                     key = mapper(key, type="connection")
+                elif mapper(key, type="gebruiksrechten"):
+                    key = mapper(key, type="gebruiksrechten")
 
                 if value and value in ["NULL", "NOT NULL"]:
                     filter_string += f"{key} IS {value} AND "
@@ -482,3 +484,97 @@ class CMISDRCClient(CMISRequest):
         else:
             error_string = f"Document identificatie {identification} is niet uniek"
             raise DocumentExistsError(error_string)
+
+    def create_cmis_gebruiksrechten(self, data):
+        """
+        Creates a Gebruiksrechten object.
+        :return:
+        """
+
+        gebruiksrechten_folder = self._get_or_create_folder("Gebruiksrechten", self._get_base_folder)
+
+        properties = {mapper(key, type="gebruiksrechten"): value for key, value in data.items() if mapper(key, type="gebruiksrechten")}
+
+        return gebruiksrechten_folder.create_gebruiksrechten(
+            name=self.get_random_string(),
+            properties=properties
+        )
+
+    def get_all_cmis_gebruiksrechten(self):
+
+        query = f"SELECT * FROM drc:gebruiksrechten"
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self.post_request(self.base_url, data)
+        results = self.get_all_resutls(json_response, Gebruiksrechten)
+        return {
+            'has_next': json_response['hasMoreItems'],
+            'total_count': json_response['numItems'],
+            'has_prev': False,
+            'results': results,
+        }
+
+    def get_a_cmis_gebruiksrechten(self, uuid):
+
+        query = f"SELECT * FROM drc:gebruiksrechten WHERE cmis:objectId = 'workspace://SpacesStore/{uuid};1.0'"
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self.post_request(self.base_url, data)
+
+        try:
+            return self.get_first_result(json_response, Gebruiksrechten)
+        except GetFirstException:
+            error_string = f"Gebruiksrechten met uuid {uuid} bestaat niet in het CMIS connection"
+            raise DocumentDoesNotExistError(error_string)
+
+    def get_cmis_gebruiksrechten(self, filters):
+
+        if filters.get('uuid') is not None:
+            results = [self.get_a_cmis_gebruiksrechten(filters.get('uuid'))]
+            return {
+                'has_next': False,
+                'total_count': 1,
+                'has_prev': False,
+                'results': results,
+            }
+        else:
+            query = "SELECT * FROM drc:gebruiksrechten WHERE "
+            sql_filters = self._build_filter(filters, strip_end=True)
+
+            if sql_filters:
+                query += f'{sql_filters}'
+
+            data = {
+                "cmisaction": "query",
+                "statement": query,
+            }
+
+            json_response = self.post_request(self.base_url, data)
+            results = self.get_all_resutls(json_response, Gebruiksrechten)
+            return {
+                'has_next': json_response['hasMoreItems'],
+                'total_count': json_response['numItems'],
+                'has_prev': False,
+                'results': results,
+            }
+
+    def delete_cmis_geruiksrechten(self, uuid):
+
+        gebruiksrechten = self.get_a_cmis_gebruiksrechten(uuid)
+
+        try:
+            gebruiksrechten.delete_gebruiksrechten()
+        except UpdateConflictException as exc:
+            # Node locked!
+            raise DocumentConflictException from exc
+
+
+

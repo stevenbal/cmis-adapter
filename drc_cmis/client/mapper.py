@@ -38,6 +38,13 @@ DOCUMENT_MAP = {
     "begin_registratie": "drc:document__begin_registratie",
 }
 
+GEBRUIKSRECHTEN_MAP = {
+    "informatieobject": "drc:gebruiksrechten__informatieobject",
+    "omschrijving_voorwaarden": "drc:gebruiksrechten__omschrijving_voorwaarden",
+    "startdatum": "drc:gebruiksrechten__startdatum",
+    "einddatum": "drc:gebruiksrechten__einddatum",
+}
+
 CONNECTION_MAP = {
     "object": "drc:connectie__zaakurl",
     "object_type": "drc:connectie__objecttype",
@@ -51,6 +58,7 @@ REVERSE_ZAAKTYPE_MAP = {value: key for key, value in ZAAKTYPE_MAP.items()}
 REVERSE_ZAAK_MAP = {value: key for key, value in ZAAK_MAP.items()}
 REVERSE_DOCUMENT_MAP = {value: key for key, value in DOCUMENT_MAP.items()}
 REVERSE_CONNECTION_MAP = {value: key for key, value in CONNECTION_MAP.items()}
+REVERSE_GEBRUIKSRECHTEN_MAP = {value: key for key, value in GEBRUIKSRECHTEN_MAP.items()}
 
 
 def mapper(drc_name, type="document"):
@@ -62,6 +70,8 @@ def mapper(drc_name, type="document"):
         return ZAAKTYPE_MAP.get(drc_name, None)
     if type == "zaak":
         return ZAAK_MAP.get(drc_name, None)
+    if type == "gebruiksrechten":
+        return GEBRUIKSRECHTEN_MAP.get(drc_name, None)
     return None
 
 
@@ -74,4 +84,6 @@ def reverse_mapper(cmis_name, type="document"):
         return REVERSE_ZAAKTYPE_MAP.get(cmis_name, None)
     if type == "zaak":
         return REVERSE_ZAAK_MAP.get(cmis_name, None)
+    if type == "gebruiksrechten":
+        return REVERSE_GEBRUIKSRECHTEN_MAP.get(cmis_name, None)
     return None
