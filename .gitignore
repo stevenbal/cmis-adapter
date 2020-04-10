@@ -113,3 +113,6 @@ tests/database.db
 XDG_CACHE_HOME/
 DEV.md
 pip-wheel-metadata/
+
+# PyCharm
+.idea/
