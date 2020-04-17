@@ -645,13 +645,22 @@ class CMISDRCClient(CMISRequest):
     def get_cmis_oio(self, filters):
 
         if filters.get('uuid') is not None:
-            results = [self.get_a_cmis_oio(filters.get('uuid'))]
-            return {
-                'has_next': False,
-                'total_count': 1,
-                'has_prev': False,
-                'results': results,
-            }
+            try:
+                results = [self.get_a_cmis_oio(filters.get('uuid'))]
+                return {
+                    'has_next': False,
+                    'total_count': 1,
+                    'has_prev': False,
+                    'results': results,
+                }
+            except DocumentDoesNotExistError:
+                results = []
+                return {
+                    'has_next': False,
+                    'total_count': 0,
+                    'has_prev': False,
+                    'results': results,
+                }
         elif len(filters) == 0:
             query = "SELECT * FROM drc:oio"
         else:
