@@ -1,4 +1,3 @@
-import base64
 import logging
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -10,8 +9,6 @@ from django.urls import reverse
 from django.contrib.sites.models import Site
 
 import iso8601
-
-from .mapper import reverse_mapper
 
 logger = logging.getLogger(__name__)
 

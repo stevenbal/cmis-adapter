@@ -26,14 +26,13 @@ class CMISRequest:
         """
         from drc_cmis.models import CMISConfig
 
-        if not hasattr(self, "_config"):
-            self._config = CMISConfig.get_solo()
-        return self._config
+        return CMISConfig.get_solo()
 
     @property
     def base_url(self):
         return self.config.client_url
 
+    @property
     def root_folder_url(self):
         return f"{self.base_url}/root"
 
