@@ -158,6 +158,15 @@ class Document(CMISBaseObject):
             versions[doc.versionLabel] = doc
         return versions
 
+    def delete_document(self, **kwargs):
+
+        data = {
+            "objectId": self.objectId,
+            "cmisaction": "delete"
+        }
+        json_response = self.post_request(self.root_folder_url, data=data)
+        return json_response
+
 
 class Folder(CMISBaseObject):
     def __getattr__(self, name):
