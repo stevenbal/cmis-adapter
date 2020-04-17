@@ -4,6 +4,7 @@ import string
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
+from typing import List
 
 from cmislib.exceptions import UpdateConflictException
 
@@ -65,6 +66,20 @@ class CMISDRCClient(CMISRequest):
                 folder = Folder({})
                 self._base_folder = folder.create_folder(name=settings.BASE_FOLDER_LOCATION)
         return self._base_folder
+
+    # generic querying
+    def query(self, return_type, lhs: List[str], rhs: List[str]):
+        table = return_type.table
+        where = (" WHERE " + " AND ".join(lhs)) if lhs else ""
+        query = CMISQuery("SELECT * FROM %s%s" % (table, where))
+
+        body = {
+            "cmisaction": "query",
+            "statement": query(*rhs),
+        }
+        response = self.post_request(self.base_url, body)
+        logger.debug(response)
+        return self.get_all_results(response, return_type)
 
     # ZRC Notification client calls.
     def get_or_create_zaaktype_folder(self, zaaktype):

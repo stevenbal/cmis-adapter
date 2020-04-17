@@ -63,6 +63,8 @@ class CMISBaseObject(CMISRequest):
 
 
 class Document(CMISBaseObject):
+    table = "drc:document"
+
     def __getattr__(self, name):
         convert_string = f"drc:{name}"
         if name in DOCUMENT_MAP:
