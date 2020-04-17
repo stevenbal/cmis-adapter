@@ -1,5 +1,7 @@
 class TempDocument:
-    def __init__(self, url=None, auteur=None, bestandsnaam=None, creatiedatum=None, vertrouwelijkheidaanduiding=None, taal=None):
+    def __init__(
+        self, url=None, auteur=None, bestandsnaam=None, creatiedatum=None, vertrouwelijkheidaanduiding=None, taal=None
+    ):
         self.url = url
         self.auteur = auteur
         self.bestandsnaam = bestandsnaam
@@ -12,6 +14,7 @@ class BaseDRCStorageBackend:
     """
     This is the base Backend storage for the DRC where it should all be based on.
     """
+
     def get_folder(self, zaak_url):
         raise NotImplementedError()
 

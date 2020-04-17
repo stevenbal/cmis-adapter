@@ -8,24 +8,25 @@ from cmislib.exceptions import UpdateConflictException
 from rest_framework.exceptions import ValidationError
 
 from .client import CMISDRCClient
-from .client.convert import (
-    make_enkelvoudiginformatieobject_dataclass,
-    make_objectinformatieobject_dataclass
-)
+from .client.convert import make_enkelvoudiginformatieobject_dataclass, make_objectinformatieobject_dataclass
 from .client.exceptions import (
-    CmisUpdateConflictException, DocumentDoesNotExistError,
-    DocumentExistsError, DocumentLockConflictException,
-    DocumentLockedException, DocumentNotLockedException, GetFirstException
+    CmisUpdateConflictException,
+    DocumentDoesNotExistError,
+    DocumentExistsError,
+    DocumentLockConflictException,
+    DocumentLockedException,
+    DocumentNotLockedException,
+    GetFirstException,
 )
-from .data.v1_0_x import (
-    EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
-)
+from .data.v1_0_x import EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
 
 logger = logging.getLogger(__name__)
 
 
 class BackendException(ValidationError):
-    def __init__(self, detail, create=False, update=False, retreive_single=False, delete=False, retreive_list=False, code=None):
+    def __init__(
+        self, detail, create=False, update=False, retreive_single=False, delete=False, retreive_list=False, code=None
+    ):
         self.create = create
         self.update = update
         self.retreive_single = retreive_single
@@ -95,23 +96,20 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             dataclass: A list of enkelvoudig informatieobject dataclass.
 
         """
-        print('get_documents')
+        print("get_documents")
         logger.debug(f"CMIS_BACKEND: get_documents start")
-        if filters and 'versie' in filters:
-            filters['versie'] = self._fix_version(filters['versie'])
+        if filters and "versie" in filters:
+            filters["versie"] = self._fix_version(filters["versie"])
 
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=page, results_per_page=page_size)
         print(cmis_documents)
         documents_data = []
-        for cmis_doc in cmis_documents['results']:
+        for cmis_doc in cmis_documents["results"]:
             dict_document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, self.eio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
         print(documents_data)
-        paginated_result = self.pagination_dataclass(
-            count=cmis_documents['total_count'],
-            results=documents_data,
-        )
+        paginated_result = self.pagination_dataclass(count=cmis_documents["total_count"], results=documents_data,)
 
         logger.debug(f"CMIS_BACKEND: get_documents successful")
         return paginated_result
@@ -133,20 +131,20 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         logger.debug(f"CMIS_BACKEND: get_document {uuid} start")
         version = self._fix_version(version)
 
-        if filters and 'versie' in filters:
-            version = self._fix_version(filters['versie'])
-            del filters['versie']
+        if filters and "versie" in filters:
+            version = self._fix_version(filters["versie"])
+            del filters["versie"]
 
         try:
             cmis_document = self.cmis_client.get_cmis_document(uuid, filters=filters)
         except DocumentDoesNotExistError as e:
-            raise self.exception_class({None: e.message}, create=True, code='document-does-not-exist')
+            raise self.exception_class({None: e.message}, create=True, code="document-does-not-exist")
         else:
             logger.debug(f"CMIS_BACKEND: get_document {uuid} successful")
             if version:
                 cmis_document = self._find_version(version, cmis_document)
                 if not cmis_document:
-                    raise self.exception_class(_("Version does not exists"), update=True, code='version-does-not-exist')
+                    raise self.exception_class(_("Version does not exists"), update=True, code="version-does-not-exist")
             doc = make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
             return doc
 
@@ -184,9 +182,9 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, update=True)
         except DocumentNotLockedException as e:
-            raise self.exception_class({None: e.message}, update=True, code='not-locked')
+            raise self.exception_class({None: e.message}, update=True, code="not-locked")
         except DocumentLockConflictException as e:
-            raise self.exception_class({None: e.message}, update=True, code='wrong-lock')
+            raise self.exception_class({None: e.message}, update=True, code="wrong-lock")
         else:
             logger.debug(f"CMIS_BACKEND: update_document {uuid} successful")
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass)
@@ -254,7 +252,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             new_doc = pwc.checkin("Updated via drc ui")
             logger.debug(f"CMIS_BACKEND: unlock_document {uuid} successful")
             return make_enkelvoudiginformatieobject_dataclass(new_doc, self.eio_dataclass, skip_deleted=True)
-        raise self.exception_class(detail=_("Lock did not match"), update=True, code='unlock-failed')
+        raise self.exception_class(detail=_("Lock did not match"), update=True, code="unlock-failed")
 
     ################################################################################################
     # Splits #######################################################################################
@@ -320,16 +318,16 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         if not filters:
             filters = {}
 
-        if 'informatieobject' in filters and filters.get('informatieobject'):
-            document = self.get_document_case_connection(filters.get('informatieobject').split('/')[-1])
+        if "informatieobject" in filters and filters.get("informatieobject"):
+            document = self.get_document_case_connection(filters.get("informatieobject").split("/")[-1])
             return [document]
 
-        if 'object' not in filters:
+        if "object" not in filters:
             filters["object"] = "NOT NULL"
         cmis_documents = self.cmis_client.get_cmis_documents(filters=filters, page=0)
         documents_data = []
 
-        for cmis_doc in cmis_documents.get('results'):
+        for cmis_doc in cmis_documents.get("results"):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
@@ -352,9 +350,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         """
         logger.debug(f"CMIS_BACKEND: get_document_case_connection {uuid} start")
         try:
-            cmis_document = self.cmis_client.get_cmis_document(
-                uuid, filters={"drc:connectie__zaakurl": "NOT NULL"}
-            )
+            cmis_document = self.cmis_client.get_cmis_document(uuid, filters={"drc:connectie__zaakurl": "NOT NULL"})
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
@@ -413,7 +409,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
 
     def _fix_version(self, version):
         if version:
-            return Decimal(version) / Decimal('100.0')
+            return Decimal(version) / Decimal("100.0")
         return None
 
     def _find_version(self, version, cmis_document):

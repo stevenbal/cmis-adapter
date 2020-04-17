@@ -42,16 +42,15 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         # Return None if document is deleted.
         return None
 
-    path = reverse('enkelvoudiginformatieobject-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
+    path = reverse("enkelvoudiginformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     url = f"{settings.HOST_URL}{path}"
 
     download_link = reverse(
-        'enkelvoudiginformatieobject-download',
-        kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId}
+        "enkelvoudiginformatieobject-download", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
     )
     download_url = f"{settings.HOST_URL}{download_link}"
 
-    #Versie needs to be an integer. So we need to convert it to an integer.
+    # Versie needs to be an integer. So we need to convert it to an integer.
     versie = cmis_doc.versie
     try:
         int_versie = int(Decimal(versie) * 100)
@@ -96,7 +95,7 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
 def make_enkelvoudiginformatieobject_dataclass_old(cmis_doc, dataclass, skip_deleted=False):
     properties = cmis_doc.getProperties()
 
-    if properties.get('drc:document__verwijderd') and not skip_deleted:
+    if properties.get("drc:document__verwijderd") and not skip_deleted:
         # Return None if document is deleted.
         return None
 
@@ -107,7 +106,7 @@ def make_enkelvoudiginformatieobject_dataclass_old(cmis_doc, dataclass, skip_del
     else:
         logger.error(properties)
         cmis_id = properties.get("cmis:versionSeriesId").split("/")[-1]
-        path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_id})
+        path = reverse("enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_id})
         url = f"{settings.HOST_URL}{path}"
         download_url = f"{settings.HOST_URL}{reverse('cmis:cmis_download', kwargs={'uuid': cmis_id})}"
 
@@ -132,10 +131,12 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass, skip_deleted=Fals
         # Return None if document is deleted.
         return None
 
-    path = reverse('objectinformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
+    path = reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     url = f"{settings.HOST_URL}{path}"
 
-    eio_path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
+    eio_path = reverse(
+        "enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
+    )
     eio_url = f"{settings.HOST_URL}{eio_path}"
 
     return dataclass(
@@ -161,8 +162,7 @@ def make_objectinformatieobject_dataclass_OLD(cmis_doc, dataclass):
 
     oio_detail = reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     eio_detail = reverse(
-        "enkelvoudiginformatieobjecten-detail",
-        kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
+        "enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
     )
     url = f"{settings.HOST_URL}{oio_detail}"
     eio_url = f"{settings.HOST_URL}{eio_detail}"

@@ -22,7 +22,7 @@ class EnkelvoudigInformatieObject(models.Model):
     formaat = models.CharField(max_length=255, blank=True)
     taal = models.CharField(max_length=255, blank=True)
     bestandsnaam = models.CharField(max_length=255, blank=True)
-    inhoud = models.FileField(upload_to='uploads/%Y/%m/')
+    inhoud = models.FileField(upload_to="uploads/%Y/%m/")
     link = models.URLField(max_length=200, blank=True)
     integriteit_algoritme = models.CharField(max_length=20, blank=True)
     integriteit_waarde = models.CharField(max_length=128, blank=True)

@@ -9,15 +9,16 @@ from cmislib.exceptions import UpdateConflictException
 
 # from django.conf import settings
 from drc_cmis import settings
-from drc_cmis.cmis.drc_document import (
-    Document, Folder, Gebruiksrechten, ObjectInformatieObject
-)
+from drc_cmis.cmis.drc_document import Document, Folder, Gebruiksrechten, ObjectInformatieObject
 from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
-    DocumentConflictException, DocumentDoesNotExistError, DocumentExistsError,
-    DocumentLockConflictException, DocumentNotLockedException,
-    GetFirstException
+    DocumentConflictException,
+    DocumentDoesNotExistError,
+    DocumentExistsError,
+    DocumentLockConflictException,
+    DocumentNotLockedException,
+    GetFirstException,
 )
 from .mapper import mapper
 from .query import CMISQuery
@@ -51,8 +52,8 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: _get_base_folder")
         if not self._base_folder:
             base = self.get_request(self.root_folder_url)
-            for folder_response in base.get('objects'):
-                folder = Folder(folder_response['object'])
+            for folder_response in base.get("objects"):
+                folder = Folder(folder_response["object"])
                 if folder.name == settings.BASE_FOLDER_LOCATION:
                     self._base_folder = folder
             if not self._base_folder:
@@ -126,9 +127,7 @@ class CMISDRCClient(CMISRequest):
         # Make sure that the content is set.
         content.seek(0)
         return day_folder.create_document(
-            name=properties.pop("cmis:name"),
-            properties=properties,
-            content_file=content,
+            name=properties.pop("cmis:name"), properties=properties, content_file=content,
         )
 
     def get_cmis_documents(self, filters=None, page=1, results_per_page=100):
@@ -146,7 +145,7 @@ class CMISDRCClient(CMISRequest):
         filter_string = self._build_filter(filters, strip_end=True)
         query = f"SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
         if filter_string:
-            query += f' AND {filter_string}'
+            query += f" AND {filter_string}"
 
         print(query)
         data = {
@@ -167,10 +166,10 @@ class CMISDRCClient(CMISRequest):
         print(json_response)
         results = self.get_all_resutls(json_response, Document)
         return {
-            'has_next': json_response['hasMoreItems'],
-            'total_count': json_response['numItems'],
-            'has_prev': skip_count > 0,
-            'results': results,
+            "has_next": json_response["hasMoreItems"],
+            "total_count": json_response["numItems"],
+            "has_prev": skip_count > 0,
+            "results": results,
         }
 
     def get_cmis_document(self, identification, via_identification=None, filters=None):
@@ -211,11 +210,7 @@ class CMISDRCClient(CMISRequest):
         current_properties = cmis_doc.properties
         new_properties = self._build_properties(cmis_doc.identificatie, data)
 
-        diff_properties = {
-            key: value
-            for key, value in new_properties.items()
-            if current_properties.get(key) != value
-        }
+        diff_properties = {key: value for key, value in new_properties.items() if current_properties.get(key) != value}
 
         try:
             pwc.update_properties(diff_properties)
@@ -333,32 +328,34 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: copy_document")
         properties = {}
 
-        properties.update(**{
-            'cmis:objectTypeId': cmis_doc.objectTypeId,
-            'drc:document__auteur': cmis_doc.auteur,
-            'drc:document__beschrijving': cmis_doc.beschrijving,
-            'drc:document__bestandsnaam': cmis_doc.bestandsnaam,
-            'drc:document__bronorganisatie': cmis_doc.bronorganisatie,
-            'drc:document__creatiedatum': cmis_doc.creatiedatum,
-            'drc:document__formaat': cmis_doc.formaat,
-            'drc:document__identificatie': cmis_doc.identificatie,
-            'drc:document__indicatiegebruiksrecht': cmis_doc.indicatiegebruiksrecht,
-            'drc:document__informatieobjecttype': cmis_doc.informatieobjecttype,
-            'drc:document__integriteitalgoritme': cmis_doc.integriteitalgoritme,
-            'drc:document__integriteitdatum': cmis_doc.integriteitdatum,
-            'drc:document__integriteitwaarde': cmis_doc.integriteitwaarde,
-            'drc:document__link': cmis_doc.link,
-            'drc:document__ondertekeningdatum': cmis_doc.ondertekeningdatum,
-            'drc:document__ondertekeningsoort': cmis_doc.ondertekeningsoort,
-            'drc:document__ontvangstdatum': cmis_doc.ontvangstdatum,
-            'drc:document__status': cmis_doc.status,
-            'drc:document__taal': cmis_doc.taal,
-            'drc:document__titel': f"{cmis_doc.titel} - copy",
-            'drc:document__vertrouwelijkaanduiding': cmis_doc.vertrouwelijkaanduiding,
-            'drc:document__verwijderd': cmis_doc.verwijderd,
-            'drc:document__verzenddatum': cmis_doc.verzenddatum,
-            'drc:kopie_van': cmis_doc.id,  # Keep tack of where this is copied from.
-        })
+        properties.update(
+            **{
+                "cmis:objectTypeId": cmis_doc.objectTypeId,
+                "drc:document__auteur": cmis_doc.auteur,
+                "drc:document__beschrijving": cmis_doc.beschrijving,
+                "drc:document__bestandsnaam": cmis_doc.bestandsnaam,
+                "drc:document__bronorganisatie": cmis_doc.bronorganisatie,
+                "drc:document__creatiedatum": cmis_doc.creatiedatum,
+                "drc:document__formaat": cmis_doc.formaat,
+                "drc:document__identificatie": cmis_doc.identificatie,
+                "drc:document__indicatiegebruiksrecht": cmis_doc.indicatiegebruiksrecht,
+                "drc:document__informatieobjecttype": cmis_doc.informatieobjecttype,
+                "drc:document__integriteitalgoritme": cmis_doc.integriteitalgoritme,
+                "drc:document__integriteitdatum": cmis_doc.integriteitdatum,
+                "drc:document__integriteitwaarde": cmis_doc.integriteitwaarde,
+                "drc:document__link": cmis_doc.link,
+                "drc:document__ondertekeningdatum": cmis_doc.ondertekeningdatum,
+                "drc:document__ondertekeningsoort": cmis_doc.ondertekeningsoort,
+                "drc:document__ontvangstdatum": cmis_doc.ontvangstdatum,
+                "drc:document__status": cmis_doc.status,
+                "drc:document__taal": cmis_doc.taal,
+                "drc:document__titel": f"{cmis_doc.titel} - copy",
+                "drc:document__vertrouwelijkaanduiding": cmis_doc.vertrouwelijkaanduiding,
+                "drc:document__verwijderd": cmis_doc.verwijderd,
+                "drc:document__verzenddatum": cmis_doc.verzenddatum,
+                "drc:kopie_van": cmis_doc.id,  # Keep tack of where this is copied from.
+            }
+        )
 
         new_properties = self._build_case_properties(data)
         properties.update(**new_properties)
@@ -371,20 +368,16 @@ class CMISDRCClient(CMISRequest):
 
         # Update the cmis:name to make it more unique
         file_name = f"{cmis_doc.titel}-{self.get_random_string()}"
-        properties['cmis:name'] = file_name
+        properties["cmis:name"] = file_name
 
         stream = cmis_doc.get_content_stream()
-        new_doc = folder.create_document(
-            name=file_name,
-            properties=properties,
-            content_file=stream,
-        )
+        new_doc = folder.create_document(name=file_name, properties=properties, content_file=stream,)
 
         return new_doc
 
     def get_random_string(self, number=6):
         logger.debug("CMIS_CLIENT: get_random_string")
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=number))
+        return "".join(random.choices(string.ascii_uppercase + string.digits, k=number))
 
     def get_folder_from_case_url(self, zaak_url):
         logger.debug("CMIS_CLIENT: get_folder_from_case_url")
@@ -462,11 +455,11 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: _build_properties")
         base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
         base_properties["cmis:objectTypeId"] = "D:drc:document"
-        base_properties['cmis:name'] = f"{data.get('titel')}-{self.get_random_string()}"
+        base_properties["cmis:name"] = f"{data.get('titel')}-{self.get_random_string()}"
         base_properties[mapper("identificatie")] = identification
 
         if "cmis:versionLabel" in base_properties:
-            del base_properties['cmis:versionLabel']
+            del base_properties["cmis:versionLabel"]
         return base_properties
 
     def _build_case_properties(self, data, allow_empty=True):
@@ -505,12 +498,13 @@ class CMISDRCClient(CMISRequest):
 
         gebruiksrechten_folder = self._get_or_create_folder("Gebruiksrechten", self._get_base_folder)
 
-        properties = {mapper(key, type="gebruiksrechten"): value for key, value in data.items() if mapper(key, type="gebruiksrechten")}
+        properties = {
+            mapper(key, type="gebruiksrechten"): value
+            for key, value in data.items()
+            if mapper(key, type="gebruiksrechten")
+        }
 
-        return gebruiksrechten_folder.create_gebruiksrechten(
-            name=self.get_random_string(),
-            properties=properties
-        )
+        return gebruiksrechten_folder.create_gebruiksrechten(name=self.get_random_string(), properties=properties)
 
     def get_all_cmis_gebruiksrechten(self):
 
@@ -524,10 +518,10 @@ class CMISDRCClient(CMISRequest):
         json_response = self.post_request(self.base_url, data)
         results = self.get_all_resutls(json_response, Gebruiksrechten)
         return {
-            'has_next': json_response['hasMoreItems'],
-            'total_count': json_response['numItems'],
-            'has_prev': False,
-            'results': results,
+            "has_next": json_response["hasMoreItems"],
+            "total_count": json_response["numItems"],
+            "has_prev": False,
+            "results": results,
         }
 
     def get_a_cmis_gebruiksrechten(self, uuid):
@@ -549,20 +543,20 @@ class CMISDRCClient(CMISRequest):
 
     def get_cmis_gebruiksrechten(self, filters):
 
-        if filters.get('uuid') is not None:
-            results = [self.get_a_cmis_gebruiksrechten(filters.get('uuid'))]
+        if filters.get("uuid") is not None:
+            results = [self.get_a_cmis_gebruiksrechten(filters.get("uuid"))]
             return {
-                'has_next': False,
-                'total_count': 1,
-                'has_prev': False,
-                'results': results,
+                "has_next": False,
+                "total_count": 1,
+                "has_prev": False,
+                "results": results,
             }
         else:
             query = "SELECT * FROM drc:gebruiksrechten WHERE "
             sql_filters = self._build_filter(filters, strip_end=True)
 
             if sql_filters:
-                query += f'{sql_filters}'
+                query += f"{sql_filters}"
 
             data = {
                 "cmisaction": "query",
@@ -572,10 +566,10 @@ class CMISDRCClient(CMISRequest):
             json_response = self.post_request(self.base_url, data)
             results = self.get_all_resutls(json_response, Gebruiksrechten)
             return {
-                'has_next': json_response['hasMoreItems'],
-                'total_count': json_response['numItems'],
-                'has_prev': False,
-                'results': results,
+                "has_next": json_response["hasMoreItems"],
+                "total_count": json_response["numItems"],
+                "has_prev": False,
+                "results": results,
             }
 
     def delete_cmis_geruiksrechten(self, uuid):
@@ -596,12 +590,13 @@ class CMISDRCClient(CMISRequest):
 
         oio_folder = self._get_or_create_folder("ObjectInformatieObject", self._get_base_folder)
 
-        properties = {mapper(key, type="objectinformatieobject"): value for key, value in data.items() if mapper(key, type="objectinformatieobject")}
+        properties = {
+            mapper(key, type="objectinformatieobject"): value
+            for key, value in data.items()
+            if mapper(key, type="objectinformatieobject")
+        }
 
-        return oio_folder.create_oio(
-            name=self.get_random_string(),
-            properties=properties
-        )
+        return oio_folder.create_oio(name=self.get_random_string(), properties=properties)
 
     def get_all_cmis_oio(self):
 
@@ -615,10 +610,10 @@ class CMISDRCClient(CMISRequest):
         json_response = self.post_request(self.base_url, data)
         results = self.get_all_resutls(json_response, ObjectInformatieObject)
         return {
-            'has_next': json_response['hasMoreItems'],
-            'total_count': json_response['numItems'],
-            'has_prev': False,
-            'results': results,
+            "has_next": json_response["hasMoreItems"],
+            "total_count": json_response["numItems"],
+            "has_prev": False,
+            "results": results,
         }
 
     def get_a_cmis_oio(self, uuid):
@@ -640,13 +635,13 @@ class CMISDRCClient(CMISRequest):
 
     def get_cmis_oio(self, filters):
 
-        if filters.get('uuid') is not None:
-            results = [self.get_a_cmis_oio(filters.get('uuid'))]
+        if filters.get("uuid") is not None:
+            results = [self.get_a_cmis_oio(filters.get("uuid"))]
             return {
-                'has_next': False,
-                'total_count': 1,
-                'has_prev': False,
-                'results': results,
+                "has_next": False,
+                "total_count": 1,
+                "has_prev": False,
+                "results": results,
             }
         elif len(filters) == 0:
             query = "SELECT * FROM drc:oio"
@@ -655,7 +650,7 @@ class CMISDRCClient(CMISRequest):
             sql_filters = self._build_filter(filters, strip_end=True)
 
             if sql_filters:
-                query += f'{sql_filters}'
+                query += f"{sql_filters}"
 
         data = {
             "cmisaction": "query",
@@ -665,10 +660,10 @@ class CMISDRCClient(CMISRequest):
         json_response = self.post_request(self.base_url, data)
         results = self.get_all_resutls(json_response, ObjectInformatieObject)
         return {
-            'has_next': json_response['hasMoreItems'],
-            'total_count': json_response['numItems'],
-            'has_prev': False,
-            'results': results,
+            "has_next": json_response["hasMoreItems"],
+            "total_count": json_response["numItems"],
+            "has_prev": False,
+            "results": results,
         }
 
     def delete_cmis_oio(self, uuid):

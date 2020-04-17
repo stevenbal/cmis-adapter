@@ -68,6 +68,7 @@ REVERSE_CONNECTION_MAP = {value: key for key, value in CONNECTION_MAP.items()}
 REVERSE_GEBRUIKSRECHTEN_MAP = {value: key for key, value in GEBRUIKSRECHTEN_MAP.items()}
 REVERSE_OBJECTINFORMATIEOBJECT_MAP = {value: key for key, value in OBJECTINFORMATIEOBJECT_MAP.items()}
 
+
 def mapper(drc_name, type="document"):
     if type == "document":
         return DOCUMENT_MAP.get(drc_name, None)

@@ -25,9 +25,9 @@ class CMISOioTests(TestCase):
 
         cmis_oio = self.client.create_cmis_oio(data)
 
-        self.assertEqual(data['informatieobject'], cmis_oio.informatieobject)
-        self.assertEqual(data['object_type'], cmis_oio.object_type)
-        self.assertEqual(data['zaak_url'], cmis_oio.zaak_url)
+        self.assertEqual(data["informatieobject"], cmis_oio.informatieobject)
+        self.assertEqual(data["object_type"], cmis_oio.object_type)
+        self.assertEqual(data["zaak_url"], cmis_oio.zaak_url)
 
     def test_get_all(self):
         data = {
@@ -43,7 +43,7 @@ class CMISOioTests(TestCase):
 
         retrieved_oio = self.client.get_all_cmis_oio()
 
-        self.assertEqual(retrieved_oio['total_count'], 3)
+        self.assertEqual(retrieved_oio["total_count"], 3)
 
     def test_get_one(self):
         data_1 = {
@@ -65,9 +65,9 @@ class CMISOioTests(TestCase):
 
         retrieved_oio = self.client.get_a_cmis_oio(uuid)
 
-        self.assertEqual(data_1['informatieobject'], retrieved_oio.informatieobject)
-        self.assertEqual(data_1['object_type'], retrieved_oio.object_type)
-        self.assertEqual(data_1['zaak_url'], retrieved_oio.zaak_url)
+        self.assertEqual(data_1["informatieobject"], retrieved_oio.informatieobject)
+        self.assertEqual(data_1["object_type"], retrieved_oio.object_type)
+        self.assertEqual(data_1["zaak_url"], retrieved_oio.zaak_url)
 
     def test_delete(self):
         data = {

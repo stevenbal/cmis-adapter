@@ -26,17 +26,17 @@ class CMISDeleteDocumentTests(DMSMixin, TestCase):
 
     def test_delete_document_no_document(self):
         with self.assertRaises(BackendException):
-            self.backend.delete_document('identification')
+            self.backend.delete_document("identification")
 
     def test_delete_documents(self):
-        eio = EnkelvoudigInformatieObjectFactory(identificatie='test')
+        eio = EnkelvoudigInformatieObjectFactory(identificatie="test")
         eio_dict = eio.__dict__
 
-        cmis_doc = self.cmis_client.create_document(eio.identificatie, eio_dict.copy(), BytesIO(b'some content'))
+        cmis_doc = self.cmis_client.create_document(eio.identificatie, eio_dict.copy(), BytesIO(b"some content"))
         document = make_enkelvoudiginformatieobject_dataclass(cmis_doc, EnkelvoudigInformatieObject)
         self.assertIsNotNone(cmis_doc)
         self.assertFalse(cmis_doc.verwijderd)
 
-        self.backend.delete_document(document.url.split('/')[-1])
+        self.backend.delete_document(document.url.split("/")[-1])
         cmis_doc.reload()
         self.assertTrue(cmis_doc.verwijderd)
