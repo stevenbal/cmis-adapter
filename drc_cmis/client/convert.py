@@ -42,11 +42,11 @@ def make_enkelvoudiginformatieobject_dataclass(cmis_doc, dataclass, skip_deleted
         # Return None if document is deleted.
         return None
 
-    path = reverse('enkelvoudiginformatieobjecten-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
+    path = reverse('enkelvoudiginformatieobject-detail', kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId})
     url = f"{settings.HOST_URL}{path}"
 
     download_link = reverse(
-        'enkelvoudiginformatieobjecten-download',
+        'enkelvoudiginformatieobject-download',
         kwargs={'version': '1', 'uuid': cmis_doc.versionSeriesId}
     )
     download_url = f"{settings.HOST_URL}{download_link}"
