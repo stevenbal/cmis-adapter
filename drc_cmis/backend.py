@@ -1,7 +1,9 @@
 import logging
 from decimal import Decimal
 
-from django.conf import settings
+# from django.conf import settings
+from tests import settings
+
 from django.utils import timezone
 from django.utils.module_loading import import_string
 from django.utils.translation import ugettext_lazy as _
