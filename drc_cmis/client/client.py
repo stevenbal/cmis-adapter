@@ -207,7 +207,7 @@ class CMISDRCClient(CMISRequest):
 
         # build up the properties
         current_properties = cmis_doc.properties
-        new_properties = self._build_properties(cmis_doc.identification, data)
+        new_properties = self._build_properties(cmis_doc.identificatie, data)
 
         diff_properties = {
             key: value
