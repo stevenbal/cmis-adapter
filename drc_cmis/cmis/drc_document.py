@@ -12,8 +12,8 @@ from drc_cmis.client.mapper import (
     REVERSE_DOCUMENT_MAP,
     REVERSE_GEBRUIKSRECHTEN_MAP,
     REVERSE_OBJECTINFORMATIEOBJECT_MAP,
-
 )
+
 from .utils import CMISRequest
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class CMISBaseObject(CMISRequest):
     def __init__(self, data):
         super().__init__()
         self.data = data
-        self.properties = dict(data.get('properties', {}))
+        self.properties = dict(data.get("properties", {}))
 
     def reload(self):
         logger.debug("CMIS: DRC_DOCUMENT: reload")
@@ -34,7 +34,7 @@ class CMISBaseObject(CMISRequest):
 
         json_response = self.get_request(self.root_folder_url, params=params)
         self.data = json_response
-        self.properties = json_response.get('properties')
+        self.properties = json_response.get("properties")
 
     def get_object_parents(self):
         logger.debug("CMIS: DRC_DOCUMENT: get_object_parents")
@@ -51,14 +51,14 @@ class CMISBaseObject(CMISRequest):
             "objectId": self.objectId,
             "cmisaction": "move",
             "sourceFolderId": sourceFolder.objectId,
-            "targetFolderId": targetFolder.objectId
+            "targetFolderId": targetFolder.objectId,
         }
         logger.debug(f"From: {sourceFolder.name} To: {targetFolder.name}")
         logger.debug(f"From: {sourceFolder.objectTypeId} To: {targetFolder.objectTypeId}")
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, data=data)
         self.data = json_response
-        self.properties = json_response.get('properties')
+        self.properties = json_response.get("properties")
         return self
 
 
@@ -71,7 +71,7 @@ class Document(CMISBaseObject):
             convert_string = CONNECTION_MAP.get(name)
         elif convert_string not in REVERSE_CONNECTION_MAP and convert_string not in REVERSE_DOCUMENT_MAP:
             convert_string = f"cmis:{name}"
-        return self.properties.get(convert_string, {}).get('value')
+        return self.properties.get(convert_string, {}).get("value")
 
     def checkout(self):
         logger.debug("CMIS: DRC_DOCUMENT: checkout")
@@ -88,11 +88,11 @@ class Document(CMISBaseObject):
         prop_count = 0
         for prop_key, prop_value in properties.items():
             # Skip property because update is not allowed
-            if prop_key == 'cmis:objectTypeId':
+            if prop_key == "cmis:objectTypeId":
                 continue
 
             if isinstance(prop_value, date):
-                prop_value = prop_value.strftime('%Y-%m-%dT%H:%I:%S.000Z')
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%I:%S.000Z")
 
             data["propertyId[%s]" % prop_count] = prop_key
             data["propertyValue[%s]" % prop_count] = prop_value
@@ -101,7 +101,7 @@ class Document(CMISBaseObject):
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, data=data)
         self.data = json_response
-        self.properties = json_response.get('properties')
+        self.properties = json_response.get("properties")
 
         return self
 
@@ -132,11 +132,11 @@ class Document(CMISBaseObject):
 
         mimetype = None
         # need to determine the mime type
-        if not mimetype and hasattr(content_file, 'name'):
+        if not mimetype and hasattr(content_file, "name"):
             mimetype, _encoding = mimetypes.guess_type(content_file.name)
 
         if not mimetype:
-            mimetype = 'application/binary'
+            mimetype = "application/binary"
 
         files = {self.name: (self.name, content_file, mimetype)}
 
@@ -167,16 +167,12 @@ class Document(CMISBaseObject):
 
     def delete_document(self, **kwargs):
 
-        data = {
-            "objectId": self.objectId,
-            "cmisaction": "delete"
-        }
+        data = {"objectId": self.objectId, "cmisaction": "delete"}
         json_response = self.post_request(self.root_folder_url, data=data)
         return json_response
 
 
 class Gebruiksrechten(CMISBaseObject):
-
     def __getattr__(self, name):
         """
         :param name: Name of the attribute to retrieve
@@ -190,19 +186,15 @@ class Gebruiksrechten(CMISBaseObject):
         else:
             # General alresco properties
             convert_string = f"cmis:{name}"
-        return self.properties.get(convert_string, {}).get('value')
+        return self.properties.get(convert_string, {}).get("value")
 
     def delete_gebruiksrechten(self):
-        data = {
-            "objectId": self.objectId,
-            "cmisaction": "delete"
-        }
+        data = {"objectId": self.objectId, "cmisaction": "delete"}
         json_response = self.post_request(self.root_folder_url, data=data)
         return json_response
 
 
 class ObjectInformatieObject(CMISBaseObject):
-
     def __getattr__(self, name):
         """
         :param name: Name of the attribute to retrieve
@@ -216,20 +208,17 @@ class ObjectInformatieObject(CMISBaseObject):
         else:
             # General alresco properties
             convert_string = f"cmis:{name}"
-        return self.properties.get(convert_string, {}).get('value')
+        return self.properties.get(convert_string, {}).get("value")
 
     def delete_oio(self):
-        data = {
-            "objectId": self.objectId,
-            "cmisaction": "delete"
-        }
+        data = {"objectId": self.objectId, "cmisaction": "delete"}
         json_response = self.post_request(self.root_folder_url, data=data)
         return json_response
 
 
 class Folder(CMISBaseObject):
     def __getattr__(self, name):
-        return self.properties.get(f"cmis:{name}", {}).get('value')
+        return self.properties.get(f"cmis:{name}", {}).get("value")
 
     def get_children(self):
         logger.debug("CMIS: DRC_DOCUMENT: get_children")
@@ -238,7 +227,7 @@ class Folder(CMISBaseObject):
             "statement": f"SELECT * FROM cmis:folder WHERE IN_FOLDER('{self.objectId}')",
         }
         json_response = self.post_request(self.base_url, data=data)
-        return self.get_all_resutls(json_response, Folder)
+        return self.get_all_results(json_response, Folder)
 
     def create_folder(self, name, properties={}, **kwargs):
         logger.debug("CMIS: DRC_DOCUMENT: create_folder")
@@ -246,12 +235,12 @@ class Folder(CMISBaseObject):
             "objectId": self.objectId,
             "cmisaction": "createFolder",
             "propertyId[0]": "cmis:name",
-            "propertyValue[0]": name
+            "propertyValue[0]": name,
         }
 
         data["propertyId[1]"] = "cmis:objectTypeId"
-        if 'cmis:objectTypeId' in properties.keys():
-            data["propertyValue[1]"] = properties['cmis:objectTypeId']
+        if "cmis:objectTypeId" in properties.keys():
+            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
         else:
             data["propertyValue[1]"] = "cmis:folder"
 
@@ -270,19 +259,19 @@ class Folder(CMISBaseObject):
             "objectId": self.objectId,
             "cmisaction": "createDocument",
             "propertyId[0]": "cmis:name",
-            "propertyValue[0]": name
+            "propertyValue[0]": name,
         }
 
         data["propertyId[1]"] = "cmis:objectTypeId"
-        if 'cmis:objectTypeId' in properties.keys():
-            data["propertyValue[1]"] = properties['cmis:objectTypeId']
+        if "cmis:objectTypeId" in properties.keys():
+            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
         else:
             data["propertyValue[1]"] = "drc:document"
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
             if isinstance(prop_value, date):
-                prop_value = prop_value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
             data[f"propertyId[{prop_count}]"] = prop_key
             data[f"propertyValue[{prop_count}]"] = prop_value
@@ -297,19 +286,19 @@ class Folder(CMISBaseObject):
             "objectId": self.objectId,
             "cmisaction": "createDocument",
             "propertyId[0]": "cmis:name",
-            "propertyValue[0]": name
+            "propertyValue[0]": name,
         }
 
         data["propertyId[1]"] = "cmis:objectTypeId"
-        if 'cmis:objectTypeId' in properties.keys():
-            data["propertyValue[1]"] = properties['cmis:objectTypeId']
+        if "cmis:objectTypeId" in properties.keys():
+            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
         else:
             data["propertyValue[1]"] = "D:drc:gebruiksrechten"
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
             if isinstance(prop_value, date):
-                prop_value = prop_value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
             data[f"propertyId[{prop_count}]"] = prop_key
             data[f"propertyValue[{prop_count}]"] = prop_value
@@ -323,19 +312,19 @@ class Folder(CMISBaseObject):
             "objectId": self.objectId,
             "cmisaction": "createDocument",
             "propertyId[0]": "cmis:name",
-            "propertyValue[0]": name
+            "propertyValue[0]": name,
         }
 
         data["propertyId[1]"] = "cmis:objectTypeId"
-        if 'cmis:objectTypeId' in properties.keys():
-            data["propertyValue[1]"] = properties['cmis:objectTypeId']
+        if "cmis:objectTypeId" in properties.keys():
+            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
         else:
             data["propertyValue[1]"] = "D:drc:oio"
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
             if isinstance(prop_value, date):
-                prop_value = prop_value.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
             data[f"propertyId[{prop_count}]"] = prop_key
             data[f"propertyValue[{prop_count}]"] = prop_value
@@ -345,8 +334,5 @@ class Folder(CMISBaseObject):
         return ObjectInformatieObject(json_response)
 
     def delete_tree(self, **kwargs):
-        data = {
-            "objectId": self.objectId,
-            "cmisaction": "deleteTree"
-        }
+        data = {"objectId": self.objectId, "cmisaction": "deleteTree"}
         self.post_request(self.root_folder_url, data=data)

@@ -49,64 +49,77 @@ class CmisNoValidResponse(CmisBaseException):
 
 class CmisInvalidArgumentException(CmisBaseException):
     """ InvalidArgumentException """
+
     pass
 
 
 class CmisObjectNotFoundException(CmisBaseException):
     """ ObjectNotFoundException """
+
     pass
 
 
 class CmisNotSupportedException(CmisBaseException):
     """ NotSupportedException """
+
     pass
 
 
 class CmisPermissionDeniedException(CmisBaseException):
     """ PermissionDeniedException """
+
     pass
 
 
 class CmisRuntimeException(CmisBaseException):
     """ RuntimeException """
+
     pass
 
 
 class CmisConstraintException(CmisBaseException):
     """ ConstraintException """
+
     pass
 
 
 class CmisContentAlreadyExistsException(CmisBaseException):
     """ContentAlreadyExistsException """
+
     pass
 
 
 class CmisFilterNotValidException(CmisBaseException):
     """FilterNotValidException """
+
     pass
 
 
 class CmisNameConstraintViolationException(CmisBaseException):
     """NameConstraintViolationException """
+
     pass
 
 
 class CmisStorageException(CmisBaseException):
     """StorageException """
+
     pass
 
 
 class CmisStreamNotSupportedException(CmisBaseException):
     """ StreamNotSupportedException """
+
     pass
 
 
 class CmisUpdateConflictException(CmisBaseException):
     """ UpdateConflictException """
+
     pass
 
 
 class CmisVersioningException(CmisBaseException):
     """ VersioningException """
+
     pass

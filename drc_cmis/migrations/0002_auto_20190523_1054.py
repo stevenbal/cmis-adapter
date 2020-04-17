@@ -15,5 +15,7 @@ class Migration(migrations.Migration):
                 ("location", models.CharField(default="", max_length=200)),
             ],
         ),
-        migrations.AddField(model_name="cmisconfig", name="locations", field=models.ManyToManyField(to="drc_cmis.CMISFolderLocation")),
+        migrations.AddField(
+            model_name="cmisconfig", name="locations", field=models.ManyToManyField(to="drc_cmis.CMISFolderLocation")
+        ),
     ]
