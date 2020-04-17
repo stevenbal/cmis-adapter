@@ -10,7 +10,12 @@ from drc_cmis import settings
 
 from cmislib.exceptions import UpdateConflictException
 
-from drc_cmis.cmis.drc_document import Document, Gebruiksrechten, Folder
+from drc_cmis.cmis.drc_document import (
+    Document,
+    Gebruiksrechten,
+    ObjectInformatieObject,
+    Folder,
+)
 from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
@@ -433,11 +438,22 @@ class CMISDRCClient(CMISRequest):
                     key = mapper(key, type="connection")
                 elif mapper(key, type="gebruiksrechten"):
                     key = mapper(key, type="gebruiksrechten")
+                elif mapper(key, type="objectinformatieobject"):
+                    key = mapper(key, type="objectinformatieobject")
 
                 if value and value in ["NULL", "NOT NULL"]:
                     filter_string += f"{key} IS {value} AND "
                 elif isinstance(value, Decimal):
                     filter_string += f"{key} = {value} AND "
+                elif isinstance(value, list):
+                    if len(value) == 0:
+                        continue
+                    filter_string += "( "
+                    for item in value:
+                        sub_filter_string = self._build_filter({key: item}, strip_end=True)
+                        filter_string += f"{sub_filter_string} OR "
+                    filter_string = filter_string[:-3]
+                    filter_string += " ) AND "
                 elif value:
                     filter_string += f"{key} = '{value}' AND "
 
@@ -576,5 +592,94 @@ class CMISDRCClient(CMISRequest):
             # Node locked!
             raise DocumentConflictException from exc
 
+    def create_cmis_oio(self, data):
+        """
+        Creates a Gebruiksrechten object.
+        :return:
+        """
 
+        oio_folder = self._get_or_create_folder("ObjectInformatieObject", self._get_base_folder)
 
+        properties = {mapper(key, type="objectinformatieobject"): value for key, value in data.items() if mapper(key, type="objectinformatieobject")}
+
+        return oio_folder.create_oio(
+            name=self.get_random_string(),
+            properties=properties
+        )
+
+    def get_all_cmis_oio(self):
+
+        query = f"SELECT * FROM drc:oio"
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self.post_request(self.base_url, data)
+        results = self.get_all_resutls(json_response, ObjectInformatieObject)
+        return {
+            'has_next': json_response['hasMoreItems'],
+            'total_count': json_response['numItems'],
+            'has_prev': False,
+            'results': results,
+        }
+
+    def get_a_cmis_oio(self, uuid):
+
+        query = f"SELECT * FROM drc:oio WHERE cmis:objectId = 'workspace://SpacesStore/{uuid};1.0'"
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self.post_request(self.base_url, data)
+
+        try:
+            return self.get_first_result(json_response, ObjectInformatieObject)
+        except GetFirstException:
+            error_string = f"ObjectInformatieObject met uuid {uuid} bestaat niet in het CMIS connection"
+            raise DocumentDoesNotExistError(error_string)
+
+    def get_cmis_oio(self, filters):
+
+        if filters.get('uuid') is not None:
+            results = [self.get_a_cmis_oio(filters.get('uuid'))]
+            return {
+                'has_next': False,
+                'total_count': 1,
+                'has_prev': False,
+                'results': results,
+            }
+        elif len(filters) == 0:
+            query = "SELECT * FROM drc:oio"
+        else:
+            query = "SELECT * FROM drc:oio WHERE "
+            sql_filters = self._build_filter(filters, strip_end=True)
+
+            if sql_filters:
+                query += f'{sql_filters}'
+
+        data = {
+            "cmisaction": "query",
+            "statement": query,
+        }
+
+        json_response = self.post_request(self.base_url, data)
+        results = self.get_all_resutls(json_response, ObjectInformatieObject)
+        return {
+            'has_next': json_response['hasMoreItems'],
+            'total_count': json_response['numItems'],
+            'has_prev': False,
+            'results': results,
+        }
+
+    def delete_cmis_oio(self, uuid):
+        oio = self.get_a_cmis_oio(uuid)
+
+        try:
+            oio.delete_oio()
+        except UpdateConflictException as exc:
+            # Node locked!
+            raise DocumentConflictException from exc

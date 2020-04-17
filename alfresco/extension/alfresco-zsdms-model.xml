@@ -362,6 +362,48 @@
             <overrides/>
             <mandatory-aspects/>
         </type>
+        <type name="drc:oio">
+            <title>DRC Object Informatie Object</title>
+            <description>ObjectInformatieObject bevat de relaties tussen de documenten, zaaken en besluit objects</description>
+            <parent>cm:content</parent>
+            <properties>
+                <property name="drc:oio__enkelvoudiginformatieobject">
+                    <title>DRC - URL-referentie naar het INFORMATIEOBJECT</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:oio__related_object_type">
+                    <title>DRC - Het type van het gerelateerde OBJECT.</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="false">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:oio__zaak_url">
+                    <title>DRC - URL-referentie naar de extern zaak</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>
+                <property name="drc:oio__besluit_url">
+                    <title>DRC - URL-referentie naar de extern besluit</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <index enabled="true">
+                        <tokenised>TRUE</tokenised>
+                    </index>
+                </property>                
+            </properties>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
+        </type>
         <type name="drc:zaaktypefolder">
             <title>DRC Zaaktypefolder</title>
             <description>Dit is een Zaaktype folder. Hierin zullen alle zaakfolders in terecht komen.</description>

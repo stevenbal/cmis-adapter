@@ -45,6 +45,13 @@ GEBRUIKSRECHTEN_MAP = {
     "einddatum": "drc:gebruiksrechten__einddatum",
 }
 
+OBJECTINFORMATIEOBJECT_MAP = {
+    "enkelvoudiginformatieobject": "drc:oio__enkelvoudiginformatieobject",
+    "related_object_type": "drc:oio__related_object_type",
+    "zaak_url": "drc:oio__zaak_url",
+    "besluit_url": "drc:oio__besluit_url",
+}
+
 CONNECTION_MAP = {
     "object": "drc:connectie__zaakurl",
     "object_type": "drc:connectie__objecttype",
@@ -59,7 +66,7 @@ REVERSE_ZAAK_MAP = {value: key for key, value in ZAAK_MAP.items()}
 REVERSE_DOCUMENT_MAP = {value: key for key, value in DOCUMENT_MAP.items()}
 REVERSE_CONNECTION_MAP = {value: key for key, value in CONNECTION_MAP.items()}
 REVERSE_GEBRUIKSRECHTEN_MAP = {value: key for key, value in GEBRUIKSRECHTEN_MAP.items()}
-
+REVERSE_OBJECTINFORMATIEOBJECT_MAP = {value: key for key, value in OBJECTINFORMATIEOBJECT_MAP.items()}
 
 def mapper(drc_name, type="document"):
     if type == "document":
@@ -72,6 +79,8 @@ def mapper(drc_name, type="document"):
         return ZAAK_MAP.get(drc_name, None)
     if type == "gebruiksrechten":
         return GEBRUIKSRECHTEN_MAP.get(drc_name, None)
+    if type == "objectinformatieobject":
+        return OBJECTINFORMATIEOBJECT_MAP.get(drc_name, None)
     return None
 
 
@@ -86,4 +95,6 @@ def reverse_mapper(cmis_name, type="document"):
         return REVERSE_ZAAK_MAP.get(cmis_name, None)
     if type == "gebruiksrechten":
         return REVERSE_GEBRUIKSRECHTEN_MAP.get(cmis_name, None)
+    if type == "objectinformatieobject":
+        return REVERSE_OBJECTINFORMATIEOBJECT_MAP.get(cmis_name, None)
     return None
