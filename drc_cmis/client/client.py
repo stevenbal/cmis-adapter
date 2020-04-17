@@ -5,16 +5,12 @@ from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
 
-# from django.conf import settings
-from drc_cmis import settings
-
 from cmislib.exceptions import UpdateConflictException
 
+# from django.conf import settings
+from drc_cmis import settings
 from drc_cmis.cmis.drc_document import (
-    Document,
-    Gebruiksrechten,
-    ObjectInformatieObject,
-    Folder,
+    Document, Folder, Gebruiksrechten, ObjectInformatieObject
 )
 from drc_cmis.cmis.utils import CMISRequest
 

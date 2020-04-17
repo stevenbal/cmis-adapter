@@ -1,7 +1,7 @@
 import datetime
 
-from django.utils import timezone
 from django.test import TestCase
+from django.utils import timezone
 
 from drc_cmis.client import CMISDRCClient, exceptions
 
@@ -84,6 +84,3 @@ class CMISOioTests(TestCase):
 
         with self.assertRaises(exceptions.DocumentDoesNotExistError):
             self.client.get_a_cmis_oio(uuid)
-
-
-

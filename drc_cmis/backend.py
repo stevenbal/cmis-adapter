@@ -13,12 +13,13 @@ from .client.convert import (
     make_objectinformatieobject_dataclass
 )
 from .client.exceptions import (
-    CmisUpdateConflictException,
-    DocumentDoesNotExistError,
+    CmisUpdateConflictException, DocumentDoesNotExistError,
     DocumentExistsError, DocumentLockConflictException,
     DocumentLockedException, DocumentNotLockedException, GetFirstException
 )
-from .data.v1_0_x import EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
+from .data.v1_0_x import (
+    EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
+)
 
 logger = logging.getLogger(__name__)
 
