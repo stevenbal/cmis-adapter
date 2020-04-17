@@ -19,15 +19,31 @@ logger = logging.getLogger(__name__)
 
 
 class CMISRequest:
-    def __init__(self):
+    @property
+    def config(self):
+        """
+        Lazily load the config so that no DB queries are done while Django is starting.
+        """
         from drc_cmis.models import CMISConfig
 
-        config = CMISConfig.get_solo()
+        if not hasattr(self, "_config"):
+            self._config = CMISConfig.get_solo()
+        return self._config
 
-        self.base_url = config.client_url
-        self.root_folder_url = f"{self.base_url}/root"
-        self.user = config.client_user
-        self.password = config.client_password
+    @property
+    def base_url(self):
+        return self.config.client_url
+
+    def root_folder_url(self):
+        return f"{self.base_url}/root"
+
+    @property
+    def user(self):
+        return self.config.client_user
+
+    @property
+    def password(self):
+        return self.config.client_password
 
     def get_request(self, url, params=None):
         logger.debug(f"GET: {url} | {params}")

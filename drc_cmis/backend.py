@@ -8,7 +8,10 @@ from cmislib.exceptions import UpdateConflictException
 from rest_framework.exceptions import ValidationError
 
 from .client import CMISDRCClient
-from .client.convert import make_enkelvoudiginformatieobject_dataclass, make_objectinformatieobject_dataclass
+from .client.convert import (
+    make_enkelvoudiginformatieobject_dataclass,
+    make_objectinformatieobject_dataclass,
+)
 from .client.exceptions import (
     CmisUpdateConflictException,
     DocumentDoesNotExistError,
@@ -18,7 +21,11 @@ from .client.exceptions import (
     DocumentNotLockedException,
     GetFirstException,
 )
-from .data.v1_0_x import EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
+from .data.v1_0_x import (
+    EnkelvoudigInformatieObject,
+    ObjectInformatieObject,
+    PaginationObject,
+)
 
 logger = logging.getLogger(__name__)
 

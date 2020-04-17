@@ -9,7 +9,12 @@ from cmislib.exceptions import UpdateConflictException
 
 # from django.conf import settings
 from drc_cmis import settings
-from drc_cmis.cmis.drc_document import Document, Folder, Gebruiksrechten, ObjectInformatieObject
+from drc_cmis.cmis.drc_document import (
+    Document,
+    Folder,
+    Gebruiksrechten,
+    ObjectInformatieObject,
+)
 from drc_cmis.cmis.utils import CMISRequest
 
 from .exceptions import (
