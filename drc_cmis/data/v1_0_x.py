@@ -1,3 +1,6 @@
+"""
+Datamodel for Documenten API 1.0.x
+"""
 from dataclasses import dataclass
 from datetime import date, datetime
 

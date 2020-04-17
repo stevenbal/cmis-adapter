@@ -1,14 +1,11 @@
 import logging
 from decimal import Decimal
 
-# from django.conf import settings
-from tests import settings
-
 from django.utils import timezone
-from django.utils.module_loading import import_string
 from django.utils.translation import ugettext_lazy as _
 
 from cmislib.exceptions import UpdateConflictException
+from rest_framework.exceptions import ValidationError
 
 from .client import CMISDRCClient
 from .client.convert import (
@@ -16,21 +13,42 @@ from .client.convert import (
     make_objectinformatieobject_dataclass
 )
 from .client.exceptions import (
-    CmisUpdateConflictException, DocumentDoesNotExistError,
+    CmisUpdateConflictException,
+    DocumentDoesNotExistError,
     DocumentExistsError, DocumentLockConflictException,
     DocumentLockedException, DocumentNotLockedException, GetFirstException
 )
+from .data.v1_0_x import EnkelvoudigInformatieObject, ObjectInformatieObject, PaginationObject
 
 logger = logging.getLogger(__name__)
 
 
-class CMISDRCStorageBackend(import_string(settings.ABSTRACT_BASE_CLASS)):
+class BackendException(ValidationError):
+    def __init__(self, detail, create=False, update=False, retreive_single=False, delete=False, retreive_list=False, code=None):
+        self.create = create
+        self.update = update
+        self.retreive_single = retreive_single
+        self.delete = delete
+        self.retreive_list = retreive_list
+
+        super().__init__(detail, code)
+
+
+class AbstractStorageBackend:
+    exception_class = BackendException
+    eio_dataclass = EnkelvoudigInformatieObject
+    oio_dataclass = ObjectInformatieObject
+    pagination_dataclass = PaginationObject
+
+
+class CMISDRCStorageBackend(AbstractStorageBackend):
     """
     This is the backend that is used to store the documents in a CMIS compatible backend.
 
     This class is based on:
         drc.backend.abstract.BaseDRCStorageBackend
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cmis_client = CMISDRCClient()
