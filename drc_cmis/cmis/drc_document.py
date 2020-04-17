@@ -227,7 +227,7 @@ class Folder(CMISBaseObject):
             "statement": f"SELECT * FROM cmis:folder WHERE IN_FOLDER('{self.objectId}')",
         }
         json_response = self.post_request(self.base_url, data=data)
-        return self.get_all_resutls(json_response, Folder)
+        return self.get_all_results(json_response, Folder)
 
     def create_folder(self, name, properties={}, **kwargs):
         logger.debug("CMIS: DRC_DOCUMENT: create_folder")

@@ -109,7 +109,7 @@ class CMISRequest:
 
         return return_type(json.get("results")[0])
 
-    def get_all_resutls(self, json, return_type):
+    def get_all_results(self, json, return_type):
         results = []
         for item in json.get("results"):
             results.append(return_type(item))

@@ -152,7 +152,7 @@ class CMISDRCClient(CMISRequest):
         if filter_string:
             query += f" AND {filter_string}"
 
-        print(query)
+        logger.debug(query)
         data = {
             "cmisaction": "query",
             "statement": query,
@@ -168,8 +168,8 @@ class CMISDRCClient(CMISRequest):
             data["skipCount"] = skip_count
 
         json_response = self.post_request(self.base_url, data)
-        print(json_response)
-        results = self.get_all_resutls(json_response, Document)
+        logger.debug(json_response)
+        results = self.get_all_results(json_response, Document)
         return {
             "has_next": json_response["hasMoreItems"],
             "total_count": json_response["numItems"],
@@ -521,7 +521,7 @@ class CMISDRCClient(CMISRequest):
         }
 
         json_response = self.post_request(self.base_url, data)
-        results = self.get_all_resutls(json_response, Gebruiksrechten)
+        results = self.get_all_results(json_response, Gebruiksrechten)
         return {
             "has_next": json_response["hasMoreItems"],
             "total_count": json_response["numItems"],
@@ -569,7 +569,7 @@ class CMISDRCClient(CMISRequest):
             }
 
             json_response = self.post_request(self.base_url, data)
-            results = self.get_all_resutls(json_response, Gebruiksrechten)
+            results = self.get_all_results(json_response, Gebruiksrechten)
             return {
                 "has_next": json_response["hasMoreItems"],
                 "total_count": json_response["numItems"],
@@ -613,7 +613,7 @@ class CMISDRCClient(CMISRequest):
         }
 
         json_response = self.post_request(self.base_url, data)
-        results = self.get_all_resutls(json_response, ObjectInformatieObject)
+        results = self.get_all_results(json_response, ObjectInformatieObject)
         return {
             "has_next": json_response["hasMoreItems"],
             "total_count": json_response["numItems"],
@@ -663,7 +663,7 @@ class CMISDRCClient(CMISRequest):
         }
 
         json_response = self.post_request(self.base_url, data)
-        results = self.get_all_resutls(json_response, ObjectInformatieObject)
+        results = self.get_all_results(json_response, ObjectInformatieObject)
         return {
             "has_next": json_response["hasMoreItems"],
             "total_count": json_response["numItems"],
