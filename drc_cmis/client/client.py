@@ -604,8 +604,7 @@ class CMISDRCClient(CMISRequest):
 
     def create_cmis_oio(self, data):
         """
-        Creates a Gebruiksrechten object.
-        :return:
+        Creates a ObjectInformatieObject.
         """
 
         oio_folder = self._get_or_create_folder("ObjectInformatieObject", self._get_base_folder)
@@ -637,6 +636,11 @@ class CMISDRCClient(CMISRequest):
         }
 
     def get_a_cmis_oio(self, uuid):
+        """
+        Filters the objectinformatieobject in Alfresco based on the UUID
+        :param uuid: string
+        :return: The first retrieved objectinformatie object with right uuid
+        """
 
         query = f"SELECT * FROM drc:oio WHERE cmis:objectId = 'workspace://SpacesStore/{uuid};1.0'"
 
@@ -654,6 +658,11 @@ class CMISDRCClient(CMISRequest):
             raise DocumentDoesNotExistError(error_string)
 
     def get_cmis_oio(self, filters):
+        """
+        Filters the ObjectInformatieObjects on either the informatieobject, the zaak or besluit URL.
+        :param filters: dict - valid keys are 'informatieobject', 'zaak' or 'besluit'
+        :return: dictionary with the total number of results, the documents retrieved and 'has_prev/next' properties
+        """
 
         if filters.get('uuid') is not None:
             try:

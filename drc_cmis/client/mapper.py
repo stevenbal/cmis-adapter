@@ -46,10 +46,10 @@ GEBRUIKSRECHTEN_MAP = {
 }
 
 OBJECTINFORMATIEOBJECT_MAP = {
-    "enkelvoudiginformatieobject": "drc:oio__enkelvoudiginformatieobject",
-    "related_object_type": "drc:oio__related_object_type",
-    "zaak_url": "drc:oio__zaak_url",
-    "besluit_url": "drc:oio__besluit_url",
+    "informatieobject": "drc:oio__informatieobject",
+    "object_type": "drc:oio__object_type",
+    "zaak": "drc:oio__zaak",
+    "besluit": "drc:oio__besluit",
 }
 
 CONNECTION_MAP = {
