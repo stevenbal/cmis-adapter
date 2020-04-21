@@ -197,6 +197,8 @@ class Gebruiksrechten(CMISBaseObject):
 
 
 class ObjectInformatieObject(CMISBaseObject):
+    table = "drc:oio"
+
     def __getattr__(self, name):
         """
         :param name: Name of the attribute to retrieve
