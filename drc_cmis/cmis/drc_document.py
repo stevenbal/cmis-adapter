@@ -175,6 +175,8 @@ class Document(CMISBaseObject):
 
 
 class Gebruiksrechten(CMISBaseObject):
+    table = "drc:gebruiksrechten"
+
     def __getattr__(self, name):
         """
         :param name: Name of the attribute to retrieve
