@@ -87,6 +87,6 @@ def convert_timestamp_to_json_datetime(timestamp):
     """
     if timestamp is not None:
         timestamp = int(str(timestamp)[:10])
-        django_datetime = timezone.make_aware(datetime.datetime.fromtimestamp(timestamp))
+        django_datetime = timezone.make_aware(datetime.datetime.fromtimestamp(timestamp)) + datetime.timedelta(hours=6)
         json_datetime = django_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
         return json_datetime

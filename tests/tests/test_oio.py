@@ -27,7 +27,7 @@ class CMISOioTests(TestCase):
 
         self.assertEqual(data["informatieobject"], cmis_oio.informatieobject)
         self.assertEqual(data["object_type"], cmis_oio.object_type)
-        self.assertEqual(data["zaak_url"], cmis_oio.zaak_url)
+        self.assertEqual(None, cmis_oio.zaak_url)
 
     def test_get_all(self):
         data = {
@@ -67,7 +67,7 @@ class CMISOioTests(TestCase):
 
         self.assertEqual(data_1["informatieobject"], retrieved_oio.informatieobject)
         self.assertEqual(data_1["object_type"], retrieved_oio.object_type)
-        self.assertEqual(data_1["zaak_url"], retrieved_oio.zaak_url)
+        self.assertEqual(None, retrieved_oio.zaak_url)
 
     def test_delete(self):
         data = {

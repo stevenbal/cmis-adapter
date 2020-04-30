@@ -3,12 +3,11 @@ from io import BytesIO
 from django.test import TestCase
 
 from rest_framework.exceptions import ErrorDetail
-from tests.app.backend import BackendException
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
 from drc_cmis import settings
-from drc_cmis.backend import CMISDRCStorageBackend
+from drc_cmis.backend import BackendException, CMISDRCStorageBackend
 from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 

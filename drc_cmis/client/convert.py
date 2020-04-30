@@ -4,9 +4,9 @@ from decimal import Decimal, InvalidOperation
 from typing import Optional
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.http import HttpRequest
 from django.urls import reverse
-from django.contrib.sites.models import Site
 
 import iso8601
 
@@ -106,11 +106,11 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass, skip_deleted=Fals
         # Return None if document is deleted.
         return None
 
-    path = reverse("objectinformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
+    path = reverse("objectinformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     url = make_absolute_uri(path)
 
     eio_path = reverse(
-        "enkelvoudiginformatieobjecten-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
+        "enkelvoudiginformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
     )
     eio_url = make_absolute_uri(eio_path)
 
