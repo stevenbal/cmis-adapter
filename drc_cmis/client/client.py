@@ -8,6 +8,7 @@ from typing import List
 
 from cmislib.exceptions import UpdateConflictException
 
+from django.db.utils import IntegrityError
 # from django.conf import settings
 from drc_cmis import settings
 from drc_cmis.cmis.drc_document import (
@@ -475,7 +476,8 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: _build_properties")
         base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
         base_properties["cmis:objectTypeId"] = "D:drc:document"
-        base_properties["cmis:name"] = f"{data.get('titel')}-{self.get_random_string()}"
+        if data.get('titel') is not None:
+            base_properties["cmis:name"] = f"{data.get('titel')}-{self.get_random_string()}"
         base_properties[mapper("identificatie")] = identification
 
         if "cmis:versionLabel" in base_properties:
@@ -607,6 +609,11 @@ class CMISDRCClient(CMISRequest):
         Creates a ObjectInformatieObject.
         """
 
+        # TODO: Implement constraints directly in Alfresco?
+        if data.get('zaak') is not None and data.get('besluit') is not None:
+            raise IntegrityError("ObjectInformatie object cannot have both Zaak and Besluit relation")
+        elif data.get('zaak') is None and data.get('besluit') is None:
+            raise IntegrityError("ObjectInformatie object needs to have either a Zaak or Besluit relation")
         oio_folder = self._get_or_create_folder("ObjectInformatieObject", self._get_base_folder)
 
         properties = {
