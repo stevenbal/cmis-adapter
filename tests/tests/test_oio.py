@@ -20,7 +20,7 @@ class CMISOioTests(TestCase):
         data = {
             "informatieobject": "/some/url/",
             "object_type": "zaak",
-            "zaak_url": "/some/other/url/",
+            "zaak": "/some/other/url/",
         }
 
         cmis_oio = self.client.create_cmis_oio(data)
@@ -33,7 +33,7 @@ class CMISOioTests(TestCase):
         data = {
             "informatieobject": "/some/url/",
             "object_type": "zaak",
-            "zaak_url": "/some/other/url/",
+            "zaak": "/some/other/url/",
         }
 
         sent_oio = []
@@ -49,13 +49,13 @@ class CMISOioTests(TestCase):
         data_1 = {
             "informatieobject": "/some/url/",
             "object_type": "zaak",
-            "zaak_url": "/some/other/url/",
+            "zaak": "/some/other/url/",
         }
 
         data_2 = {
             "informatieobject": "/some/fun/url/",
             "object_type": "zaak",
-            "zaak_url": "/another/url/",
+            "zaak": "/another/url/",
         }
 
         cmis_oio_1 = self.client.create_cmis_oio(data_1)
@@ -73,7 +73,7 @@ class CMISOioTests(TestCase):
         data = {
             "informatieobject": "/some/url/",
             "object_type": "zaak",
-            "zaak_url": "/some/other/url/",
+            "zaak": "/some/other/url/",
         }
 
         cmis_oio = self.client.create_cmis_oio(data)
