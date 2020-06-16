@@ -5,9 +5,7 @@ from django.test import TestCase
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
-from drc_cmis import settings
 from drc_cmis.backend import BackendException, CMISDRCStorageBackend
-from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 
 class CMISReadDocumentTests(DMSMixin, TestCase):
@@ -15,27 +13,8 @@ class CMISReadDocumentTests(DMSMixin, TestCase):
         super().setUp()
 
         self.backend = CMISDRCStorageBackend()
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        self.config = CMISConfig.get_solo()
-        self.config.locations.add(location)
 
     def test_get_documents(self):
-        eio = EnkelvoudigInformatieObjectFactory()
-        doc = self.backend.create_document(eio.__dict__, BytesIO(b"some content"))
-        self.assertIsNotNone(doc)
-
-        # Because we need to give alfresco some time to index the document there is a timeout
-        import time
-
-        time.sleep(25)
-
-        documents = self.backend.get_documents()
-        self.assertEqual(len(documents.results), 1)
-
-    def test_get_documents_multiple_search_folders(self):
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        self.config.locations.add(location)
-
         eio = EnkelvoudigInformatieObjectFactory()
         doc = self.backend.create_document(eio.__dict__, BytesIO(b"some content"))
         self.assertIsNotNone(doc)

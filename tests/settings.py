@@ -67,7 +67,4 @@ TEMPLATES = [
     },
 ]
 
-#
-# CMIS SETTINGS
-#
-BASE_FOLDER_LOCATION = "TEST_DRC"
+DMS_MAPPER_CONFIG = os.path.join(PROJECT_DIR, "cmis_mapper.json")

@@ -17,7 +17,6 @@ from .client.exceptions import (
     DocumentDoesNotExistError,
     DocumentExistsError,
     DocumentLockConflictException,
-    DocumentLockedException,
     DocumentNotLockedException,
     GetFirstException,
 )
@@ -104,7 +103,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
 
         """
         print("get_documents")
-        logger.debug(f"CMIS_BACKEND: get_documents start")
+        logger.debug("CMIS_BACKEND: get_documents start")
         if filters and "versie" in filters:
             filters["versie"] = self._fix_version(filters["versie"])
 
@@ -118,7 +117,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         print(documents_data)
         paginated_result = self.pagination_dataclass(count=cmis_documents["total_count"], results=documents_data,)
 
-        logger.debug(f"CMIS_BACKEND: get_documents successful")
+        logger.debug("CMIS_BACKEND: get_documents successful")
         return paginated_result
 
     def get_document(self, uuid, version=None, filters=None):
@@ -235,7 +234,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         """
         logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} start")
         try:
-            cmis_document = self.cmis_client.obliterate_document(uuid)
+            self.cmis_client.obliterate_document(uuid)
         except DocumentDoesNotExistError as e:
             raise self.exception_class({None: e.message}, create=True)
         else:
@@ -320,7 +319,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             dataclass: A list of object informatieobject dataclass.
 
         """
-        logger.debug(f"CMIS_BACKEND: get_document_case_connections start")
+        logger.debug("CMIS_BACKEND: get_document_case_connections start")
 
         if not filters:
             filters = {}
@@ -338,7 +337,7 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             dict_document = make_objectinformatieobject_dataclass(cmis_doc, self.oio_dataclass)
             if dict_document:
                 documents_data.append(dict_document)
-        logger.debug(f"CMIS_BACKEND: get_document_case_connections successful")
+        logger.debug("CMIS_BACKEND: get_document_case_connections successful")
         return documents_data
 
     def get_document_case_connection(self, uuid):

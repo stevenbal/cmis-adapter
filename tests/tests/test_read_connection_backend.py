@@ -5,10 +5,8 @@ from django.test import TestCase
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
-from drc_cmis import settings
 from drc_cmis.backend import BackendException, CMISDRCStorageBackend
 from drc_cmis.client import CMISDRCClient
-from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 
 class CMISReadConnectionTests(DMSMixin, TestCase):
@@ -16,9 +14,6 @@ class CMISReadConnectionTests(DMSMixin, TestCase):
         super().setUp()
 
         self.backend = CMISDRCStorageBackend()
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        config = CMISConfig.get_solo()
-        config.locations.add(location)
         self.cmis_client = CMISDRCClient()
 
     def test_get_document_case_connections(self):

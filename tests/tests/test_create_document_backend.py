@@ -6,9 +6,7 @@ from rest_framework.exceptions import ErrorDetail
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
-from drc_cmis import settings
 from drc_cmis.backend import BackendException, CMISDRCStorageBackend
-from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 
 class CMISCreateDocumentTests(DMSMixin, TestCase):
@@ -16,9 +14,6 @@ class CMISCreateDocumentTests(DMSMixin, TestCase):
         super().setUp()
 
         self.backend = CMISDRCStorageBackend()
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        config = CMISConfig.get_solo()
-        config.locations.add(location)
 
     # CREATE DOCUMENT TESTS
     def test_create_document(self):

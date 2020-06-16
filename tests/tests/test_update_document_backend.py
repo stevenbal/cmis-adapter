@@ -1,4 +1,3 @@
-from datetime import datetime
 from io import BytesIO
 
 from django.test import TestCase
@@ -6,10 +5,7 @@ from django.test import TestCase
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
-from drc_cmis import settings
 from drc_cmis.backend import BackendException, CMISDRCStorageBackend
-from drc_cmis.client.exceptions import DocumentConflictException
-from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 
 class CMISUpdateDocumentTests(DMSMixin, TestCase):
@@ -17,9 +13,6 @@ class CMISUpdateDocumentTests(DMSMixin, TestCase):
         super().setUp()
 
         self.backend = CMISDRCStorageBackend()
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        config = CMISConfig.get_solo()
-        config.locations.add(location)
 
     def test_update_document_no_document(self):
         eio = EnkelvoudigInformatieObjectFactory()

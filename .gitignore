@@ -104,6 +104,7 @@ uploads/
 alfresco/alfresco-community-installer-201707-linux-x64.bin
 reports/junit.xml
 
+# Project specific files
 reports/
 alfresco2/
 .vscode/
@@ -113,6 +114,7 @@ tests/database.db
 XDG_CACHE_HOME/
 DEV.md
 pip-wheel-metadata/
+export_mapper.py
 
 # PyCharm
 .idea/

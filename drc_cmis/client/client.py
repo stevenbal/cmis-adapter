@@ -6,11 +6,10 @@ from decimal import Decimal
 from io import BytesIO
 from typing import List
 
+from django.db.utils import IntegrityError
+
 from cmislib.exceptions import UpdateConflictException
 
-from django.db.utils import IntegrityError
-# from django.conf import settings
-from drc_cmis import settings
 from drc_cmis.cmis.drc_document import (
     Document,
     Folder,
@@ -61,11 +60,11 @@ class CMISDRCClient(CMISRequest):
             base = self.get_request(self.root_folder_url)
             for folder_response in base.get("objects"):
                 folder = Folder(folder_response["object"])
-                if folder.name == settings.BASE_FOLDER_LOCATION:
+                if folder.name == self.base_folder:
                     self._base_folder = folder
             if not self._base_folder:
                 folder = Folder({})
-                self._base_folder = folder.create_folder(name=settings.BASE_FOLDER_LOCATION)
+                self._base_folder = folder.create_folder(name=self.base_folder)
         return self._base_folder
 
     # generic querying
@@ -164,7 +163,7 @@ class CMISDRCClient(CMISRequest):
         """
         logger.debug("CMIS_CLIENT: get_cmis_documents")
         filter_string = self._build_filter(filters, strip_end=True)
-        query = f"SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
+        query = "SELECT * FROM drc:document WHERE drc:document__verwijderd='false'"
         if filter_string:
             query += f" AND {filter_string}"
 
@@ -476,7 +475,7 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: _build_properties")
         base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
         base_properties["cmis:objectTypeId"] = "D:drc:document"
-        if data.get('titel') is not None:
+        if data.get("titel") is not None:
             base_properties["cmis:name"] = f"{data.get('titel')}-{self.get_random_string()}"
         base_properties[mapper("identificatie")] = identification
 
@@ -530,7 +529,7 @@ class CMISDRCClient(CMISRequest):
 
     def get_all_cmis_gebruiksrechten(self):
 
-        query = f"SELECT * FROM drc:gebruiksrechten"
+        query = "SELECT * FROM drc:gebruiksrechten"
 
         data = {
             "cmisaction": "query",
@@ -610,9 +609,9 @@ class CMISDRCClient(CMISRequest):
         """
 
         # TODO: Implement constraints directly in Alfresco?
-        if data.get('zaak') is not None and data.get('besluit') is not None:
+        if data.get("zaak") is not None and data.get("besluit") is not None:
             raise IntegrityError("ObjectInformatie object cannot have both Zaak and Besluit relation")
-        elif data.get('zaak') is None and data.get('besluit') is None:
+        elif data.get("zaak") is None and data.get("besluit") is None:
             raise IntegrityError("ObjectInformatie object needs to have either a Zaak or Besluit relation")
         oio_folder = self._get_or_create_folder("ObjectInformatieObject", self._get_base_folder)
 
@@ -626,7 +625,7 @@ class CMISDRCClient(CMISRequest):
 
     def get_all_cmis_oio(self):
 
-        query = f"SELECT * FROM drc:oio"
+        query = "SELECT * FROM drc:oio"
 
         data = {
             "cmisaction": "query",
@@ -671,22 +670,22 @@ class CMISDRCClient(CMISRequest):
         :return: dictionary with the total number of results, the documents retrieved and 'has_prev/next' properties
         """
 
-        if filters.get('uuid') is not None:
+        if filters.get("uuid") is not None:
             try:
-                results = [self.get_a_cmis_oio(filters.get('uuid'))]
+                results = [self.get_a_cmis_oio(filters.get("uuid"))]
                 return {
-                    'has_next': False,
-                    'total_count': 1,
-                    'has_prev': False,
-                    'results': results,
+                    "has_next": False,
+                    "total_count": 1,
+                    "has_prev": False,
+                    "results": results,
                 }
             except DocumentDoesNotExistError:
                 results = []
                 return {
-                    'has_next': False,
-                    'total_count': 0,
-                    'has_prev': False,
-                    'results': results,
+                    "has_next": False,
+                    "total_count": 0,
+                    "has_prev": False,
+                    "results": results,
                 }
         elif len(filters) == 0:
             query = "SELECT * FROM drc:oio"

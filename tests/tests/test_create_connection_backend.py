@@ -6,10 +6,8 @@ from django.utils import timezone
 from tests.tests.factories import EnkelvoudigInformatieObjectFactory
 from tests.tests.mixins import DMSMixin
 
-from drc_cmis import settings
 from drc_cmis.backend import CMISDRCStorageBackend
 from drc_cmis.client import CMISDRCClient
-from drc_cmis.models import CMISConfig, CMISFolderLocation
 
 
 class CMISCreateConnectionTests(DMSMixin, TestCase):
@@ -17,9 +15,6 @@ class CMISCreateConnectionTests(DMSMixin, TestCase):
         super().setUp()
 
         self.backend = CMISDRCStorageBackend()
-        location = CMISFolderLocation.objects.create(location=settings.BASE_FOLDER_LOCATION)
-        config = CMISConfig.get_solo()
-        config.locations.add(location)
         self.cmis_client = CMISDRCClient()
 
     def test_create_document_case_connection(self):

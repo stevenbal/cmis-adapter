@@ -37,6 +37,10 @@ class CMISRequest:
         return f"{self.base_url}/root"
 
     @property
+    def base_folder(self):
+        return f"{self.config.base_folder}"
+
+    @property
     def user(self):
         return self.config.client_user
 

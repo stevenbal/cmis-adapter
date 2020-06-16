@@ -109,9 +109,7 @@ def make_objectinformatieobject_dataclass(cmis_doc, dataclass, skip_deleted=Fals
     path = reverse("objectinformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     url = make_absolute_uri(path)
 
-    eio_path = reverse(
-        "enkelvoudiginformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId}
-    )
+    eio_path = reverse("enkelvoudiginformatieobject-detail", kwargs={"version": "1", "uuid": cmis_doc.versionSeriesId})
     eio_url = make_absolute_uri(eio_path)
 
     return dataclass(
