@@ -244,7 +244,7 @@ class Folder(CMISBaseObject):
 
         data["propertyId[1]"] = "cmis:objectTypeId"
         if "cmis:objectTypeId" in properties.keys():
-            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
+            data["propertyValue[1]"] = properties.pop("cmis:objectTypeId")
         else:
             data["propertyValue[1]"] = "cmis:folder"
 
@@ -268,7 +268,7 @@ class Folder(CMISBaseObject):
 
         data["propertyId[1]"] = "cmis:objectTypeId"
         if "cmis:objectTypeId" in properties.keys():
-            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
+            data["propertyValue[1]"] = properties.pop("cmis:objectTypeId")
         else:
             data["propertyValue[1]"] = "drc:document"
 
@@ -295,7 +295,7 @@ class Folder(CMISBaseObject):
 
         data["propertyId[1]"] = "cmis:objectTypeId"
         if "cmis:objectTypeId" in properties.keys():
-            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
+            data["propertyValue[1]"] = properties.pop("cmis:objectTypeId")
         else:
             data["propertyValue[1]"] = "D:drc:gebruiksrechten"
 
@@ -321,7 +321,7 @@ class Folder(CMISBaseObject):
 
         data["propertyId[1]"] = "cmis:objectTypeId"
         if "cmis:objectTypeId" in properties.keys():
-            data["propertyValue[1]"] = properties["cmis:objectTypeId"]
+            data["propertyValue[1]"] = properties.pop("cmis:objectTypeId")
         else:
             data["propertyValue[1]"] = "D:drc:oio"
 
