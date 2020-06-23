@@ -24,7 +24,7 @@ class CMISConfig(AppConfig):
             "OBJECTINFORMATIEOBJECT_MAP": OBJECTINFORMATIEOBJECT_MAP,
         }
 
-        mapper_file_path = settings.DMS_MAPPER_CONFIG
+        mapper_file_path = settings.CMIS_MAPPER_FILE
 
         with open(mapper_file_path, "r") as f:
             loaded_cmis_maps = json.load(f)
