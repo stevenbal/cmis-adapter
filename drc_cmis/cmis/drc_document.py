@@ -2,6 +2,7 @@ import logging
 import mimetypes
 from datetime import date
 from io import BytesIO
+from typing import List
 
 from drc_cmis.client.mapper import (
     CONNECTION_MAP,
@@ -198,18 +199,20 @@ class Document(CMISBaseObject):
         file_content = self.get_request(self.root_folder_url, params=params)
         return BytesIO(file_content)
 
-    def get_all_versions(self, **kwargs):
-        logger.debug("CMIS: DRC_DOCUMENT: checkout")
-        params = {"objectId": self.objectId, "cmisselector": "versions"}
-        json_response = self.get_request(self.root_folder_url, params=params)
-        return self.parse_versions(json_response)
+    @classmethod
+    def get_all_versions(cls, document: "Document") -> List["Document"]:
+        """
+        Retrieve all versions for a given document.
 
-    def parse_versions(self, json):
-        versions = {}
-        for json_version in json:
-            doc = Document(json_version)
-            versions[doc.versionLabel] = doc
-        return versions
+        Versions are ordered by most-recent first based on cmis:creationDate. If there
+        is a PWC, it shall be the first object.
+
+        http://docs.oasis-open.org/cmis/CMIS/v1.1/errata01/os/CMIS-v1.1-errata01-os-complete.html#x1-3440006
+        """
+
+        params = {"objectId": document.objectId, "cmisselector": "versions"}
+        all_versions = document.get_request(document.root_folder_url, params=params)
+        return [cls(data) for data in all_versions]
 
     def delete_document(self, **kwargs):
 
