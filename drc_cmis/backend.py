@@ -44,20 +44,18 @@ class BackendException(ValidationError):
         super().__init__(detail, code)
 
 
-class AbstractStorageBackend:
-    exception_class = BackendException
-    eio_dataclass = EnkelvoudigInformatieObject
-    oio_dataclass = ObjectInformatieObject
-    pagination_dataclass = PaginationObject
-
-
-class CMISDRCStorageBackend(AbstractStorageBackend):
+class CMISDRCStorageBackend:
     """
     This is the backend that is used to store the documents in a CMIS compatible backend.
 
     This class is based on:
         drc.backend.abstract.BaseDRCStorageBackend
     """
+
+    exception_class = BackendException
+    eio_dataclass = EnkelvoudigInformatieObject
+    oio_dataclass = ObjectInformatieObject
+    pagination_dataclass = PaginationObject
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -220,9 +218,9 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             logger.debug(f"CMIS_BACKEND: delete_document {uuid} successful")
             return make_enkelvoudiginformatieobject_dataclass(cmis_document, self.eio_dataclass, skip_deleted=True)
 
-    def obliterate_document(self, uuid):
+    def obliterate_document(self, uuid: str) -> None:
         """
-        A request to delete permanently the document.
+        Permanently delete the document identified by ``uuid``.
 
         Args:
             uuid (str): The uuid of the document.
@@ -234,13 +232,13 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
             BackendException: Raised a backend exception if the document does not exists.
 
         """
-        logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} start")
+        logger.info("Obliterating document with UUID %s", uuid)
         try:
             self.cmis_client.obliterate_document(uuid)
-        except DocumentDoesNotExistError as e:
-            raise self.exception_class({None: e.message}, create=True)
+        except DocumentDoesNotExistError as exc:
+            raise self.exception_class({None: exc.message}, delete=True) from exc
         else:
-            logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} successful")
+            logger.info("Obliterated document with UUID %s", uuid)
 
     def lock_document(self, uuid: str, lock: str):
         """

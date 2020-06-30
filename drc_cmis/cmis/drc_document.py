@@ -214,11 +214,21 @@ class Document(CMISBaseObject):
         all_versions = document.get_request(document.root_folder_url, params=params)
         return [cls(data) for data in all_versions]
 
-    def delete_document(self, **kwargs):
+    def destroy(self) -> None:
+        """
+        Permanently delete the object from the CMIS store, with all its versions.
+
+        By default, all versions should be deleted according to the CMIS standard. If
+        the document is currently locked (i.e. there is a private working copy), we need
+        to cancel that checkout first.
+        """
+        if self.isVersionSeriesCheckedOut:
+            pwc = self.get_private_working_copy()
+            cancel_checkout_data = {"cmisaction": "cancelCheckout", "objectId": pwc.objectId}
+            self.post_request(self.root_folder_url, data=cancel_checkout_data)
 
         data = {"objectId": self.objectId, "cmisaction": "delete"}
-        json_response = self.post_request(self.root_folder_url, data=data)
-        return json_response
+        self.post_request(self.root_folder_url, data=data)
 
 
 class Gebruiksrechten(CMISBaseObject):

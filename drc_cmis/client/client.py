@@ -281,10 +281,10 @@ class CMISDRCClient(CMISRequest):
         for child_folder in self._get_base_folder.get_children():
             child_folder.delete_tree()
 
-    def obliterate_document(self, uuid):
+    def obliterate_document(self, uuid: str) -> None:
         logger.debug("CMIS_CLIENT: obliterate_document")
         cmis_doc = self.get_cmis_document(uuid)
-        cmis_doc.delete_document()
+        cmis_doc.destroy()
         logger.debug("CMIS_CLIENT: obliteration successful")
 
     # Split ########################################################################################
