@@ -1,12 +1,12 @@
 import logging
-import random
-import string
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
-from typing import List
+from typing import List, Optional, Union
+from uuid import UUID
 
 from django.db.utils import IntegrityError
+from django.utils.crypto import constant_time_compare
 
 from cmislib.exceptions import UpdateConflictException
 
@@ -28,6 +28,7 @@ from .exceptions import (
 )
 from .mapper import mapper
 from .query import CMISQuery
+from .utils import get_random_string
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +42,6 @@ class CMISDRCClient(CMISRequest):
 
     documents_in_folders_query = CMISQuery("SELECT * FROM drc:document WHERE %s")
     find_folder_by_case_url_query = CMISQuery("SELECT * FROM drc:zaakfolder WHERE drc:zaak__url='%s'")
-
-    document_via_identification_query = CMISQuery(
-        "SELECT * FROM drc:document WHERE drc:document__identificatie = '%s' %s"
-    )
-    document_via_cmis_id_query = CMISQuery(
-        "SELECT * FROM drc:document WHERE cmis:objectId = 'workspace://SpacesStore/%s;1.0' %s"
-    )
 
     _repo = None
     _root_folder = None
@@ -115,7 +109,7 @@ class CMISDRCClient(CMISRequest):
         return cmis_folder
 
     # DRC client calls.
-    def create_document(self, identification, data, content=None):
+    def create_document(self, identification: str, data: dict, content=None):
         """
         Create a cmis document.
 
@@ -142,7 +136,8 @@ class CMISDRCClient(CMISRequest):
         year_folder = self._get_or_create_folder(str(now.year), self._get_base_folder)
         month_folder = self._get_or_create_folder(str(now.month), year_folder)
         day_folder = self._get_or_create_folder(str(now.day), month_folder)
-        properties = self._build_properties(identification, data)
+
+        properties = Document.build_properties(data, new=True, identification=identification)
 
         # Make sure that the content is set.
         content.seek(0)
@@ -192,43 +187,58 @@ class CMISDRCClient(CMISRequest):
             "results": results,
         }
 
-    def get_cmis_document(self, identification, via_identification=None, filters=None):
+    def get_cmis_document(self, uuid: Optional[str], via_identification=None, filters=None):
         """
         Given a cmis document instance.
 
-        :param identification.
-        :return: :class:`AtomPubDocument` object
+        :param uuid: UUID of the document as used in the endpoint URL
+        :return: :class:`AtomPubDocument` object, the latest version of this document
         """
         logger.debug("CMIS_CLIENT: get_cmis_document")
-        document_query = self.document_via_cmis_id_query
-        if via_identification:
-            document_query = self.document_via_identification_query
+        assert not via_identification, "Support for 'via_identification' is being dropped"
+
+        error_string = f"Document met identificatie {uuid} bestaat niet in het CMIS connection"
+        does_not_exist = DocumentDoesNotExistError(error_string)
+
+        # shortcut - no reason in going over the wire
+        if uuid is None:
+            raise does_not_exist
+
+        # this always selects the latest version
+        query = CMISQuery(f"SELECT * FROM drc:document WHERE cmis:objectId = '%s' %s")
+
         filter_string = self._build_filter(filters, filter_string="AND ", strip_end=True)
-        query = document_query(identification, filter_string)
         data = {
             "cmisaction": "query",
-            "statement": query,
+            "statement": query(uuid, filter_string),
         }
         json_response = self.post_request(self.base_url, data)
+
         try:
             return self.get_first_result(json_response, Document)
-        except GetFirstException:
-            error_string = f"Document met identificatie {identification} bestaat niet in het CMIS connection"
-            raise DocumentDoesNotExistError(error_string)
+        except GetFirstException as exc:
+            raise does_not_exist from exc
 
-    def update_cmis_document(self, uuid, lock, data, content=None):
-        logger.debug("CMIS_CLIENT: update_cmis_document")
+    def update_cmis_document(self, uuid: str, lock: str, data: dict, content=None):
+        logger.debug("Updating document with UUID %s", uuid)
         cmis_doc = self.get_cmis_document(uuid)
-        if not cmis_doc.versionSeriesCheckedOutId:
-            raise DocumentNotLockedException("Document is niet gelocked.")
-        if lock != cmis_doc.versionSeriesCheckedOutId:
-            raise DocumentLockConflictException("Wrong lock given")
 
+        if not cmis_doc.isVersionSeriesCheckedOut:
+            raise DocumentNotLockedException("Document is not checked out and/or locked.")
+
+        assert not cmis_doc.isPrivateWorkingCopy, "Unexpected PWC retrieved"
         pwc = cmis_doc.get_private_working_copy()
+
+        if not pwc.lock:
+            raise DocumentNotLockedException("Document is not checked out and/or locked.")
+
+        correct_lock = constant_time_compare(lock, pwc.lock)
+        if not correct_lock:
+            raise DocumentLockConflictException("Wrong document lock given.")
 
         # build up the properties
         current_properties = cmis_doc.properties
-        new_properties = self._build_properties(cmis_doc.identificatie, data)
+        new_properties = Document.build_properties(data, new=False)
 
         diff_properties = {key: value for key, value in new_properties.items() if current_properties.get(key) != value}
 
@@ -387,17 +397,13 @@ class CMISDRCClient(CMISRequest):
             folder = self._get_or_create_folder(str(now.day), month_folder)
 
         # Update the cmis:name to make it more unique
-        file_name = f"{cmis_doc.titel}-{self.get_random_string()}"
+        file_name = f"{cmis_doc.titel}-{get_random_string()}"
         properties["cmis:name"] = file_name
 
         stream = cmis_doc.get_content_stream()
         new_doc = folder.create_document(name=file_name, properties=properties, content_file=stream,)
 
         return new_doc
-
-    def get_random_string(self, number=6):
-        logger.debug("CMIS_CLIENT: get_random_string")
-        return "".join(random.choices(string.ascii_uppercase + string.digits, k=number))
 
     def get_folder_from_case_url(self, zaak_url):
         logger.debug("CMIS_CLIENT: get_folder_from_case_url")
@@ -471,18 +477,6 @@ class CMISDRCClient(CMISRequest):
 
         return filter_string
 
-    def _build_properties(self, identification, data):
-        logger.debug("CMIS_CLIENT: _build_properties")
-        base_properties = {mapper(key): value for key, value in data.items() if mapper(key)}
-        base_properties["cmis:objectTypeId"] = "D:drc:document"
-        if data.get("titel") is not None:
-            base_properties["cmis:name"] = f"{data.get('titel')}-{self.get_random_string()}"
-        base_properties[mapper("identificatie")] = identification
-
-        if "cmis:versionLabel" in base_properties:
-            del base_properties["cmis:versionLabel"]
-        return base_properties
-
     def _build_case_properties(self, data, allow_empty=True):
         logger.debug("CMIS_CLIENT: _build_case_properties")
         props = {}
@@ -501,14 +495,20 @@ class CMISDRCClient(CMISRequest):
 
         return props
 
-    def _check_document_exists(self, identification):
+    def _check_document_exists(self, identification: Union[str, UUID]):
+        # FIXME: should be both bronorganisatie and identification check, not just identification
         logger.debug("CMIS_CLIENT: _check_document_exists")
-        try:
-            self.get_cmis_document(identification, via_identification=True)
-        except DocumentDoesNotExistError:
-            pass
-        else:
-            error_string = f"Document identificatie {identification} is niet uniek"
+
+        column = mapper("identificatie", type="document")
+        query = CMISQuery(f"SELECT * FROM drc:document WHERE {column} = '%s'")
+
+        data = {
+            "cmisaction": "query",
+            "statement": query(str(identification)),
+        }
+        json_response = self.post_request(self.base_url, data)
+        if json_response["numItems"] > 0:
+            error_string = f"Document identificatie {identification} is niet uniek."
             raise DocumentExistsError(error_string)
 
     def create_cmis_gebruiksrechten(self, data):
@@ -525,7 +525,7 @@ class CMISDRCClient(CMISRequest):
             if mapper(key, type="gebruiksrechten")
         }
 
-        return gebruiksrechten_folder.create_gebruiksrechten(name=self.get_random_string(), properties=properties)
+        return gebruiksrechten_folder.create_gebruiksrechten(name=get_random_string(), properties=properties)
 
     def get_all_cmis_gebruiksrechten(self):
 
@@ -621,7 +621,7 @@ class CMISDRCClient(CMISRequest):
             if mapper(key, type="objectinformatieobject")
         }
 
-        return oio_folder.create_oio(name=self.get_random_string(), properties=properties)
+        return oio_folder.create_oio(name=get_random_string(), properties=properties)
 
     def get_all_cmis_oio(self):
 

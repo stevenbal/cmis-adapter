@@ -9,7 +9,7 @@ ZAAK_MAP = {
 
 
 DOCUMENT_MAP = {
-    # "uuid": "drc:",
+    "uuid": None,
     "identificatie": None,
     "bronorganisatie": None,
     "creatiedatum": None,
@@ -36,6 +36,7 @@ DOCUMENT_MAP = {
     "integriteit_datum": None,
     "verwijderd": None,
     "begin_registratie": None,
+    "lock": None,
 }
 
 GEBRUIKSRECHTEN_MAP = {

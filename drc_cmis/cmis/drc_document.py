@@ -10,7 +10,9 @@ from drc_cmis.client.mapper import (
     OBJECTINFORMATIEOBJECT_MAP,
     REVERSE_CONNECTION_MAP,
     REVERSE_DOCUMENT_MAP,
+    mapper,
 )
+from drc_cmis.client.utils import get_random_string
 
 from .utils import CMISRequest
 
@@ -62,8 +64,9 @@ class CMISBaseObject(CMISRequest):
 
 class Document(CMISBaseObject):
     table = "drc:document"
+    object_type_id = f"D:{table}"
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         convert_string = f"drc:{name}"
         if name in DOCUMENT_MAP:
             convert_string = DOCUMENT_MAP.get(name)
@@ -71,7 +74,42 @@ class Document(CMISBaseObject):
             convert_string = CONNECTION_MAP.get(name)
         elif convert_string not in REVERSE_CONNECTION_MAP and convert_string not in REVERSE_DOCUMENT_MAP:
             convert_string = f"cmis:{name}"
-        return self.properties.get(convert_string, {}).get("value")
+
+        if convert_string not in self.properties:
+            raise AttributeError(f"No property '{convert_string}'")
+
+        return self.properties[convert_string]["value"]
+
+    @classmethod
+    def build_properties(cls, data: dict, new: bool = True, identification: str = "") -> dict:
+        logger.debug("Building CMIS properties, document identification: %s", identification or "(not set)")
+
+        props = {}
+        for key, value in data.items():
+            prop_name = mapper(key, type="document")
+            if not prop_name:
+                logger.debug("No property name found for key '%s'", key)
+                continue
+            props[prop_name] = value
+
+        if new:
+            props.setdefault("cmis:objectTypeId", cls.object_type_id)
+
+            # increase likelihood of uniqueness of title by appending a random string
+            title, suffix = data.get("titel"), get_random_string()
+            if title is not None:
+                props["cmis:name"] = f"{title}-{suffix}"
+
+            # make sure the identification is set, but _only_ for newly created documents.
+            # identificatie is immutable once the document is created
+            if identification:
+                prop_name = mapper("identificatie")
+                props[prop_name] = identification
+
+        # can't or shouldn't be written
+        props.pop(mapper("uuid"), None)
+
+        return props
 
     def checkout(self):
         logger.debug("CMIS: DRC_DOCUMENT: checkout")
@@ -105,10 +143,18 @@ class Document(CMISBaseObject):
 
         return self
 
-    def get_private_working_copy(self):
-        logger.debug("CMIS: DRC_DOCUMENT: get_private_working_copy")
-        self.properties["cmis:objectId"]["value"] = self.properties["cmis:versionSeriesCheckedOutId"]["value"]
-        return self
+    def get_private_working_copy(self) -> "Document":
+        """
+        Retrieve the private working copy version of a document.
+        """
+        logger.debug("Fetching the PWC for the current document (UUID '%s')", self.uuid)
+        # http://docs.oasis-open.org/cmis/CMIS/v1.1/os/CMIS-v1.1-os.html#x1-5590004
+        params = {
+            "cmisselector": "object",  # get the object rather than the content
+            "objectId": self.versionSeriesCheckedOutId,
+        }
+        data = self.get_request(self.root_folder_url, params)
+        return type(self)(data)
 
     def checkin(self, checkin_comment, major=True):
         logger.debug("CMIS: DRC_DOCUMENT: checkin")

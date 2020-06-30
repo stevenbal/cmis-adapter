@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from cmislib.exceptions import UpdateConflictException
 from rest_framework.exceptions import ValidationError
 
+from drc_cmis.client.mapper import mapper
+
 from .client import CMISDRCClient
 from .client.convert import (
     make_enkelvoudiginformatieobject_dataclass,
@@ -240,15 +242,27 @@ class CMISDRCStorageBackend(AbstractStorageBackend):
         else:
             logger.debug(f"CMIS_BACKEND: obliterate_document {uuid} successful")
 
-    def lock_document(self, uuid):
-        logger.debug(f"CMIS_BACKEND: lock_document {uuid} start")
+    def lock_document(self, uuid: str, lock: str):
+        """
+        Check out the CMIS document and store the lock value for check in/unlock.
+        """
+        logger.debug("CMIS checkout of document %s (lock value %s)", uuid, lock)
         cmis_doc = self.cmis_client.get_cmis_document(uuid)
+
+        already_locked = self.exception_class(detail="Document was already checked out", code="double_lock")
+
         try:
             pwc = cmis_doc.checkout()
+            assert pwc.isPrivateWorkingCopy, "checkout result must be a private working copy"
+            if pwc.lock:
+                raise already_locked
+
+            # store the lock value on the PWC so we can compare it later
+            pwc.update_properties({mapper("lock"): lock})
         except CmisUpdateConflictException as exc:
-            raise self.exception_class(detail="Document was already checked out", code="dubble_lock") from exc
-        logger.debug(f"CMIS_BACKEND: lock_document {uuid} successful")
-        return pwc.versionSeriesCheckedOutId
+            raise already_locked from exc
+
+        logger.debug("CMIS checkout of document %s with lock value %s succeeded", uuid, lock)
 
     def unlock_document(self, uuid, lock, force=False):
         logger.debug(f"CMIS_BACKEND: unlock_document {uuid} start with: {lock}")
