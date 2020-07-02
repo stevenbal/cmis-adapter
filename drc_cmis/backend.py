@@ -256,6 +256,7 @@ class CMISDRCStorageBackend:
         pwc = cmis_doc.get_private_working_copy()
 
         if constant_time_compare(pwc.lock, lock) or force:
+            pwc.update_properties({mapper("lock"): ""})
             new_doc = pwc.checkin("Updated via Documenten API")
             logger.debug("Unlocked document with UUID %s (forced: %s)", uuid, force)
             return make_enkelvoudiginformatieobject_dataclass(new_doc, self.eio_dataclass, skip_deleted=True)
