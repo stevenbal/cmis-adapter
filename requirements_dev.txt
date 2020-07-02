@@ -11,7 +11,7 @@ twine==1.12.1
 pytest==3.8.2
 pytest-runner==4.2
 pytest-cov==2.7.1
-django<2.2
+django~=2.2
 factory-boy==2.11.1
 django-choices==1.6.2
 cmislib-maykin==0.7.2.dev0
