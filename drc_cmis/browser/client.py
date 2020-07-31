@@ -4,20 +4,19 @@ from io import BytesIO
 from typing import List, Optional, Union
 from uuid import UUID
 
+from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 
 from cmislib.exceptions import UpdateConflictException
 
-from drc_cmis.cmis.browser_drc_document import (
+from drc_cmis.browser.drc_document import (
     Document,
     Folder,
     Gebruiksrechten,
     ObjectInformatieObject,
 )
-from drc_cmis.cmis.browser_request import CMISRequest
-from drc_cmis.cmis.utils import build_query_filters
-
-from .exceptions import (
+from drc_cmis.browser.request import CMISRequest
+from drc_cmis.utils.exceptions import (
     CmisUpdateConflictException,
     DocumentConflictException,
     DocumentDoesNotExistError,
@@ -29,9 +28,9 @@ from .exceptions import (
     GetFirstException,
     LockDidNotMatchException,
 )
-from .mapper import mapper
-from .query import CMISQuery
-from .utils import get_random_string
+from drc_cmis.utils.mapper import mapper
+from drc_cmis.utils.query import CMISQuery
+from drc_cmis.utils.utils import build_query_filters, get_random_string
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +164,7 @@ class CMISDRCClient(CMISRequest):
             "oio",
         ], "'object_type' can be only 'gebruiksrechten' or 'oio'"
 
-        now = datetime.datetime.now()
+        now = timezone.now()
         year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
         month_folder = self.get_or_create_folder(str(now.month), year_folder)
         day_folder = self.get_or_create_folder(str(now.day), month_folder)
@@ -266,7 +265,7 @@ class CMISDRCClient(CMISRequest):
         logger.debug("CMIS_CLIENT: create_document")
         self.check_document_exists(identification)
 
-        now = datetime.datetime.now()
+        now = timezone.now()
         data.setdefault("versie", 1)
 
         if content is None:
@@ -296,8 +295,10 @@ class CMISDRCClient(CMISRequest):
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
-            if isinstance(prop_value, datetime.date):
-                prop_value = prop_value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            if isinstance(prop_value, datetime.date) or isinstance(
+                prop_value, datetime.datetime
+            ):
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%M:%S")
 
             data[f"propertyId[{prop_count}]"] = prop_key
             data[f"propertyValue[{prop_count}]"] = prop_value

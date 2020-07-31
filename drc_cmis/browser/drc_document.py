@@ -5,16 +5,19 @@ from datetime import date
 from io import BytesIO
 from typing import List, Optional, Union
 
-from drc_cmis.client.mapper import (
-    CONNECTION_MAP,
+from django.utils import timezone
+
+import pytz
+
+from drc_cmis.utils.mapper import (
     DOCUMENT_MAP,
     GEBRUIKSRECHTEN_MAP,
     OBJECTINFORMATIEOBJECT_MAP,
     mapper,
 )
-from drc_cmis.client.utils import get_random_string
+from drc_cmis.utils.utils import get_random_string
 
-from .browser_request import CMISRequest
+from .request import CMISRequest
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +33,9 @@ class CMISBaseObject(CMISRequest):
         properties = data.get("properties", {})
         for prop_name, prop_details in properties.items():
             if prop_details["type"] == "datetime" and prop_details["value"] is not None:
-                prop_details["value"] = datetime.datetime.utcfromtimestamp(
-                    int(prop_details["value"]) / 1000
+                prop_details["value"] = timezone.make_aware(
+                    datetime.datetime.fromtimestamp(int(prop_details["value"]) / 1000),
+                    pytz.timezone("UTC"),
                 )
 
         self.properties = properties
@@ -52,8 +56,6 @@ class CMISBaseObject(CMISRequest):
         convert_name = f"drc:{name}"
         if self.name_map is not None and name in self.name_map:
             convert_name = self.name_map.get(name)
-        elif name in CONNECTION_MAP:
-            convert_name = CONNECTION_MAP.get(name)
 
         if convert_name not in self.properties:
             raise AttributeError(f"No property '{convert_name}'")
@@ -221,16 +223,15 @@ class Document(CMISContentObject):
         the document is currently locked (i.e. there is a private working copy), we need
         to cancel that checkout first.
         """
-        if self.isVersionSeriesCheckedOut:
-            pwc = self.get_private_working_copy()
+        pwc = self.get_private_working_copy()
+        if pwc is not None:
             cancel_checkout_data = {
                 "cmisaction": "cancelCheckout",
                 "objectId": pwc.objectId,
             }
             self.post_request(self.root_folder_url, data=cancel_checkout_data)
 
-        data = {"objectId": self.objectId, "cmisaction": "delete"}
-        self.post_request(self.root_folder_url, data=data)
+        return super().delete_object()
 
 
 class Gebruiksrechten(CMISContentObject):

@@ -3,7 +3,7 @@ from json.decoder import JSONDecodeError
 
 import requests
 
-from drc_cmis.client.exceptions import (
+from drc_cmis.utils.exceptions import (
     CmisBaseException,
     CmisInvalidArgumentException,
     CmisNotSupportedException,
@@ -35,6 +35,10 @@ class CMISRequest:
     @property
     def base_folder_name(self):
         return f"{self.config.base_folder_name}"
+
+    @property
+    def time_zone(self):
+        return self.config.time_zone
 
     @property
     def root_folder_url(self):
