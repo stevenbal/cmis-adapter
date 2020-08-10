@@ -163,7 +163,7 @@ class CMISDRCClient(CMISRequest):
         """
         logger.debug("CMIS_CLIENT: get_or_create_zaaktype_folder")
         properties = {
-            "cmis:objectTypeId": "F:drc:zaaktypefolder",
+            "cmis:objectTypeId": f"{self.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
             mapper("url", "zaaktype"): zaaktype.get("url"),
             mapper("identificatie", "zaaktype"): zaaktype.get("identificatie"),
         }
@@ -182,7 +182,7 @@ class CMISDRCClient(CMISRequest):
         """
         logger.debug("CMIS_CLIENT: get_or_create_zaak_folder")
         properties = {
-            "cmis:objectTypeId": "F:drc:zaakfolder",
+            "cmis:objectTypeId": f"{self.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
             mapper("url", "zaak"): zaak.get("url"),
             mapper("identificatie", "zaak"): zaak.get("identificatie"),
             mapper("zaaktype", "zaak"): zaak.get("zaaktype"),
@@ -371,7 +371,9 @@ class CMISDRCClient(CMISRequest):
         if "cmis:objectTypeId" in properties.keys():
             json_data["propertyValue[1]"] = properties.pop("cmis:objectTypeId")
         else:
-            json_data["propertyValue[1]"] = f"D:drc:{object_type}"
+            json_data[
+                "propertyValue[1]"
+            ] = f"{self.get_object_type_id_prefix(object_type)}drc:{object_type}"
 
         prop_count = 2
         for prop_key, prop_value in properties.items():
@@ -455,6 +457,10 @@ class CMISDRCClient(CMISRequest):
 
         now = timezone.now()
         data.setdefault("versie", 1)
+        data.setdefault(
+            "object_type_id",
+            f"{self.get_object_type_id_prefix('document')}drc:document",
+        )
 
         if content is None:
             content = BytesIO()
