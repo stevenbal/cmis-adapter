@@ -214,8 +214,8 @@ Predefined mapping:
 | ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
 +---------------------+---------------------------------+
 
-Content model configuration
----------------------------
+DMS Content model configuration
+-------------------------------
 
 The mapping configuration must match the content model in the DMS. Each 
 property, like ``drc:document__titel`` in the example above, must be defined 
@@ -225,6 +225,62 @@ The example shown in ``/alfresco/extension/alfreso-zsdms-model.xml``
 indicates all attributes, types and whether the property is indexed (queryable) 
 or not. If these attributes are incorrectly configured, the Documenten API 
 might not work correctly.
+
+DMS folder structure
+--------------------
+
+Open Zaak uses a folder structure in the DMS similar to the 
+`Zaak- en Documentservices 1.2`_. However, due to way the Documenten API works
+there are differences.
+
+.. _`Zaak- en Documentservices`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
+
+**Creating a document**
+
+When a document is created via the Documenten API, the document is placed in a 
+temporary folder. By default this is:
+
+.. code-block::
+
+    CMIS Root > 
+        [base-folder (cmis:folder)] > 
+            [year (cmis:folder)] > 
+                [month (cmis:folder)] > 
+                    [day (cmis:folder)] > 
+                        [filename (drc:document)]
+
+
+For example:
+
+.. code-block::
+
+    CMIS Root > DRC > 2020 > 12 > 31 > document.txt
+
+
+If nothing else happens, this document will remain here and can be considered
+a "zombie" document that has no relation to any Zaak.
+
+**Relating a document to a Zaak**
+
+When a document is related to a Zaak, the document is moved to another folder
+that can be consider the zaak folder:
+
+.. code-block::
+
+    CMIS Root > 
+        [base-folder (cmis:folder)] > 
+            [zaaktype-folder (drc:zaaktypefolder)]
+                [year (cmis:folder)] > 
+                    [month (cmis:folder)] > 
+                        [day (cmis:folder)] > 
+                            [zaak-folder (drc:zaakfolder)]
+                                [filename (drc:document)]
+
+For example:
+
+.. code-block::
+
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
 
 
 References
