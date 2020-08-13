@@ -3,7 +3,7 @@ Documenten API CMIS adapter
 ===========================
 
 :Version: 0.5.0
-:Source: https://github.com/GemeenteUtrecht/gemma-drc-cmis
+:Source: https://github.com/open-zaak/cmis-adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
 
@@ -68,11 +68,11 @@ Usage
 
 TODO: provide proper documentation
 
-.. |build-status| image:: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis.svg?branch=master
-    :target: https://travis-ci.org/GemeenteUtrecht/gemma-drc-cmis
+.. |build-status| image:: https://travis-ci.org/open-zaak/cmis-adapter.svg?branch=master
+    :target: https://travis-ci.org/open-zaak/cmis-adapter
 
-.. |coverage| image:: https://codecov.io/gh/GemeenteUtrecht/gemma-drc-cmis/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/GemeenteUtrecht/gemma-drc-cmis
+.. |coverage| image:: https://codecov.io/gh/open-zaak/cmis-adapter/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/open-zaak/cmis-adapter
     :alt: Coverage status
 
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
