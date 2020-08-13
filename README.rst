@@ -7,24 +7,49 @@ Documenten API CMIS adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
 
-|build-status| |coverage| |black|
+|build-status| |coverage| |black| |python-versions| |django-versions| |pypi-version|
 
-|python-versions| |django-versions| |pypi-version|
+A CMIS backend-connector for the `Documenten API`_.
 
-An adapter to manage `Documenten API`_ resources in a CMIS backend.
+Developed by `Maykin Media B.V.`_ commissioned by the municipality of Utrecht
+with support of the municipality of Súdwest-Fryslân and the Open Zaak project
+team.
 
-.. contents::
 
-.. section-numbering::
+Introduction
+============
+
+The Documenten API CMIS adapter allows Django implementations of the Documenten
+API to easily connect to a CMIS-compatible Document Management System (DMS).
+Most notably it's used by `Open Zaak`_ to use a DMS as backend for the 
+Documenten API rather then using its own backend.
 
 Features
-========
+--------
 
-* CMIS 1.1 browser binding
-* Store documents and metadata in a CMIS repository
-* Supports reading and writing of documents
-* Supports checking out/in of documents
-* Supports custom data-model
+Both `CMIS 1.0`_ and `CMIS 1.1`_ are supported but not for all bindings. Below
+is a list of supported bindings for each CMIS version.
+
+.. _`CMIS 1.0`: https://docs.oasis-open.org/cmis/CMIS/v1.0/cmis-spec-v1.0.html
+.. _`CMIS 1.1`: https://docs.oasis-open.org/cmis/CMIS/v1.1/CMIS-v1.1.html
+
++----------------------+-----------+-----------+
+|                      |  CMIS 1.0 |  CMIS 1.1 |
++======================+===========+===========+
+| Web Services binding | Supported |  Untested |
++----------------------+-----------+-----------+
+| AtomPub binding      |  Untested |  Untested |
++----------------------+-----------+-----------+
+| Browser binding      |    N/A    | Supported |
++----------------------+-----------+-----------+
+
+For the supported bindings, the following features are implemented:
+
+* Retrieve from and store documents in a CMIS-compatible DMS.
+* Supports reading and writing of documents.
+* Supports checking out/in of documents.
+* Supports custom data-model for storing additional meta data.
+
 
 Installation
 ============
@@ -39,12 +64,13 @@ Requirements
 Install
 -------
 
+1. Install the library in your Django project:
+
 .. code-block:: bash
 
     $ pip install drc-cmis
 
-
-Add to installed apps
+2. Add to ``INSTALLED_APPS`` in your Django ``settings.py``:
 
 .. code-block:: python
 
@@ -54,19 +80,91 @@ Add to installed apps
         ...
     ]
 
+3. Create a mapping file to match Documenten API attributes to custom 
+   properties in your DMS model. See `Mapping configuration`_.
 
-And add the settings to enable it:
+4. In your ``settings.py``, add these settings to enable it:
 
 .. code-block:: python
 
+    # Enables the CMIS-backend and the Django admin interface for configuring 
+    # the DMS settings.
     CMIS_ENABLED = True
-    CMIS_DELETE_IS_OBLITERATE = True
+
+    # Absolute path to the mapping of Documenten API attributes to (custom) 
+    # properties in your DMS model.
     CMIS_MAPPER_FILE = /path/to/cmis_mapper.json
 
-Usage
------
+5. Login to the Django admin as superuser and configure the CMIS backend.
 
-TODO: provide proper documentation
+Mapping configuration
+=====================
+
+Mapping Documenten API attributes to custom properties in the DMS model should
+be done with great care. When the DMS stores these properties, the Documenten 
+API relies on their existance to create proper responses.
+
+Below is a snippet of the ``cmis_mapper.json``:
+
+.. code-block:: json
+
+    {
+      "DOCUMENT_MAP": {
+        "titel": "drc:document__titel"
+      }
+    }
+
+The ``DOCUMENT_MAP`` describes the mapping for the 
+``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
+snippet, only ``titel`` is mapped to a custom DMS property called
+``drc:document_titel``.
+
+When creating a document, the custom properties are translated to CMIS 
+properties as shown below (note that this is a stripped down request example):
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <soapenv:Envelope xmlmsg:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlmsg:msg="http://docs.oasis-open.org/ns/cmis/messaging/200908/" xmlmsg:core="http://docs.oasis-open.org/ns/cmis/core/200908/">
+    <soapenv:Header />
+    <soapenv:Body>
+      <msg:createDocument>
+        <msg:repositoryId>d6a10501-ef36-41e1-9aae-547154f57838</msg:repositoryId>
+        <msg:properties>
+          <core:propertyString propertyDefinitionId="drc:document__titel">
+          <core:value>example.txt</core:value>
+        </msg:properties>
+        <msg:folderId>workspace://SpacesStore/7c6c7c86-fd63-4eec-bcf8-ffb59f6f6b90</msg:folderId>
+      </msg:createDocument>
+    </soapenv:Body>
+    </soapenv:Envelope>
+
+An example of the mapping configuration, with all possible Documenten API 
+resources and attributes is shown in ``test_app/cmis_mapper.json``. The 
+related DMS model for `Alfresco`_ (an open source DMS) is in 
+``/alfresco/extension/zsdms-model-context.xml``. Both the mapping and the 
+model should be in sync.
+
+
+References
+==========
+
+* `Issues <https://github.com/open-zaak/open-zaak/issues>`_
+* `Code <https://github.com/open-zaak/cmis-adapter>`_
+
+
+License
+=======
+
+Copyright © Dimpact 2019 - 2020
+
+Licensed under the EUPL_
+
+.. _EUPL: LICENCE.md
+
+.. _`Maykin Media B.V.`: https://www.maykinmedia.nl
+
+.. _`Alfresco`: https://www.alfresco.com/ecm-software/alfresco-community-editions
 
 .. |build-status| image:: https://travis-ci.org/open-zaak/cmis-adapter.svg?branch=master
     :target: https://travis-ci.org/open-zaak/cmis-adapter
