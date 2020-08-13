@@ -116,8 +116,8 @@ Below is a snippet of the ``cmis_mapper.json``:
 
 The ``DOCUMENT_MAP`` describes the mapping for the 
 ``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
-snippet, only ``titel`` is mapped to a custom DMS property called
-``drc:document_titel``.
+snippet, only the ``EnkelvoudigInformatieObject.titel`` is mapped to a custom 
+DMS property called ``drc:document_titel``.
 
 When creating a document, the custom properties are translated to CMIS 
 properties as shown below (note that this is a stripped down request example):
@@ -141,9 +141,65 @@ properties as shown below (note that this is a stripped down request example):
 
 An example of the mapping configuration, with all possible Documenten API 
 resources and attributes is shown in ``test_app/cmis_mapper.json``. The 
-related DMS model for `Alfresco`_ (an open source DMS) is in 
-``/alfresco/extension/zsdms-model-context.xml``. Both the mapping and the 
+related DMS content model for `Alfresco`_ (an open source DMS) is in 
+``/alfresco/extension/alfreso-zsdms-model.xml``. Both the mapping and the 
 model should be in sync.
+
+In addition to the configurable mapping for ``EnkelvoudigInformatieObject`` 
+(``DOCUMENT_MAP``), ``Gebruiksrechten`` (``GEBRUIKSRECHTEN_MAP``) and ``ObjectInformatieObject`` (``OBJECTINFORMATIEOBJECT_MAP``), there are 2 predefined mappings.
+
+Predefined mappings
+-------------------
+
+**Zaaktype folder**
+
+Contains all Zaken from this Zaaktype and has itself some meta data about the
+Zaaktype. API-attributes are from the `Catalogi API`_ Zaaktype-resource.
+
+.. _`Catalogi API`: https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index
+
+``cmis:objectTypeId`` = ``F:drc:zaaktypefolder``
+
++-------------------+---------------------------------+
+| API-attribute     | CMIS-property                   |
++===================+=================================+
+| ``url``           | ``drc:zaaktype__url``           |
++-------------------+---------------------------------+
+| ``identificatie`` | ``drc:zaaktype__identificatie`` |
++-------------------+---------------------------------+
+
+**Zaak folder**
+
+Contains all Zaak-related documents and has itself some meta data about the
+Zaak. API-attributes are from the `Zaken API`_ Zaak-resource.
+
+.. _`Zaken API`: https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index
+
+``cmis:objectTypeId`` = ``F:drc:zaakfolder``
+
++---------------------+---------------------------------+
+| API-attribute       | CMIS-property                   |
++=====================+=================================+
+| ``url``             | ``drc:zaak__url``               |
++---------------------+---------------------------------+
+| ``identificatie``   | ``drc:zaak__identificatie``     |
++---------------------+---------------------------------+
+| ``zaaktype``        | ``drc:zaak__zaaktypeurl``       |
++---------------------+---------------------------------+
+| ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
++---------------------+---------------------------------+
+
+Content model configuration
+---------------------------
+
+The mapping configuration must match the content model in the DMS. Each 
+property, like ``drc:document__titel`` in the example above, must be defined 
+in the content model.
+
+The example shown in ``/alfresco/extension/alfreso-zsdms-model.xml`` 
+indicates all attributes, types and whether the property is indexed (queryable) 
+or not. If these attributes are incorrectly configured, the Documenten API 
+might not work correctly.
 
 
 References
