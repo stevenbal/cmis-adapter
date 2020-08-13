@@ -145,18 +145,41 @@ related DMS content model for `Alfresco`_ (an open source DMS) is in
 ``/alfresco/extension/alfreso-zsdms-model.xml``. Both the mapping and the 
 model should be in sync.
 
-In addition to the configurable mapping for ``EnkelvoudigInformatieObject`` 
-(``DOCUMENT_MAP``), ``Gebruiksrechten`` (``GEBRUIKSRECHTEN_MAP``) and ``ObjectInformatieObject`` (``OBJECTINFORMATIEOBJECT_MAP``), there are 2 predefined mappings.
+Mappings
+--------
 
-Predefined mappings
--------------------
+**Document**
+
+Represents the `Documenten API`_ ``EnkelvoudigInformatieObjecten``-resource.
+
+``cmis:objectTypeId`` = ``D:drc:document``
+
+Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
+
+**Gebruiksrechten**
+
+Represents the `Documenten API`_ ``Gebruiksrechten``-resource.
+
+``cmis:objectTypeId`` = ``D:drc:document``
+
+Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
+
+**ObjectInformatieObject**
+
+Represents the `Documenten API`_ ``ObjectInformatieObjecten``-resource.
+
+``cmis:objectTypeId`` = ``D:drc:document``
+
+Mapping configurable via ``OBJECTINFORMATIEOBJECT_MAP`` in the CMIS mapper.
 
 **Zaaktype folder**
 
 Contains all Zaken from this Zaaktype and has itself some meta data about the
-Zaaktype. API-attributes are from the `Catalogi API`_ Zaaktype-resource.
+Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktypen``-resource.
 
 .. _`Catalogi API`: https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index
+
+Predefined mapping:
 
 ``cmis:objectTypeId`` = ``F:drc:zaaktypefolder``
 
@@ -171,9 +194,11 @@ Zaaktype. API-attributes are from the `Catalogi API`_ Zaaktype-resource.
 **Zaak folder**
 
 Contains all Zaak-related documents and has itself some meta data about the
-Zaak. API-attributes are from the `Zaken API`_ Zaak-resource.
+Zaak. API-attributes are from the `Zaken API`_ ``Zaken``-resource.
 
 .. _`Zaken API`: https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index
+
+Predefined mapping:
 
 ``cmis:objectTypeId`` = ``F:drc:zaakfolder``
 
