@@ -3,6 +3,8 @@ from uuid import UUID
 
 from django.utils import timezone
 
+from drc_cmis.utils.exceptions import DocumentDoesNotExistError
+
 from .models import Vendor
 
 # The Document/Folder/Oio/Gebruiksrechten classes used in practice depend on the client
@@ -127,7 +129,7 @@ class CMISClient:
 
         # Get the document
         document_uuid = data.get("informatieobject").split("/")[-1]
-        document = self.get_document(uuid=document_uuid)
+        document = self.get_document(drc_uuid=document_uuid)
 
         if "object" in data:
             data[data["object_type"]] = data.pop("object")
@@ -197,7 +199,7 @@ class CMISClient:
         """
 
         document_uuid = data.get("informatieobject").split("/")[-1]
-        document = self.get_document(uuid=document_uuid)
+        document = self.get_document(drc_uuid=document_uuid)
 
         parent_folder = document.get_parent_folders()[0]
         related_data_folder = self.get_or_create_folder("Related data", parent_folder)
@@ -208,24 +210,24 @@ class CMISClient:
             destination_folder=related_data_folder,
         )
 
-    def delete_content_object(self, uuid: Union[str, UUID], object_type: str):
+    def delete_content_object(self, drc_uuid: Union[str, UUID], object_type: str):
         """Delete the gebruiksrechten/objectinformatieobject with specified uuid
 
-        :param uuid: string or UUID, identifier that when combined with 'workspace://SpacesStore/' and the version
+        :param drc_uuid: string or UUID, the value of drc:oio__uuid/drc:gebruiksrechten__uuid
         number gives the cmis:objectId
         :param object_type: string, either "gebruiksrechten" or "oio"
         :return: Either a Gebruiksrechten or ObjectInformatieObject
         """
 
-        content_object = self.get_content_object(uuid, object_type=object_type)
+        content_object = self.get_content_object(drc_uuid, object_type=object_type)
         content_object.delete_object()
 
-    def delete_document(self, uuid: str) -> None:
-        """Delete all versions of a document with objectId workspace://SpacesStore/<uuid>
+    def delete_document(self, drc_uuid: str) -> None:
+        """Delete all versions of a document with given uuid
 
-        :param uuid: string, uuid used to create the objectId
+        :param drc_uuid: string, the value of drc:oio__uuid/drc:gebruiksrechten__uuid
         """
-        document = self.get_document(uuid=uuid)
+        document = self.get_document(drc_uuid=drc_uuid)
         document.delete_object()
 
     def get_or_create_zaaktype_folder(self, zaaktype: dict) -> Folder:
@@ -262,3 +264,24 @@ class CMISClient:
         return self.get_or_create_folder(
             f"zaak-{zaak['identificatie']}", zaaktype_folder, properties
         )
+
+    def get_latest_version_not_pwc(self, extracted_data: List) -> Document:
+        """Return the latest version which is not the pwc
+
+        :param extracted_data: dict, the results of a query
+        "SELECT * FROM drc:document WHERE drc:document__uuid = '<uuid>'"
+        :return: Document, the latest not locked version of a document
+        """
+        error_string = "Document bestaat niet in het CMIS connection"
+        does_not_exist = DocumentDoesNotExistError(error_string)
+
+        if len(extracted_data) == 0:
+            raise does_not_exist
+        elif len(extracted_data) == 1:
+            return self.document_type(extracted_data[0])
+        elif len(extracted_data) == 2:
+            # In this case there is both the latest version and pwc
+            # return the latest version
+            for doc_data in extracted_data:
+                if doc_data["properties"]["cmis:versionLabel"]["value"] != "pwc":
+                    return self.document_type(doc_data)
