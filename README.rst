@@ -24,6 +24,8 @@ API to easily connect to a CMIS-compatible Document Management System (DMS).
 Most notably it's used by `Open Zaak`_ to use a DMS as backend for the 
 Documenten API rather then using its own backend.
 
+.. _`Open Zaak`: https://github.com/open-zaak/open-zaak/
+
 Features
 --------
 
@@ -152,7 +154,7 @@ Mappings
 
 Represents the `Documenten API`_ ``EnkelvoudigInformatieObjecten``-resource.
 
-``cmis:objectTypeId`` = ``D:drc:document``
+``cmis:objectTypeId`` = ``drc:document``
 
 Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
 
@@ -160,7 +162,7 @@ Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
 
 Represents the `Documenten API`_ ``Gebruiksrechten``-resource.
 
-``cmis:objectTypeId`` = ``D:drc:document``
+``cmis:objectTypeId`` = ``drc:gebruiksrechten``
 
 Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
 
@@ -168,7 +170,7 @@ Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
 
 Represents the `Documenten API`_ ``ObjectInformatieObjecten``-resource.
 
-``cmis:objectTypeId`` = ``D:drc:document``
+``cmis:objectTypeId`` = ``drc:oio``
 
 Mapping configurable via ``OBJECTINFORMATIEOBJECT_MAP`` in the CMIS mapper.
 
@@ -181,7 +183,7 @@ Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktypen``-resource.
 
 Predefined mapping:
 
-``cmis:objectTypeId`` = ``F:drc:zaaktypefolder``
+``cmis:objectTypeId`` = ``drc:zaaktypefolder``
 
 +-------------------+---------------------------------+
 | API-attribute     | CMIS-property                   |
@@ -200,7 +202,7 @@ Zaak. API-attributes are from the `Zaken API`_ ``Zaken``-resource.
 
 Predefined mapping:
 
-``cmis:objectTypeId`` = ``F:drc:zaakfolder``
+``cmis:objectTypeId`` = ``drc:zaakfolder``
 
 +---------------------+---------------------------------+
 | API-attribute       | CMIS-property                   |
