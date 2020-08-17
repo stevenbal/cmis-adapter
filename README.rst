@@ -7,24 +7,51 @@ Documenten API CMIS adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
 
-|build-status| |coverage| |black|
+|build-status| |coverage| |black| |python-versions| |django-versions| |pypi-version|
 
-|python-versions| |django-versions| |pypi-version|
+A CMIS backend-connector for the `Documenten API`_.
 
-An adapter to manage `Documenten API`_ resources in a CMIS backend.
+Developed by `Maykin Media B.V.`_ commissioned by the municipality of Utrecht
+with support of the municipality of Súdwest-Fryslân and the Open Zaak project
+team.
 
-.. contents::
 
-.. section-numbering::
+Introduction
+============
+
+The Documenten API CMIS adapter allows Django implementations of the Documenten
+API to easily connect to a CMIS-compatible Document Management System (DMS).
+Most notably it's used by `Open Zaak`_ to use a DMS as backend for the 
+Documenten API rather then using its own backend.
+
+.. _`Open Zaak`: https://github.com/open-zaak/open-zaak/
 
 Features
-========
+--------
 
-* CMIS 1.1 browser binding
-* Store documents and metadata in a CMIS repository
-* Supports reading and writing of documents
-* Supports checking out/in of documents
-* Supports custom data-model
+Both `CMIS 1.0`_ and `CMIS 1.1`_ are supported but not for all bindings. Below
+is a list of supported bindings for each CMIS version.
+
+.. _`CMIS 1.0`: https://docs.oasis-open.org/cmis/CMIS/v1.0/cmis-spec-v1.0.html
+.. _`CMIS 1.1`: https://docs.oasis-open.org/cmis/CMIS/v1.1/CMIS-v1.1.html
+
++----------------------+-----------+-----------+
+|                      |  CMIS 1.0 |  CMIS 1.1 |
++======================+===========+===========+
+| Web Services binding | Supported |  Untested |
++----------------------+-----------+-----------+
+| AtomPub binding      |  Untested |  Untested |
++----------------------+-----------+-----------+
+| Browser binding      |    N/A    | Supported |
++----------------------+-----------+-----------+
+
+For the supported bindings, the following features are implemented:
+
+* Retrieve from and store documents in a CMIS-compatible DMS.
+* Supports reading and writing of documents.
+* Supports checking out/in of documents.
+* Supports custom data-model for storing additional meta data.
+
 
 Installation
 ============
@@ -39,12 +66,13 @@ Requirements
 Install
 -------
 
+1. Install the library in your Django project:
+
 .. code-block:: bash
 
     $ pip install drc-cmis
 
-
-Add to installed apps
+2. Add to ``INSTALLED_APPS`` in your Django ``settings.py``:
 
 .. code-block:: python
 
@@ -54,19 +82,228 @@ Add to installed apps
         ...
     ]
 
+3. Create a mapping file to match Documenten API attributes to custom 
+   properties in your DMS model. See `Mapping configuration`_.
 
-And add the settings to enable it:
+4. In your ``settings.py``, add these settings to enable it:
 
 .. code-block:: python
 
+    # Enables the CMIS-backend and the Django admin interface for configuring 
+    # the DMS settings.
     CMIS_ENABLED = True
-    CMIS_DELETE_IS_OBLITERATE = True
+
+    # Absolute path to the mapping of Documenten API attributes to (custom) 
+    # properties in your DMS model.
     CMIS_MAPPER_FILE = /path/to/cmis_mapper.json
 
-Usage
------
+5. Login to the Django admin as superuser and configure the CMIS backend.
 
-TODO: provide proper documentation
+Mapping configuration
+=====================
+
+Mapping Documenten API attributes to custom properties in the DMS model should
+be done with great care. When the DMS stores these properties, the Documenten 
+API relies on their existance to create proper responses.
+
+Below is a snippet of the ``cmis_mapper.json``:
+
+.. code-block:: json
+
+    {
+      "DOCUMENT_MAP": {
+        "titel": "drc:document__titel"
+      }
+    }
+
+The ``DOCUMENT_MAP`` describes the mapping for the 
+``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
+snippet, only the ``EnkelvoudigInformatieObject.titel`` is mapped to a custom 
+DMS property called ``drc:document_titel``.
+
+When creating a document, the custom properties are translated to CMIS 
+properties as shown below (note that this is a stripped down request example):
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <soapenv:Envelope xmlmsg:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlmsg:msg="http://docs.oasis-open.org/ns/cmis/messaging/200908/" xmlmsg:core="http://docs.oasis-open.org/ns/cmis/core/200908/">
+    <soapenv:Header />
+    <soapenv:Body>
+      <msg:createDocument>
+        <msg:repositoryId>d6a10501-ef36-41e1-9aae-547154f57838</msg:repositoryId>
+        <msg:properties>
+          <core:propertyString propertyDefinitionId="drc:document__titel">
+          <core:value>example.txt</core:value>
+        </msg:properties>
+        <msg:folderId>workspace://SpacesStore/7c6c7c86-fd63-4eec-bcf8-ffb59f6f6b90</msg:folderId>
+      </msg:createDocument>
+    </soapenv:Body>
+    </soapenv:Envelope>
+
+An example of the mapping configuration, with all possible Documenten API 
+resources and attributes is shown in ``test_app/cmis_mapper.json``. The 
+related DMS content model for `Alfresco`_ (an open source DMS) is in 
+``/alfresco/extension/alfreso-zsdms-model.xml``. Both the mapping and the 
+model should be in sync.
+
+Mappings
+--------
+
+**Document**
+
+Represents the `Documenten API`_ ``EnkelvoudigInformatieObjecten``-resource.
+
+``cmis:objectTypeId`` = ``drc:document``
+
+Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
+
+**Gebruiksrechten**
+
+Represents the `Documenten API`_ ``Gebruiksrechten``-resource.
+
+``cmis:objectTypeId`` = ``drc:gebruiksrechten``
+
+Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
+
+**ObjectInformatieObject**
+
+Represents the `Documenten API`_ ``ObjectInformatieObjecten``-resource.
+
+``cmis:objectTypeId`` = ``drc:oio``
+
+Mapping configurable via ``OBJECTINFORMATIEOBJECT_MAP`` in the CMIS mapper.
+
+**Zaaktype folder**
+
+Contains all Zaken from this Zaaktype and has itself some meta data about the
+Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktypen``-resource.
+
+.. _`Catalogi API`: https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index
+
+Predefined mapping:
+
+``cmis:objectTypeId`` = ``drc:zaaktypefolder``
+
++-------------------+---------------------------------+
+| API-attribute     | CMIS-property                   |
++===================+=================================+
+| ``url``           | ``drc:zaaktype__url``           |
++-------------------+---------------------------------+
+| ``identificatie`` | ``drc:zaaktype__identificatie`` |
++-------------------+---------------------------------+
+
+**Zaak folder**
+
+Contains all Zaak-related documents and has itself some meta data about the
+Zaak. API-attributes are from the `Zaken API`_ ``Zaken``-resource.
+
+.. _`Zaken API`: https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index
+
+Predefined mapping:
+
+``cmis:objectTypeId`` = ``drc:zaakfolder``
+
++---------------------+---------------------------------+
+| API-attribute       | CMIS-property                   |
++=====================+=================================+
+| ``url``             | ``drc:zaak__url``               |
++---------------------+---------------------------------+
+| ``identificatie``   | ``drc:zaak__identificatie``     |
++---------------------+---------------------------------+
+| ``zaaktype``        | ``drc:zaak__zaaktypeurl``       |
++---------------------+---------------------------------+
+| ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
++---------------------+---------------------------------+
+
+DMS Content model configuration
+-------------------------------
+
+The mapping configuration must match the content model in the DMS. Each 
+property, like ``drc:document__titel`` in the example above, must be defined 
+in the content model.
+
+The example shown in ``/alfresco/extension/alfreso-zsdms-model.xml`` 
+indicates all attributes, types and whether the property is indexed (queryable) 
+or not. If these attributes are incorrectly configured, the Documenten API 
+might not work correctly.
+
+DMS folder structure
+--------------------
+
+Open Zaak uses a folder structure in the DMS similar to the 
+`Zaak- en Documentservices 1.2`_. However, due to way the Documenten API works
+there are differences.
+
+.. _`Zaak- en Documentservices`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
+
+**Creating a document**
+
+When a document is created via the Documenten API, the document is placed in a 
+temporary folder. By default this is:
+
+.. code-block::
+
+    CMIS Root > 
+        [base-folder (cmis:folder)] > 
+            [year (cmis:folder)] > 
+                [month (cmis:folder)] > 
+                    [day (cmis:folder)] > 
+                        [filename (drc:document)]
+
+
+For example:
+
+.. code-block::
+
+    CMIS Root > DRC > 2020 > 12 > 31 > document.txt
+
+
+If nothing else happens, this document will remain here and can be considered
+a "zombie" document that has no relation to any Zaak.
+
+**Relating a document to a Zaak**
+
+When a document is related to a Zaak, the document is moved to another folder
+that can be consider the zaak folder:
+
+.. code-block::
+
+    CMIS Root > 
+        [base-folder (cmis:folder)] > 
+            [zaaktype-folder (drc:zaaktypefolder)]
+                [year (cmis:folder)] > 
+                    [month (cmis:folder)] > 
+                        [day (cmis:folder)] > 
+                            [zaak-folder (drc:zaakfolder)]
+                                [filename (drc:document)]
+
+For example:
+
+.. code-block::
+
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
+
+
+References
+==========
+
+* `Issues <https://github.com/open-zaak/open-zaak/issues>`_
+* `Code <https://github.com/open-zaak/cmis-adapter>`_
+
+
+License
+=======
+
+Copyright © Dimpact 2019 - 2020
+
+Licensed under the EUPL_
+
+.. _EUPL: LICENCE.md
+
+.. _`Maykin Media B.V.`: https://www.maykinmedia.nl
+
+.. _`Alfresco`: https://www.alfresco.com/ecm-software/alfresco-community-editions
 
 .. |build-status| image:: https://travis-ci.org/open-zaak/cmis-adapter.svg?branch=master
     :target: https://travis-ci.org/open-zaak/cmis-adapter

@@ -2,7 +2,7 @@
 Alfresco on Docker
 ===================
 
-Creates a container that runs Alfresco Community.
+Creates a container that runs Alfresco Community Edition.
 
 Usage
 =====
@@ -28,6 +28,10 @@ Locations
     http://localhost:8080/
     # The default username/password are: admin/admin
 
-#. You can find the CMIS endpoint at::
+#. You can find the CMIS 1.1 Browser binding endpoint at::
 
     http://localhost:8082/alfresco/cmisatom
+
+#. You can find the CMIS 1.0 SOAP binding endpoint at::
+
+    http://localhost:8082/alfresco/cmisws/cmis?wsdl
