@@ -94,7 +94,7 @@ Install
     CMIS_ENABLED = True
 
     # Absolute path to the mapping of Documenten API attributes to (custom) 
-    # properties in your DMS model.
+    # properties in your DMS content model.
     CMIS_MAPPER_FILE = /path/to/cmis_mapper.json
 
 5. Login to the Django admin as superuser and configure the CMIS backend.
@@ -102,11 +102,18 @@ Install
 Mapping configuration
 =====================
 
-Mapping Documenten API attributes to custom properties in the DMS model should
-be done with great care. When the DMS stores these properties, the Documenten 
-API relies on their existance to create proper responses.
+There are 2 important concepts:
 
-Below is a snippet of the ``cmis_mapper.json``:
+* Content model - The DMS configuration to store (custom) properties on folders
+  and documents. These properties are called CMIS properties.
+* CMIS-mapper - a JSON-file containing the translation from Documenten API 
+  attributes to CMIS properties.
+
+Mapping the Documenten API attributes to (custom) CMIS properties in the DMS 
+content model should be done with great care. When the DMS stores these 
+properties, the Documenten API relies on their existance to create proper responses. 
+
+Below is a snippet of the CMIS-mapper:
 
 .. code-block:: json
 
@@ -118,11 +125,13 @@ Below is a snippet of the ``cmis_mapper.json``:
 
 The ``DOCUMENT_MAP`` describes the mapping for the 
 ``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
-snippet, only the ``EnkelvoudigInformatieObject.titel`` is mapped to a custom 
-DMS property called ``drc:document_titel``.
+snippet, only the ``EnkelvoudigInformatieObject.titel`` attribute is mapped to 
+a custom CMIS property called ``drc:document_titel``.
 
-When creating a document, the custom properties are translated to CMIS 
-properties as shown below (note that this is a stripped down request example):
+Communication between the Documenten API using the CMIS-adapter, is done via 
+CMIS. Therefore, when creating a document via the Documenten API, the 
+attributes are translated to CMIS properties as shown below (note that this is 
+a stripped down request example).
 
 .. code-block:: xml
 
@@ -142,48 +151,88 @@ properties as shown below (note that this is a stripped down request example):
     </soapenv:Envelope>
 
 An example of the mapping configuration, with all possible Documenten API 
-resources and attributes is shown in ``test_app/cmis_mapper.json``. The 
-related DMS content model for `Alfresco`_ (an open source DMS) is in 
-``/alfresco/extension/alfreso-zsdms-model.xml``. Both the mapping and the 
-model should be in sync.
+resources and attributes is shown in ``test_app/cmis_mapper.json`` 
+(`cmis_mapper.json`_). The related DMS content model, that has the definitions 
+for all these CMIS properties, for `Alfresco`_ (an open source DMS) is in 
+``/alfresco/extension/alfreso-zsdms-model.xml`` (`alfreso-zsdms-model.xml`_). 
+Both the mapping and the model should be aligned.
+
+.. _`cmis_mapper.json`: https://github.com/open-zaak/cmis-adapter/blob/master/test_app/cmis_mapper.json
+.. _`alfreso-zsdms-model.xml`: https://github.com/open-zaak/cmis-adapter/blob/master/alfresco/extension/alfreso-zsdms-model.xml
 
 Mappings
 --------
 
+The content model and the CMIS-mapper configurations need to be aligned. For 
+each object, the API resource, the CMIS objecttype, CMIS basetype and the 
+(configuratble) CMIS-mapper object is described.
+
 **Document**
 
-Represents the `Documenten API`_ ``EnkelvoudigInformatieObjecten``-resource.
+The document itself, its content and meta data.
 
-``cmis:objectTypeId`` = ``drc:document``
++-------------------------+---------------------------------+
+| Documenten API resource | ``EnkelvoudigInformatieObject`` |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:document``                |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``DOCUMENT_MAP``                |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
+All CMIS-mapper properties are described in the `cmis_mapper.json`_.
 
 **Gebruiksrechten**
 
-Represents the `Documenten API`_ ``Gebruiksrechten``-resource.
+Usage rights. These rights don't need to be enforced by the DMS but are stored 
+for use outside the DMS.
 
-``cmis:objectTypeId`` = ``drc:gebruiksrechten``
++-------------------------+---------------------------------+
+| Documenten API resource | ``Gebruiksrechten``             |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:gebruiksrechten``         |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``GEBRUIKSRECHTEN_MAP``         |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
+All CMIS-mapper properties are described in the `cmis_mapper.json`_.
 
 **ObjectInformatieObject**
 
-Represents the `Documenten API`_ ``ObjectInformatieObjecten``-resource.
+Relation between a document and another object, like a Zaak, Besluit or 
+something else.
 
-``cmis:objectTypeId`` = ``drc:oio``
++-------------------------+---------------------------------+
+| Documenten API resource | ``ObjectInformatieObject``      |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:oio``                     |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``OBJECTINFORMATIEOBJECT_MAP``  |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``OBJECTINFORMATIEOBJECT_MAP`` in the CMIS mapper.
+All CMIS-mapper properties are described in the `cmis_mapper.json`_.
 
 **Zaaktype folder**
 
 Contains all Zaken from this Zaaktype and has itself some meta data about the
-Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktypen``-resource.
+Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktype``-resource.
 
 .. _`Catalogi API`: https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index
 
-Predefined mapping:
-
-``cmis:objectTypeId`` = ``drc:zaaktypefolder``
++-------------------------+---------------------------------+
+| Catalogi API resource   | ``Zaaktype``                    |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:zaaktypefolder``          |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:folder``                 |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | *Not configurable, see below*   |
++-------------------------+---------------------------------+
 
 +-------------------+---------------------------------+
 | API-attribute     | CMIS-property                   |
@@ -196,13 +245,19 @@ Predefined mapping:
 **Zaak folder**
 
 Contains all Zaak-related documents and has itself some meta data about the
-Zaak. API-attributes are from the `Zaken API`_ ``Zaken``-resource.
+Zaak. API-attributes are from the `Zaken API`_ ``Zaak``-resource.
 
 .. _`Zaken API`: https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index
 
-Predefined mapping:
-
-``cmis:objectTypeId`` = ``drc:zaakfolder``
++-------------------------+---------------------------------+
+| Zaken API resource      | ``Zaak``                        |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:zaakfolder``              |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:folder``                 |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | *Not configurable, see below*   |
++-------------------------+---------------------------------+
 
 +---------------------+---------------------------------+
 | API-attribute       | CMIS-property                   |
@@ -216,10 +271,12 @@ Predefined mapping:
 | ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
 +---------------------+---------------------------------+
 
+\* CMIS objecttype: ``cmis:objectTypeId``
+
 DMS Content model configuration
 -------------------------------
 
-The mapping configuration must match the content model in the DMS. Each 
+The CMIS mapper configuration must match the content model in the DMS. Each 
 property, like ``drc:document__titel`` in the example above, must be defined 
 in the content model.
 
@@ -235,7 +292,7 @@ Open Zaak uses a folder structure in the DMS similar to the
 `Zaak- en Documentservices 1.2`_. However, due to way the Documenten API works
 there are differences.
 
-.. _`Zaak- en Documentservices`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
+.. _`Zaak- en Documentservices 1.2`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
 
 **Creating a document**
 
@@ -283,6 +340,15 @@ For example:
 .. code-block::
 
     CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
+
+**Relating a document to a Besluit**
+
+When a document is related to a Besluit, and that Besluit is part of a Zaak, the
+document is moved as if it was related to that Zaak.
+
+**Relating a document to another object**
+
+When a document is related to any other object, the document is not moved.
 
 
 References
