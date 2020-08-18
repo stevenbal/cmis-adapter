@@ -231,16 +231,10 @@ Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktype``-resource.
 +-------------------------+---------------------------------+
 | CMIS basetype           | ``cmis:folder``                 |
 +-------------------------+---------------------------------+
-| CMIS-mapper object      | *Not configurable, see below*   |
+| CMIS-mapper object      | ``ZAAKTYPE_MAP``                |
 +-------------------------+---------------------------------+
 
-+-------------------+---------------------------------+
-| API-attribute     | CMIS-property                   |
-+===================+=================================+
-| ``url``           | ``drc:zaaktype__url``           |
-+-------------------+---------------------------------+
-| ``identificatie`` | ``drc:zaaktype__identificatie`` |
-+-------------------+---------------------------------+
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Zaak folder**
 
@@ -256,20 +250,10 @@ Zaak. API-attributes are from the `Zaken API`_ ``Zaak``-resource.
 +-------------------------+---------------------------------+
 | CMIS basetype           | ``cmis:folder``                 |
 +-------------------------+---------------------------------+
-| CMIS-mapper object      | *Not configurable, see below*   |
+| CMIS-mapper object      | ``ZAAK_MAP``                    |
 +-------------------------+---------------------------------+
 
-+---------------------+---------------------------------+
-| API-attribute       | CMIS-property                   |
-+=====================+=================================+
-| ``url``             | ``drc:zaak__url``               |
-+---------------------+---------------------------------+
-| ``identificatie``   | ``drc:zaak__identificatie``     |
-+---------------------+---------------------------------+
-| ``zaaktype``        | ``drc:zaak__zaaktypeurl``       |
-+---------------------+---------------------------------+
-| ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
-+---------------------+---------------------------------+
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 \* CMIS objecttype: ``cmis:objectTypeId``
 
@@ -308,21 +292,34 @@ temporary folder. By default this is:
                     [day (cmis:folder)] > 
                         [filename (drc:document)]
 
-
 For example:
 
 .. code-block::
 
     CMIS Root > DRC > 2020 > 12 > 31 > document.txt
 
+If nothing else happens, this document will remain here.
 
-If nothing else happens, this document will remain here and can be considered
-a "zombie" document that has no relation to any Zaak.
+**Creating gebruiksrechten**
+
+A document can have Gebruiksrechten. These are stored as a separate document 
+(``gebruiksrechten``) in a folder called ``related data``. This folder is 
+always in the same folder as the document itself and is of type ``cmis:folder``.
+
+The Gebruiksrechten will always be moved or copied along with the document.
+
+For example:
+
+.. code-block::
+
+    CMIS Root > DRC > 2020 > 12 > 31 > document.txt
+    CMIS Root > DRC > 2020 > 12 > 31 > related data > document.txt-gebruiksrechten
 
 **Relating a document to a Zaak**
 
-When a document is related to a Zaak, the document is moved to another folder
-that can be consider the zaak folder:
+Relating a document to a Zaak (by creating an ``ObjectInformatieObject``
+instance in the Documenten API) will cause the document and its Gebruiksrechten
+if it exists, to be **moved** or **copied** to the zaak folder.
 
 .. code-block::
 
@@ -335,20 +332,49 @@ that can be consider the zaak folder:
                             [zaak-folder (drc:zaakfolder)]
                                 [filename (drc:document)]
 
+A document is **moved** when the document was **not related** to a Zaak before 
+(and thus it was in the temporary folder). The document is **copied** to the 
+new zaak folder when the document was **already related** to a Zaak.
+
+The relation of a document to a Zaak is implicitly described by its path. In
+addition however, this relation is stored as a separate document (``oio``) in
+the ``related_data`` folder.
+
 For example:
 
 .. code-block::
 
     CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > related data > document.txt-gebruiksrechten
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > related data > document.txt-oio
 
 **Relating a document to a Besluit**
 
-When a document is related to a Besluit, and that Besluit is part of a Zaak, the
-document is moved as if it was related to that Zaak.
+When a document is related to a Besluit, there's a few different scenario's:
+
+1. The Besluit is **related** to a Zaak and...
+
+   1. The document is **not related** to a Zaak (and thus the document is in 
+      the temporary folder): The document is **moved** to the Zaak folder of 
+      the Zaak that is related to the Besluit.
+   2. The document is **already related** to a Zaak: The document is **copied**
+      to the new Zaak folder.
+
+2. The Besluit is **not related** to a Zaak and...
+
+   1. The document is **not related** to a Zaak: The document **stays** in its 
+      temporary folder.
+   2. The document is **related** to a Zaak: The document is **copied** to the
+      temporary folder.
+
+In all cases, the relation of a document to a Besluit is stored as a separate 
+document (``oio``) in the ``related_data`` folder, relative to wherever the new
+document is stored.
 
 **Relating a document to another object**
 
-When a document is related to any other object, the document is not moved.
+When a document is related to any other object, the document is not moved or 
+copied and stays in its temporary folder.
 
 
 References
