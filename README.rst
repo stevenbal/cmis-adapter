@@ -181,7 +181,7 @@ The document itself, its content and meta data.
 | CMIS-mapper object      | ``DOCUMENT_MAP``                |
 +-------------------------+---------------------------------+
 
-All CMIS-mapper properties are described in the `cmis_mapper.json`_.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Gebruiksrechten**
 
@@ -198,7 +198,7 @@ for use outside the DMS.
 | CMIS-mapper object      | ``GEBRUIKSRECHTEN_MAP``         |
 +-------------------------+---------------------------------+
 
-All CMIS-mapper properties are described in the `cmis_mapper.json`_.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **ObjectInformatieObject**
 
@@ -215,7 +215,7 @@ something else.
 | CMIS-mapper object      | ``OBJECTINFORMATIEOBJECT_MAP``  |
 +-------------------------+---------------------------------+
 
-All CMIS-mapper properties are described in the `cmis_mapper.json`_.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Zaaktype folder**
 
