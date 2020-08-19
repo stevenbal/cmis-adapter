@@ -181,6 +181,8 @@ def make_soap_envelope(
     :param content_id: str, ID of the content of a document (as the content will be a MTOM attachment)
     :param major: str, true or false whether the document being checked in is a major version
     :param checkin_comment: str, comment when checking in a document
+    :param source_folder_id: str, folder objectId from which to copy a document
+    :param target_folder_id: str, folder objectId to which to copy a document
     :return: minidom document
     """
 
@@ -323,6 +325,11 @@ def make_soap_envelope(
         include_element.setAttribute("href", f"cid:{content_id}")
         stream_element.appendChild(include_element)
         content_element.appendChild(stream_element)
+
+        filename_element = xml_doc.createElement("ns:filename")
+        filename_text = xml_doc.createTextNode("filename")
+        filename_element.appendChild(filename_text)
+        content_element.appendChild(filename_element)
 
         action_element.appendChild(content_element)
 

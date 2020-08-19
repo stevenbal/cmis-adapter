@@ -26,7 +26,6 @@ from drc_cmis.webservice.data_models import (
 from drc_cmis.webservice.request import SOAPCMISRequest
 from drc_cmis.webservice.utils import (
     extract_content,
-    extract_num_items,
     extract_object_properties_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
@@ -421,7 +420,7 @@ class Folder(CMISBaseObject):
     def get_children_folders(self) -> List:
         """Get all the folders in the current folder"""
 
-        query = CMISQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('%s')")
+        query = CMISQuery("SELECT * FROM cmis:folder WHERE cmis:parentId = '%s'")
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
@@ -430,13 +429,18 @@ class Folder(CMISBaseObject):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                return []
+            else:
+                raise exc
+
         xml_response = extract_xml_from_soap(soap_response)
-        num_items = extract_num_items(xml_response)
-        if num_items == 0:
-            return []
 
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         return [type(self)(folder) for folder in extracted_data]

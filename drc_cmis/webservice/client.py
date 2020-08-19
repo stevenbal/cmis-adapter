@@ -43,7 +43,6 @@ from drc_cmis.webservice.drc_document import (
 )
 from drc_cmis.webservice.request import SOAPCMISRequest
 from drc_cmis.webservice.utils import (
-    extract_num_items,
     extract_object_properties_from_xml,
     extract_repo_info_from_xml,
     extract_xml_from_soap,
@@ -70,27 +69,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             if self.base_folder_name == "":
                 self._base_folder = self.get_folder(object_id=self.root_folder_id)
             else:
-                query = CMISQuery("SELECT * FROM cmis:folder WHERE IN_FOLDER('%s')")
-
-                soap_envelope = make_soap_envelope(
-                    auth=(self.user, self.password),
-                    repository_id=self.main_repo_id,
-                    statement=query(str(self.root_folder_id)),
-                    cmis_action="query",
-                )
-
-                soap_response = self.request(
-                    "DiscoveryService", soap_envelope=soap_envelope.toxml()
-                )
-                xml_response = extract_xml_from_soap(soap_response)
-                num_items = extract_num_items(xml_response)
-                if num_items > 0:
-                    extracted_data = extract_object_properties_from_xml(
-                        xml_response, "query"
-                    )
-                    folders = [Folder(data) for data in extracted_data]
-                else:
-                    folders = []
+                root_folder = self.get_folder(self.root_folder_id)
+                folders = root_folder.get_children_folders()
 
                 # Check if the base folder has already been created
                 for folder in folders:
@@ -148,9 +128,17 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                return []
+            else:
+                raise exc
+
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
@@ -483,17 +471,23 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
-        xml_response = extract_xml_from_soap(soap_response)
-
-        object_title = object_type.capitalize()
         error_string = (
-            f"{object_title} {object_type} met identificatie drc:{object_type}__uuid {drc_uuid} "
+            f"{object_type.capitalize()} {object_type} met identificatie drc:{object_type}__uuid {drc_uuid} "
             f"bestaat niet in het CMIS connection"
         )
         does_not_exist = DocumentDoesNotExistError(error_string)
+
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                raise does_not_exist
+            else:
+                raise exc
+        xml_response = extract_xml_from_soap(soap_response)
 
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         if len(extracted_data) == 0:
@@ -714,14 +708,22 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                raise does_not_exist
+            else:
+                raise exc
+
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         return self.get_latest_version_not_pwc(extracted_data)
 
-    def check_document_exists(self, identification: Union[str, UUID]):
+    def check_document_exists(self, identification: Union[str, UUID]) -> None:
         """Query by identification if a document is in the repository
 
         :param identification: string, document ``identificatie``
@@ -737,9 +739,17 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        except CmisRuntimeException as exc:
+            # Corsa raises an error if the query gives no results, while Alfresco a 200
+            if "objectNotFound" in exc.message:
+                return
+            else:
+                raise exc
+
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
