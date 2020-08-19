@@ -285,12 +285,12 @@ temporary folder. By default this is:
 
 .. code-block::
 
-    CMIS Root > 
-        [base-folder (cmis:folder)] > 
-            [year (cmis:folder)] > 
-                [month (cmis:folder)] > 
-                    [day (cmis:folder)] > 
-                        [filename (drc:document)]
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [year] (cmis:folder)
+            +-- [month] (cmis:folder)
+                +-- [day] (cmis:folder)
+                    +-- [filename] (drc:document)
 
 For example:
 
@@ -303,7 +303,7 @@ If nothing else happens, this document will remain here.
 **Creating gebruiksrechten**
 
 A document can have Gebruiksrechten. These are stored as a separate document 
-(``gebruiksrechten``) in a folder called ``related data``. This folder is 
+(``gebruiksrechten``) in a folder called ``Related data``. This folder is 
 always in the same folder as the document itself and is of type ``cmis:folder``.
 
 The Gebruiksrechten will always be moved or copied along with the document.
@@ -313,7 +313,7 @@ For example:
 .. code-block::
 
     CMIS Root > DRC > 2020 > 12 > 31 > document.txt
-    CMIS Root > DRC > 2020 > 12 > 31 > related data > document.txt-gebruiksrechten
+    CMIS Root > DRC > 2020 > 12 > 31 > Related data > document.txt-gebruiksrechten
 
 **Relating a document to a Zaak**
 
@@ -323,14 +323,17 @@ if it exists, to be **moved** or **copied** to the zaak folder.
 
 .. code-block::
 
-    CMIS Root > 
-        [base-folder (cmis:folder)] > 
-            [zaaktype-folder (drc:zaaktypefolder)]
-                [year (cmis:folder)] > 
-                    [month (cmis:folder)] > 
-                        [day (cmis:folder)] > 
-                            [zaak-folder (drc:zaakfolder)]
-                                [filename (drc:document)]
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [zaaktype-folder] (drc:zaaktypefolder)
+            +-- [year] (cmis:folder)
+                +-- [month] (cmis:folder)
+                    +-- [day] (cmis:folder)
+                        +-- [zaak-folder] (drc:zaakfolder)
+                            +-- [filename] (drc:document)
+                            +-- Related data (cmis:folder)
+                                +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+                                +-- [filename]-oio (drc:oio)
 
 A document is **moved** when the document was **not related** to a Zaak before 
 (and thus it was in the temporary folder). The document is **copied** to the 
@@ -338,15 +341,15 @@ new zaak folder when the document was **already related** to a Zaak.
 
 The relation of a document to a Zaak is implicitly described by its path. In
 addition however, this relation is stored as a separate document (``oio``) in
-the ``related_data`` folder.
+the ``Related data`` folder.
 
 For example:
 
 .. code-block::
 
     CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
-    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > related data > document.txt-gebruiksrechten
-    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > related data > document.txt-oio
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > Related data > document.txt-gebruiksrechten
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > Related data > document.txt-oio
 
 **Relating a document to a Besluit**
 
@@ -368,13 +371,39 @@ When a document is related to a Besluit, there's a few different scenario's:
       temporary folder.
 
 In all cases, the relation of a document to a Besluit is stored as a separate 
-document (``oio``) in the ``related_data`` folder, relative to wherever the new
+document (``oio``) in the ``Related data`` folder, relative to wherever the new
 document is stored.
 
 **Relating a document to another object**
 
 When a document is related to any other object, the document is not moved or 
 copied and stays in its temporary folder.
+
+DMS folder structure overview
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A complete overview of all folder- and document types are shown below:
+
+.. code-block::
+
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [zaaktype-folder] (drc:zaaktypefolder)
+        |   +-- [year] (cmis:folder)
+        |       +-- [month] (cmis:folder)
+        |           +-- [day] (cmis:folder)
+        |               +-- [zaak-folder] (drc:zaakfolder)
+        |                   +-- [filename] (drc:document)
+        |                   +-- Related data (cmis:folder)
+        |                       +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+        |                       +-- [filename]-oio (drc:oio)
+        +-- [year] (cmis:folder)
+            +-- [month] (cmis:folder)
+                +-- [day] (cmis:folder)
+                    +-- [filename] (drc:document)
+                    +-- Related data (cmis:folder)
+                        +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+                        +-- [filename]-oio (drc:oio)
 
 
 References
