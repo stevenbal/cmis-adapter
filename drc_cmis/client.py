@@ -1,9 +1,17 @@
-from typing import List, TypeVar, Union
+from io import BytesIO
+from typing import List, Optional, TypeVar, Union
 from uuid import UUID
 
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 
-from drc_cmis.utils.exceptions import DocumentDoesNotExistError
+from cmislib.exceptions import UpdateConflictException
+
+from drc_cmis.utils.exceptions import (
+    DocumentConflictException,
+    DocumentLockConflictException,
+    DocumentNotLockedException,
+)
 
 from .models import Vendor
 
@@ -108,6 +116,52 @@ class CMISClient:
         else:
             # TODO
             pass
+
+    def update_document(
+        self, drc_uuid: str, lock: str, data: dict, content: Optional[BytesIO] = None
+    ) -> Document:
+        """Update a Document (with the EnkelvoudigInformatieObject properties)
+
+        :param drc_uuid: string, the value of drc:document__uuid
+        :param lock: string, value of the lock
+        :param data: dict, the new properties of the document
+        :param content: BytesIO, the new content of the document
+        :return: Document, the updated document
+        """
+        cmis_doc = self.get_document(drc_uuid)
+
+        if not cmis_doc.isVersionSeriesCheckedOut:
+            raise DocumentNotLockedException(
+                "Document is not checked out and/or locked."
+            )
+
+        if not cmis_doc.lock:
+            raise DocumentNotLockedException(
+                "Document is not checked out and/or locked."
+            )
+
+        correct_lock = constant_time_compare(lock, cmis_doc.lock)
+
+        if not correct_lock:
+            raise DocumentLockConflictException("Wrong document lock given.")
+
+        # build up the properties
+        current_properties = cmis_doc.properties
+        new_properties = self.document_type.build_properties(data, new=False)
+
+        diff_properties = {
+            key: value
+            for key, value in new_properties.items()
+            if current_properties.get(key) != value
+        }
+
+        try:
+            cmis_doc.update_properties(diff_properties, content)
+        except UpdateConflictException as exc:
+            # Node locked!
+            raise DocumentConflictException from exc
+
+        return cmis_doc
 
     def create_oio(self, data: dict) -> ObjectInformatieObject:
         """Create ObjectInformatieObject which relates a document with a zaak or besluit
@@ -287,24 +341,3 @@ class CMISClient:
         return self.get_or_create_folder(
             f"zaak-{zaak['identificatie']}", zaaktype_folder, properties
         )
-
-    def get_latest_version_not_pwc(self, extracted_data: List) -> Document:
-        """Return the latest version which is not the pwc
-
-        :param extracted_data: dict, the results of a query
-        "SELECT * FROM drc:document WHERE drc:document__uuid = '<uuid>'"
-        :return: Document, the latest not locked version of a document
-        """
-        error_string = "Document bestaat niet in het CMIS connection"
-        does_not_exist = DocumentDoesNotExistError(error_string)
-
-        if len(extracted_data) == 0:
-            raise does_not_exist
-        elif len(extracted_data) == 1:
-            return self.document_type(extracted_data[0])
-        elif len(extracted_data) == 2:
-            # In this case there is both the latest version and pwc
-            # return the latest version
-            for doc_data in extracted_data:
-                if doc_data["properties"]["cmis:versionLabel"]["value"] != "pwc":
-                    return self.document_type(doc_data)

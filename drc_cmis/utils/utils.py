@@ -1,6 +1,11 @@
 from decimal import Decimal
+from typing import List, TypeVar
 
 from django.utils.crypto import get_random_string as _get_random_string
+
+from drc_cmis.utils.exceptions import DocumentDoesNotExistError
+
+Document = TypeVar("Document")
 
 
 def get_random_string(number: int = 6) -> str:
@@ -51,3 +56,28 @@ def build_query_filters(
         filter_string = filter_string[:-4]
 
     return filter_string
+
+
+def extract_latest_version(object_type: type, extracted_data: List) -> Document:
+    """Get the latest version
+
+    If there is a private working copy, then the pwc is returned.
+
+    :param object_type: type of the object to be returned
+    :param extracted_data: dict, the results of a query
+    "SELECT * FROM drc:document WHERE drc:document__uuid = '<uuid>'"
+    :return: Document, the latest not locked version of a document
+    """
+    error_string = "Document bestaat niet in het CMIS connection"
+    does_not_exist = DocumentDoesNotExistError(error_string)
+
+    if len(extracted_data) == 0:
+        raise does_not_exist
+    elif len(extracted_data) == 1:
+        return object_type(extracted_data[0])
+    elif len(extracted_data) == 2:
+        # In this case there is both the latest version and pwc
+        # return the latest version
+        for doc_data in extracted_data:
+            if doc_data["properties"]["cmis:versionLabel"]["value"] == "pwc":
+                return object_type(doc_data)

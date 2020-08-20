@@ -119,6 +119,20 @@ class CMISDocumentTests(DMSMixin, TestCase):
         new_doc = pwc.checkin(checkin_comment="Testing Check-in...")
         self.assertEqual(new_doc.versionLabel, "2.0")
 
+    def test_get_document(self):
+        identification = str(uuid.uuid4())
+        data = {
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+        }
+        document = self.cmis_client.create_document(
+            identification=identification, data=data
+        )
+
+        document.checkout()
+        retrieved_doc = self.cmis_client.get_document(drc_uuid=document.uuid)
+        self.assertEqual(retrieved_doc.versionLabel, "pwc")
+
     def test_get_pwc(self):
         identification = str(uuid.uuid4())
         data = {
@@ -131,8 +145,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
         document.checkout()
 
         # Retrieve pwc from the original document
-        pwc = document.get_private_working_copy()
-        self.assertIsNotNone(pwc.versionLabel)
+        pwc = document.get_latest_version()
+        self.assertTrue(pwc.isVersionSeriesCheckedOut)
 
     def test_get_pwc_with_no_checked_out_doc(self):
         identification = str(uuid.uuid4())
@@ -145,8 +159,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
         )
 
         # Retrieve pwc from the original document
-        pwc = document.get_private_working_copy()
-        self.assertIsNone(pwc)
+        pwc = document.get_latest_version()
+        self.assertFalse(pwc.isVersionSeriesCheckedOut)
 
     def test_update_properties(self):
         identification = str(uuid.uuid4())
@@ -365,6 +379,23 @@ class CMISDocumentTests(DMSMixin, TestCase):
         self.assertEqual(pwc.versionLabel, "pwc")
 
         document.delete_object()
+
+    def test_delete_pwc(self):
+        identification = str(uuid.uuid4())
+        data = {
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+        }
+        document = self.cmis_client.create_document(
+            identification=identification, data=data
+        )
+
+        pwc = document.checkout()
+
+        pwc.delete_object()
+
+        with self.assertRaises(DocumentDoesNotExistError):
+            document.get_latest_version()
 
     def test_move_document_to_folder(self):
         base_folder = self.cmis_client.base_folder

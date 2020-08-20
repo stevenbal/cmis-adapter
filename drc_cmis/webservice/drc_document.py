@@ -14,7 +14,7 @@ from drc_cmis.utils.mapper import (
     mapper,
 )
 from drc_cmis.utils.query import CMISQuery
-from drc_cmis.utils.utils import get_random_string
+from drc_cmis.utils.utils import extract_latest_version, get_random_string
 from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
     Gebruiksrechten as GebruiksrechtenDoc,
@@ -227,6 +227,8 @@ class Document(CMISContentObject):
     def get_document(self, object_id: str) -> "Document":
         """Get latest version of a document with specified objectId
 
+        The objectId contains the specific version in Alfresco
+
         :param object_id: string, objectId of the document
         :return: Document
         """
@@ -269,7 +271,7 @@ class Document(CMISContentObject):
             )[0]
             pwc_id = extracted_data["properties"]["objectId"]["value"]
         except CmisRuntimeException:
-            pwc_document = self.get_private_working_copy()
+            pwc_document = self.get_latest_version()
             pwc_id = pwc_document.objectId
 
         return self.get_document(pwc_id)
@@ -384,20 +386,45 @@ class Document(CMISContentObject):
         the document is currently locked (i.e. there is a private working copy), we need
         to cancel that checkout first.
         """
-        pwc = self.get_private_working_copy()
-        if pwc is not None:
+        latest_version = self.get_latest_version()
+
+        if latest_version.isVersionSeriesCheckedOut:
             soap_envelope = make_soap_envelope(
                 auth=(self.user, self.password),
                 repository_id=self.main_repo_id,
-                object_id=pwc.objectId,
+                object_id=latest_version.objectId,
                 cmis_action="cancelCheckOut",
             )
 
             self.request(
                 "VersioningService", soap_envelope=soap_envelope.toxml(),
             )
+            refreshed_document = self.get_latest_version()
+            return refreshed_document.delete_object()
 
         return super().delete_object()
+
+    def get_latest_version(self):
+        """Get the latest version or the PWC"""
+
+        # This always selects the latest version, and if there is a pwc,
+        # Alfresco returns both the pwc and the latest major version, while Corsa only returns the pwc.
+        query = CMISQuery("SELECT * FROM drc:document WHERE drc:document__uuid = '%s'")
+
+        soap_envelope = make_soap_envelope(
+            auth=(self.user, self.password),
+            repository_id=self.main_repo_id,
+            statement=query(self.uuid),
+            cmis_action="query",
+        )
+
+        soap_response = self.request(
+            "DiscoveryService", soap_envelope=soap_envelope.toxml()
+        )
+
+        xml_response = extract_xml_from_soap(soap_response)
+        extracted_data = extract_object_properties_from_xml(xml_response, "query")
+        return extract_latest_version(type(self), extracted_data)
 
 
 class Gebruiksrechten(CMISContentObject):

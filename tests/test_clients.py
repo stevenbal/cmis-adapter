@@ -1565,12 +1565,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         )
         lock = str(uuid.uuid4())
 
-        self.assertIs(document.get_private_working_copy(), None)
+        self.assertFalse(document.isVersionSeriesCheckedOut)
 
         self.cmis_client.lock_document(drc_uuid=document.uuid, lock=lock)
 
-        pwc = document.get_private_working_copy()
-        self.assertEqual(pwc.baseTypeId, "cmis:document")
+        pwc = document.get_latest_version()
+        self.assertTrue(pwc.isVersionSeriesCheckedOut)
 
     def test_already_locked_document(self):
         data = {
@@ -1599,14 +1599,14 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         self.cmis_client.lock_document(drc_uuid=document.uuid, lock=lock)
 
-        pwc = document.get_private_working_copy()
-        self.assertEqual(pwc.baseTypeId, "cmis:document")
+        pwc = document.get_latest_version()
+        self.assertTrue(pwc.isVersionSeriesCheckedOut)
 
         unlocked_doc = self.cmis_client.unlock_document(
             drc_uuid=document.uuid, lock=lock
         )
 
-        self.assertIs(unlocked_doc.get_private_working_copy(), None)
+        self.assertFalse(unlocked_doc.isVersionSeriesCheckedOut)
 
     def test_unlock_document_with_wrong_lock(self):
         data = {
@@ -1637,14 +1637,14 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         self.cmis_client.lock_document(drc_uuid=document.uuid, lock=lock)
 
-        pwc = document.get_private_working_copy()
-        self.assertEqual(pwc.baseTypeId, "cmis:document")
+        pwc = document.get_latest_version()
+        self.assertTrue(pwc.isVersionSeriesCheckedOut)
 
         unlocked_doc = self.cmis_client.unlock_document(
             drc_uuid=document.uuid, lock=str(uuid.uuid4()), force=True
         )
 
-        self.assertIs(unlocked_doc.get_private_working_copy(), None)
+        self.assertFalse(unlocked_doc.isVersionSeriesCheckedOut)
 
     def test_update_document(self):
         identification = str(uuid.uuid4())

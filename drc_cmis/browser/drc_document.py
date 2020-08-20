@@ -18,7 +18,8 @@ from drc_cmis.utils.mapper import (
     ZAAKTYPE_MAP,
     mapper,
 )
-from drc_cmis.utils.utils import get_random_string
+from drc_cmis.utils.query import CMISQuery
+from drc_cmis.utils.utils import extract_latest_version, get_random_string
 
 from .request import CMISRequest
 
@@ -221,6 +222,18 @@ class Document(CMISContentObject):
             data = self.get_request(self.root_folder_url, params)
             return type(self)(data)
 
+    def get_latest_version(self):
+        """Get the latest version or the PWC"""
+        query = CMISQuery("SELECT * FROM drc:document WHERE drc:document__uuid = '%s'")
+
+        data = {
+            "cmisaction": "query",
+            "statement": query(self.uuid),
+        }
+        json_response = self.post_request(self.base_url, data)
+
+        return extract_latest_version(type(self), json_response.get("results"))
+
     def checkin(self, checkin_comment, major=True):
         logger.debug("CMIS: DRC_DOCUMENT: checkin")
         props = {
@@ -279,14 +292,15 @@ class Document(CMISContentObject):
         the document is currently locked (i.e. there is a private working copy), we need
         to cancel that checkout first.
         """
-        pwc = self.get_private_working_copy()
-        if pwc is not None:
+        latest_version = self.get_latest_version()
+        if latest_version.isVersionSeriesCheckedOut:
             cancel_checkout_data = {
                 "cmisaction": "cancelCheckout",
-                "objectId": pwc.objectId,
+                "objectId": latest_version.objectId,
             }
             self.post_request(self.root_folder_url, data=cancel_checkout_data)
-
+            refreshed_document = self.get_latest_version()
+            return refreshed_document.delete_object()
         return super().delete_object()
 
 

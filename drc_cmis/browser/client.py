@@ -8,8 +8,6 @@ from uuid import UUID
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 
-from cmislib.exceptions import UpdateConflictException
-
 from drc_cmis.browser.drc_document import (
     CMISContentObject,
     Document,
@@ -23,20 +21,22 @@ from drc_cmis.browser.request import CMISRequest
 from drc_cmis.browser.utils import create_json_request_body
 from drc_cmis.client import CMISClient
 from drc_cmis.utils.exceptions import (
+    CmisInvalidArgumentException,
     CmisUpdateConflictException,
-    DocumentConflictException,
     DocumentDoesNotExistError,
     DocumentExistsError,
-    DocumentLockConflictException,
     DocumentLockedException,
-    DocumentNotLockedException,
     FolderDoesNotExistError,
     GetFirstException,
     LockDidNotMatchException,
 )
 from drc_cmis.utils.mapper import mapper
 from drc_cmis.utils.query import CMISQuery
-from drc_cmis.utils.utils import build_query_filters, get_random_string
+from drc_cmis.utils.utils import (
+    build_query_filters,
+    extract_latest_version,
+    get_random_string,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -356,12 +356,13 @@ class CMISDRCClient(CMISClient, CMISRequest):
 
         try:
             pwc = cmis_doc.checkout()
-            assert (
-                pwc.isPrivateWorkingCopy
-            ), "checkout result must be a private working copy"
-            if pwc.lock:
-                raise already_locked
+        except CmisInvalidArgumentException:
+            raise already_locked
 
+        if pwc.lock:
+            raise already_locked
+
+        try:
             # store the lock value on the PWC so we can compare it later
             pwc.update_properties({mapper("lock"): lock})
         except CmisUpdateConflictException as exc:
@@ -386,50 +387,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
             return new_doc
 
         raise LockDidNotMatchException("Lock did not match", code="unlock-failed")
-
-    def update_document(
-        self, drc_uuid: str, lock: str, data: dict, content=None
-    ) -> Document:
-        logger.debug("Updating document with UUID %s", drc_uuid)
-        cmis_doc = self.get_document(drc_uuid)
-
-        if not cmis_doc.isVersionSeriesCheckedOut:
-            raise DocumentNotLockedException(
-                "Document is not checked out and/or locked."
-            )
-
-        assert not cmis_doc.isPrivateWorkingCopy, "Unexpected PWC retrieved"
-        pwc = cmis_doc.get_private_working_copy()
-
-        if not pwc.lock:
-            raise DocumentNotLockedException(
-                "Document is not checked out and/or locked."
-            )
-
-        correct_lock = constant_time_compare(lock, pwc.lock)
-        if not correct_lock:
-            raise DocumentLockConflictException("Wrong document lock given.")
-
-        # build up the properties
-        current_properties = cmis_doc.properties
-        new_properties = Document.build_properties(data, new=False)
-
-        diff_properties = {
-            key: value
-            for key, value in new_properties.items()
-            if current_properties.get(key) != value
-        }
-
-        try:
-            pwc.update_properties(diff_properties)
-        except UpdateConflictException as exc:
-            # Node locked!
-            raise DocumentConflictException from exc
-
-        if content is not None:
-            pwc.set_content_stream(content)
-
-        return pwc
 
     def get_document(
         self, drc_uuid: Optional[str], via_identification=None, filters=None
@@ -466,7 +423,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
         }
         json_response = self.post_request(self.base_url, data)
 
-        return self.get_latest_version_not_pwc(json_response.get("results"))
+        return extract_latest_version(self.document_type, json_response.get("results"))
 
     def check_document_exists(self, identification: Union[str, UUID]):
         """Query by identification (``identificatie``) if a document is in the repository"""

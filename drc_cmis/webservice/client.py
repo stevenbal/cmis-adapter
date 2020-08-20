@@ -7,16 +7,13 @@ from uuid import UUID
 from django.utils.crypto import constant_time_compare
 
 from cmislib.domain import CmisId
-from cmislib.exceptions import UpdateConflictException
 
 from drc_cmis.client import CMISClient
 from drc_cmis.utils.exceptions import (
     CmisRuntimeException,
     CmisUpdateConflictException,
-    DocumentConflictException,
     DocumentDoesNotExistError,
     DocumentExistsError,
-    DocumentLockConflictException,
     DocumentLockedException,
     DocumentNotLockedException,
     FolderDoesNotExistError,
@@ -24,7 +21,11 @@ from drc_cmis.utils.exceptions import (
 )
 from drc_cmis.utils.mapper import mapper, reverse_mapper
 from drc_cmis.utils.query import CMISQuery
-from drc_cmis.utils.utils import build_query_filters, get_random_string
+from drc_cmis.utils.utils import (
+    build_query_filters,
+    extract_latest_version,
+    get_random_string,
+)
 from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
     Gebruiksrechten as GebruiksRechtDoc,
@@ -586,9 +587,6 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
 
         try:
             pwc = cmis_doc.checkout()
-            assert (
-                pwc.versionLabel == "pwc"
-            ), "checkout result must be a private working copy"
             if pwc.lock:
                 raise already_locked
 
@@ -614,77 +612,33 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         :return: Document, the unlocked document
         """
         cmis_doc = self.get_document(drc_uuid)
-        pwc = cmis_doc.get_private_working_copy()
-
-        if constant_time_compare(pwc.lock, lock) or force:
-            lock_property = {
-                mapper("lock"): {
-                    "value": "",
-                    "type": get_cmis_type(EnkelvoudigInformatieObject, "lock"),
-                }
-            }
-            pwc.update_properties(lock_property)
-            return pwc.checkin("Updated via Documenten API")
-
-        raise LockDidNotMatchException("Lock did not match", code="unlock-failed")
-
-    def update_document(
-        self, drc_uuid: str, lock: str, data: dict, content: Optional[BytesIO] = None
-    ) -> Document:
-        """Update a Document (with the EnkelvoudigInformatieObject properties)
-
-        :param drc_uuid: string, the value of drc:document__uuid
-        :param lock: string, value of the lock
-        :param data: dict, the new properties of the document
-        :param content: BytesIO, the new content of the document
-        :return: Document, the updated document
-        """
-        cmis_doc = self.get_document(drc_uuid)
 
         if not cmis_doc.isVersionSeriesCheckedOut:
             raise DocumentNotLockedException(
                 "Document is not checked out and/or locked."
             )
 
-        assert not cmis_doc.isPrivateWorkingCopy, "Unexpected PWC retrieved"
+        if constant_time_compare(cmis_doc.lock, lock) or force:
+            lock_property = {
+                mapper("lock"): {
+                    "value": "",
+                    "type": get_cmis_type(EnkelvoudigInformatieObject, "lock"),
+                }
+            }
+            cmis_doc.update_properties(lock_property)
+            return cmis_doc.checkin("Updated via Documenten API")
 
-        pwc = cmis_doc.get_private_working_copy()
-
-        if not pwc.lock:
-            raise DocumentNotLockedException(
-                "Document is not checked out and/or locked."
-            )
-
-        correct_lock = constant_time_compare(lock, pwc.lock)
-
-        if not correct_lock:
-            raise DocumentLockConflictException("Wrong document lock given.")
-
-        # build up the properties
-        current_properties = cmis_doc.properties
-        new_properties = Document.build_properties(data, new=False)
-
-        diff_properties = {
-            key: value
-            for key, value in new_properties.items()
-            if current_properties.get(key) != value
-        }
-
-        try:
-            pwc.update_properties(diff_properties, content)
-        except UpdateConflictException as exc:
-            # Node locked!
-            raise DocumentConflictException from exc
-
-        return pwc
+        raise LockDidNotMatchException("Lock did not match", code="unlock-failed")
 
     # FIXME filters are useless because uuid is unique
     def get_document(self, drc_uuid: str, filters: Optional[dict] = None) -> Document:
         """Retrieve a document in the main repository with given uuid (drc:document__uuid)
 
+        If the document series is checked out, it returns the private working copy
+
         :param drc_uuid: string, value of the cmis property drc:document__uuid
         :param filters: dict, filters to find the document
-        :return: Document, the first document found
+        :return: Document, latest document version
         """
         error_string = f"Document met drc:document__uuid {drc_uuid} bestaat niet in het CMIS connection"
         does_not_exist = DocumentDoesNotExistError(error_string)
@@ -692,7 +646,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         if drc_uuid is None:
             raise does_not_exist
 
-        # This always selects the latest version, and if there is a pwc, also the pwc is returned
+        # This always selects the latest version, and if there is a pwc,
+        # Alfresco returns both the pwc and the latest major version, while Corsa only returns the pwc.
         query = CMISQuery(
             "SELECT * FROM drc:document WHERE drc:document__uuid = '%s' %s"
         )
@@ -721,7 +676,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
 
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
-        return self.get_latest_version_not_pwc(extracted_data)
+        return extract_latest_version(self.document_type, extracted_data)
 
     def check_document_exists(self, identification: Union[str, UUID]) -> None:
         """Query by identification if a document is in the repository
