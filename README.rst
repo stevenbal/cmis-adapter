@@ -94,7 +94,7 @@ Install
     CMIS_ENABLED = True
 
     # Absolute path to the mapping of Documenten API attributes to (custom) 
-    # properties in your DMS model.
+    # properties in your DMS content model.
     CMIS_MAPPER_FILE = /path/to/cmis_mapper.json
 
 5. Login to the Django admin as superuser and configure the CMIS backend.
@@ -102,11 +102,18 @@ Install
 Mapping configuration
 =====================
 
-Mapping Documenten API attributes to custom properties in the DMS model should
-be done with great care. When the DMS stores these properties, the Documenten 
-API relies on their existance to create proper responses.
+There are 2 important concepts:
 
-Below is a snippet of the ``cmis_mapper.json``:
+* Content model - The DMS configuration to store (custom) properties on folders
+  and documents. These properties are called CMIS properties.
+* CMIS-mapper - a JSON-file containing the translation from Documenten API 
+  attributes to CMIS properties.
+
+Mapping the Documenten API attributes to (custom) CMIS properties in the DMS 
+content model should be done with great care. When the DMS stores these 
+properties, the Documenten API relies on their existance to create proper responses. 
+
+Below is a snippet of the CMIS-mapper:
 
 .. code-block:: json
 
@@ -118,11 +125,13 @@ Below is a snippet of the ``cmis_mapper.json``:
 
 The ``DOCUMENT_MAP`` describes the mapping for the 
 ``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
-snippet, only the ``EnkelvoudigInformatieObject.titel`` is mapped to a custom 
-DMS property called ``drc:document_titel``.
+snippet, only the ``EnkelvoudigInformatieObject.titel`` attribute is mapped to 
+a custom CMIS property called ``drc:document_titel``.
 
-When creating a document, the custom properties are translated to CMIS 
-properties as shown below (note that this is a stripped down request example):
+Communication between the Documenten API using the CMIS-adapter, is done via 
+CMIS. Therefore, when creating a document via the Documenten API, the 
+attributes are translated to CMIS properties as shown below (note that this is 
+a stripped down request example).
 
 .. code-block:: xml
 
@@ -142,84 +151,116 @@ properties as shown below (note that this is a stripped down request example):
     </soapenv:Envelope>
 
 An example of the mapping configuration, with all possible Documenten API 
-resources and attributes is shown in ``test_app/cmis_mapper.json``. The 
-related DMS content model for `Alfresco`_ (an open source DMS) is in 
-``/alfresco/extension/alfreso-zsdms-model.xml``. Both the mapping and the 
-model should be in sync.
+resources and attributes is shown in ``test_app/cmis_mapper.json`` 
+(`cmis_mapper.json`_). The related DMS content model, that has the definitions 
+for all these CMIS properties, for `Alfresco`_ (an open source DMS) is in 
+``/alfresco/extension/alfreso-zsdms-model.xml`` (`alfreso-zsdms-model.xml`_). 
+Both the mapping and the model should be aligned.
+
+.. _`cmis_mapper.json`: https://github.com/open-zaak/cmis-adapter/blob/master/test_app/cmis_mapper.json
+.. _`alfreso-zsdms-model.xml`: https://github.com/open-zaak/cmis-adapter/blob/master/alfresco/extension/alfreso-zsdms-model.xml
 
 Mappings
 --------
 
+The content model and the CMIS-mapper configurations need to be aligned. For 
+each object, the API resource, the CMIS objecttype, CMIS basetype and the 
+(configuratble) CMIS-mapper object is described.
+
 **Document**
 
-Represents the `Documenten API`_ ``EnkelvoudigInformatieObjecten``-resource.
+The document itself, its content and meta data.
 
-``cmis:objectTypeId`` = ``drc:document``
++-------------------------+---------------------------------+
+| Documenten API resource | ``EnkelvoudigInformatieObject`` |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:document``                |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``DOCUMENT_MAP``                |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``DOCUMENT_MAP`` in the CMIS mapper.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Gebruiksrechten**
 
-Represents the `Documenten API`_ ``Gebruiksrechten``-resource.
+Usage rights. These rights don't need to be enforced by the DMS but are stored 
+for use outside the DMS.
 
-``cmis:objectTypeId`` = ``drc:gebruiksrechten``
++-------------------------+---------------------------------+
+| Documenten API resource | ``Gebruiksrechten``             |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:gebruiksrechten``         |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``GEBRUIKSRECHTEN_MAP``         |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``GEBRUIKSRECHTEN_MAP`` in the CMIS mapper.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **ObjectInformatieObject**
 
-Represents the `Documenten API`_ ``ObjectInformatieObjecten``-resource.
+Relation between a document and another object, like a Zaak, Besluit or 
+something else.
 
-``cmis:objectTypeId`` = ``drc:oio``
++-------------------------+---------------------------------+
+| Documenten API resource | ``ObjectInformatieObject``      |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:oio``                     |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:document``               |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``OBJECTINFORMATIEOBJECT_MAP``  |
++-------------------------+---------------------------------+
 
-Mapping configurable via ``OBJECTINFORMATIEOBJECT_MAP`` in the CMIS mapper.
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Zaaktype folder**
 
 Contains all Zaken from this Zaaktype and has itself some meta data about the
-Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktypen``-resource.
+Zaaktype. API-attributes are from the `Catalogi API`_ ``Zaaktype``-resource.
 
 .. _`Catalogi API`: https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index
 
-Predefined mapping:
++-------------------------+---------------------------------+
+| Catalogi API resource   | ``Zaaktype``                    |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:zaaktypefolder``          |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:folder``                 |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``ZAAKTYPE_MAP``                |
++-------------------------+---------------------------------+
 
-``cmis:objectTypeId`` = ``drc:zaaktypefolder``
-
-+-------------------+---------------------------------+
-| API-attribute     | CMIS-property                   |
-+===================+=================================+
-| ``url``           | ``drc:zaaktype__url``           |
-+-------------------+---------------------------------+
-| ``identificatie`` | ``drc:zaaktype__identificatie`` |
-+-------------------+---------------------------------+
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
 **Zaak folder**
 
 Contains all Zaak-related documents and has itself some meta data about the
-Zaak. API-attributes are from the `Zaken API`_ ``Zaken``-resource.
+Zaak. API-attributes are from the `Zaken API`_ ``Zaak``-resource.
 
 .. _`Zaken API`: https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index
 
-Predefined mapping:
++-------------------------+---------------------------------+
+| Zaken API resource      | ``Zaak``                        |
++-------------------------+---------------------------------+
+| CMIS objecttype \*      | ``drc:zaakfolder``              |
++-------------------------+---------------------------------+
+| CMIS basetype           | ``cmis:folder``                 |
++-------------------------+---------------------------------+
+| CMIS-mapper object      | ``ZAAK_MAP``                    |
++-------------------------+---------------------------------+
 
-``cmis:objectTypeId`` = ``drc:zaakfolder``
+The mapping between API-attributes and CMIS properties can be found in the `cmis_mapper.json`_.
 
-+---------------------+---------------------------------+
-| API-attribute       | CMIS-property                   |
-+=====================+=================================+
-| ``url``             | ``drc:zaak__url``               |
-+---------------------+---------------------------------+
-| ``identificatie``   | ``drc:zaak__identificatie``     |
-+---------------------+---------------------------------+
-| ``zaaktype``        | ``drc:zaak__zaaktypeurl``       |
-+---------------------+---------------------------------+
-| ``bronorganisatie`` | ``drc:zaak__bronorganisatie``   |
-+---------------------+---------------------------------+
+\* CMIS objecttype: ``cmis:objectTypeId``
 
 DMS Content model configuration
 -------------------------------
 
-The mapping configuration must match the content model in the DMS. Each 
+The CMIS mapper configuration must match the content model in the DMS. Each 
 property, like ``drc:document__titel`` in the example above, must be defined 
 in the content model.
 
@@ -235,7 +276,7 @@ Open Zaak uses a folder structure in the DMS similar to the
 `Zaak- en Documentservices 1.2`_. However, due to way the Documenten API works
 there are differences.
 
-.. _`Zaak- en Documentservices`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
+.. _`Zaak- en Documentservices 1.2`: https://www.gemmaonline.nl/index.php/Zaak-_en_Documentservices
 
 **Creating a document**
 
@@ -244,13 +285,12 @@ temporary folder. By default this is:
 
 .. code-block::
 
-    CMIS Root > 
-        [base-folder (cmis:folder)] > 
-            [year (cmis:folder)] > 
-                [month (cmis:folder)] > 
-                    [day (cmis:folder)] > 
-                        [filename (drc:document)]
-
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [year] (cmis:folder)
+            +-- [month] (cmis:folder)
+                +-- [day] (cmis:folder)
+                    +-- [filename] (drc:document)
 
 For example:
 
@@ -258,31 +298,112 @@ For example:
 
     CMIS Root > DRC > 2020 > 12 > 31 > document.txt
 
+If nothing else happens, this document will remain here.
 
-If nothing else happens, this document will remain here and can be considered
-a "zombie" document that has no relation to any Zaak.
+**Creating gebruiksrechten**
 
-**Relating a document to a Zaak**
+A document can have Gebruiksrechten. These are stored as a separate document 
+(``gebruiksrechten``) in a folder called ``Related data``. This folder is 
+always in the same folder as the document itself and is of type ``cmis:folder``.
 
-When a document is related to a Zaak, the document is moved to another folder
-that can be consider the zaak folder:
+The Gebruiksrechten will always be moved or copied along with the document.
+
+For example:
 
 .. code-block::
 
-    CMIS Root > 
-        [base-folder (cmis:folder)] > 
-            [zaaktype-folder (drc:zaaktypefolder)]
-                [year (cmis:folder)] > 
-                    [month (cmis:folder)] > 
-                        [day (cmis:folder)] > 
-                            [zaak-folder (drc:zaakfolder)]
-                                [filename (drc:document)]
+    CMIS Root > DRC > 2020 > 12 > 31 > document.txt
+    CMIS Root > DRC > 2020 > 12 > 31 > Related data > document.txt-gebruiksrechten
+
+**Relating a document to a Zaak**
+
+Relating a document to a Zaak (by creating an ``ObjectInformatieObject``
+instance in the Documenten API) will cause the document and its Gebruiksrechten
+if it exists, to be **moved** or **copied** to the zaak folder.
+
+.. code-block::
+
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [zaaktype-folder] (drc:zaaktypefolder)
+            +-- [year] (cmis:folder)
+                +-- [month] (cmis:folder)
+                    +-- [day] (cmis:folder)
+                        +-- [zaak-folder] (drc:zaakfolder)
+                            +-- [filename] (drc:document)
+                            +-- Related data (cmis:folder)
+                                +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+                                +-- [filename]-oio (drc:oio)
+
+A document is **moved** when the document was **not related** to a Zaak before 
+(and thus it was in the temporary folder). The document is **copied** to the 
+new zaak folder when the document was **already related** to a Zaak.
+
+The relation of a document to a Zaak is implicitly described by its path. In
+addition however, this relation is stored as a separate document (``oio``) in
+the ``Related data`` folder.
 
 For example:
 
 .. code-block::
 
     CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > document.txt
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > Related data > document.txt-gebruiksrechten
+    CMIS Root > DRC > Melding Openbare Ruimte > 2020 > 12 > 31 > ZAAK-0000001 > Related data > document.txt-oio
+
+**Relating a document to a Besluit**
+
+When a document is related to a Besluit, there's a few different scenario's:
+
+1. The Besluit is **related** to a Zaak and...
+
+   1. The document is **not related** to a Zaak (and thus the document is in 
+      the temporary folder): The document is **moved** to the Zaak folder of 
+      the Zaak that is related to the Besluit.
+   2. The document is **already related** to a Zaak: The document is **copied**
+      to the new Zaak folder.
+
+2. The Besluit is **not related** to a Zaak and...
+
+   1. The document is **not related** to a Zaak: The document **stays** in its 
+      temporary folder.
+   2. The document is **related** to a Zaak: The document is **copied** to the
+      temporary folder.
+
+In all cases, the relation of a document to a Besluit is stored as a separate 
+document (``oio``) in the ``Related data`` folder, relative to wherever the new
+document is stored.
+
+**Relating a document to another object**
+
+When a document is related to any other object, the document is not moved or 
+copied and stays in its temporary folder.
+
+DMS folder structure overview
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A complete overview of all folder- and document types are shown below:
+
+.. code-block::
+
+    CMIS Root
+    +-- [base-folder] (cmis:folder)
+        +-- [zaaktype-folder] (drc:zaaktypefolder)
+        |   +-- [year] (cmis:folder)
+        |       +-- [month] (cmis:folder)
+        |           +-- [day] (cmis:folder)
+        |               +-- [zaak-folder] (drc:zaakfolder)
+        |                   +-- [filename] (drc:document)
+        |                   +-- Related data (cmis:folder)
+        |                       +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+        |                       +-- [filename]-oio (drc:oio)
+        +-- [year] (cmis:folder)
+            +-- [month] (cmis:folder)
+                +-- [day] (cmis:folder)
+                    +-- [filename] (drc:document)
+                    +-- Related data (cmis:folder)
+                        +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+                        +-- [filename]-oio (drc:oio)
 
 
 References
