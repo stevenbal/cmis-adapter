@@ -40,41 +40,57 @@ class Command(BaseCommand):
         # General
         cmis_client = get_cmis_client()
         cmis_client.get_repository_info()
+        get_root_folder_id(cmis_client)
         get_base_folder(cmis_client)
+        print("General: Success")
 
-        # Folders
-        get_folder(cmis_client)
-        create_folder(cmis_client)
-        delete_folder(cmis_client)
-        get_or_create_folder(cmis_client)
-        create_zaaktype_folder(cmis_client)
-        create_zaak_folder(cmis_client)
+        try:
+            # Folders
+            get_folder(cmis_client)
+            create_folder(cmis_client)
+            delete_folder(cmis_client)
+            get_or_create_folder(cmis_client)
+            create_zaaktype_folder(cmis_client)
+            create_zaak_folder(cmis_client)
+            print("Folders: Success")
 
-        # Content objects
-        create_content_object_oio(cmis_client)
-        create_content_object_gebruiksrechten(cmis_client)
-        get_content_object_oio(cmis_client)
-        get_content_object_gebruiksrechten(cmis_client)
-        delete_content_object_oio(cmis_client)
-        delete_content_object_gebruiksrechten(cmis_client)
+            # Content objects
+            create_content_object_oio(cmis_client)
+            create_content_object_gebruiksrechten(cmis_client)
+            get_content_object_oio(cmis_client)
+            get_content_object_gebruiksrechten(cmis_client)
+            delete_content_object_oio(cmis_client)
+            delete_content_object_gebruiksrechten(cmis_client)
+            print("Content objects: Success")
 
-        # Documents
-        create_document(cmis_client)
-        lock_document(cmis_client)
-        unlock_document(cmis_client)
-        get_pwc(cmis_client)
-        update_document(cmis_client)
-        create_document_copy(cmis_client)
-        move_document(cmis_client)
-        delete_document(cmis_client)
+            # Documents
+            create_document(cmis_client)
+            lock_document(cmis_client)
+            unlock_document(cmis_client)
+            get_pwc(cmis_client)
+            update_document(cmis_client)
+            create_document_copy(cmis_client)
+            move_document(cmis_client)
+            delete_document(cmis_client)
+            print("Documents: Success")
+        except Exception as exc:
+            # Clean up
+            cmis_client.base_folder.delete_tree()
+            print("Cleaned up")
+            raise exc
 
         # Clean up
         cmis_client.base_folder.delete_tree()
+        print("Cleaned up")
 
 
 # ---* General *---
 def get_base_folder(client):
     client.base_folder
+
+
+def get_root_folder_id(client):
+    client.root_folder_id
 
 
 # ---* Folders *---
