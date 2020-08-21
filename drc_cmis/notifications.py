@@ -17,18 +17,15 @@ class ZakenHandler:
             zaak_url = data.get("resource_url")
 
             if zaak_url and zaaktype_url:
-                zaaktype_folder = self.create_zaaktype_folder(zaaktype_url)
-                self.create_zaak_folder(zaak_url, zaaktype_url, zaaktype_folder)
-
-    def create_zaaktype_folder(self, zaaktype_url: str):
-        client = get_zds_client(zaaktype_url)
-        zaaktype_data = client.retrieve("zaaktype", url=zaaktype_url)
-        return self.cmis_client.get_or_create_zaaktype_folder(zaaktype_data)
+                self.create_zaak_folder(zaak_url, zaaktype_url)
 
     def create_zaak_folder(self, zaak_url: str, zaaktype_url: str, zaaktype_folder):
+        client = get_zds_client(zaaktype_url)
+        zaaktype_data = client.retrieve("zaaktype", url=zaaktype_url)
+
         client = get_zds_client(zaak_url)
         zaak_data = client.retrieve("zaak", url=zaak_url)
-        self.cmis_client.get_or_create_zaak_folder(zaak_data, zaaktype_folder)
+        self.cmis_client.get_or_create_zaak_folder_path(zaaktype_data, zaak_data)
 
 
 class RoutingHandler:

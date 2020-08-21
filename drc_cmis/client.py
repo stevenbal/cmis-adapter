@@ -12,6 +12,7 @@ from drc_cmis.utils.exceptions import (
     DocumentLockConflictException,
     DocumentNotLockedException,
 )
+from drc_cmis.utils import folder
 
 from .models import Vendor
 
@@ -208,10 +209,7 @@ class CMISClient:
         # The oio for the besluit is created in the "Related data" of the temporary folder,
         # since it is not related to a zaak
         if zaak_url is None:
-            now = timezone.now()
-            year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
-            month_folder = self.get_or_create_folder(str(now.month), year_folder)
-            destination_folder = self.get_or_create_folder(str(now.day), month_folder)
+            destination_folder = self.get_or_create_other_folder_path()
         # The oio is created in the "Related data" folder of the zaak folder
         else:
             client_zaak = get_zds_client(zaak_url)
@@ -222,12 +220,7 @@ class CMISClient:
             )
 
             # Get or create the destination folder
-            now = timezone.now()
-            zaaktype_folder = self.get_or_create_zaaktype_folder(zaaktype_data)
-            year_folder = self.get_or_create_folder(str(now.year), zaaktype_folder)
-            month_folder = self.get_or_create_folder(str(now.month), year_folder)
-            day_folder = self.get_or_create_folder(str(now.day), month_folder)
-            destination_folder = self.get_or_create_zaak_folder(zaak_data, day_folder)
+            destination_folder = self.get_or_create_zaak_folder_path(zaaktype_data, zaak_data)
 
         related_data_folder = self.get_or_create_folder(
             "Related data", destination_folder
@@ -307,37 +300,70 @@ class CMISClient:
         document = self.get_document(drc_uuid=drc_uuid)
         document.delete_object()
 
-    def get_or_create_zaaktype_folder(self, zaaktype: dict) -> Folder:
-        """Get or create the zaaktype folder in the base folder
+    def get_or_create_zaak_folder_path(self, zaaktype: dict, zaak: dict) -> Folder:
+        cmis_config = CMISConfig.objects.get_solo()
+        path_elements = get_folder_structure(cmis_config.zaak_folder_path)
 
-        The folder has prefix 'zaaktype-'
-
-        :param zaaktype: dict, contains the properties of the zaaktype
-        :return: Folder
-        """
+        parent_folder = self.get_folder(self.root_folder_id)
+        now = timezone.now()
 
         zaaktype.setdefault(
             "object_type_id",
             f"{self.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
         )
+        zaaktype_properties = self.zaaktypefolder_type.build_properties(zaaktype)
 
-        properties = self.zaaktypefolder_type.build_properties(zaaktype)
-
-        folder_name = (
-            f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}"
-        )
-        return self.get_or_create_folder(folder_name, self.base_folder, properties)
-
-    def get_or_create_zaak_folder(self, zaak: dict, zaaktype_folder: Folder) -> Folder:
-        """
-        Create a folder with the prefix 'zaak-' to make a zaak folder
-        """
         zaak.setdefault(
             "object_type_id",
             f"{self.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
         )
-        properties = self.zaakfolder_type.build_properties(zaak)
+        zaak_properties = self.zaakfolder_type.build_properties(zaak)
 
-        return self.get_or_create_folder(
-            f"zaak-{zaak['identificatie']}", zaaktype_folder, properties
-        )
+        ctx = {
+            folder.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
+            folder.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
+            folder.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
+            folder.ZAAKTYPE_PATH_ELEMENT_TEMPLATE.folder_name: (
+                f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}",
+                zaaktype_properties
+            ),
+            folder.ZAAK_PATH_ELEMENT_TEMPLATE.folder_name: (
+                f"zaak-{zaak['identificatie']}",
+                zaak_properties
+            ),
+        }
+
+        for pe in path_elements:
+            folder_name, props = ctx.get(pe.folder_name, (pe.folder_name, {}))
+
+            parent_folder = self.get_or_create_folder(
+                folder_name,
+                parent_folder,
+                props
+            )
+        
+        return parent_folder
+
+    def get_or_create_other_folder_path(self) -> Folder:
+        cmis_config = CMISConfig.objects.get_solo()
+        path_elements = get_folder_structure(cmis_config.other_folder_path)
+
+        parent_folder = self.get_folder(self.root_folder_id)
+        now = timezone.now()
+
+        ctx = {
+            folder.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
+            folder.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
+            folder.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
+        }
+
+        for pe in path_elements:
+            folder_name, props = ctx.get(pe.folder_name, (pe.folder_name, {}))
+
+            parent_folder = self.get_or_create_folder(
+                folder_name,
+                parent_folder,
+                props
+            )
+        
+        return parent_folder

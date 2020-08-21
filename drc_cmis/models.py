@@ -1,8 +1,11 @@
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 import pytz
 from djchoices import ChoiceItem, DjangoChoices
 from solo.models import SingletonModel
+
+from .validators import zaak_folder_path_validator, other_folder_path_validator
 
 
 class CMISConfig(SingletonModel):
@@ -31,12 +34,17 @@ class CMISConfig(SingletonModel):
     client_password = models.CharField(
         max_length=200, default="admin", help_text="Password for logging into DMS"
     )
-    base_folder_name = models.CharField(
-        max_length=200,
-        default="",
-        blank=True,
-        help_text="Name of the DMS base folder in which the documents will be stored. If left empty, no "
-        "base folder will be used.",
+    zaak_folder_path = models.CharField(
+        max_length=500,
+        default="/DRC/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
+        validators=[zaak_folder_path_validator,],
+        help_text=_("The path where documents related to zaken are saved.")
+    )
+    other_folder_path = models.CharField(
+        max_length=500,
+        default="/DRC/{{ year }}/{{ month }}/{{ day }}/",
+        validators=[other_folder_path_validator],
+        help_text=_("The path where other documents are saved.")
     )
 
     def __str__(self):

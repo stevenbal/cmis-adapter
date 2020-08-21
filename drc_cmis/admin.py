@@ -16,7 +16,7 @@ class CMISConfigAdmin(SingletonModelAdmin):
         (_("General"), {"fields": ("cmis_enabled",)}),
         (
             _("Configuration"),
-            {"fields": ("client_url", "binding", "time_zone", "base_folder_name")},
+            {"fields": ("client_url", "binding", "time_zone", "zaak_folder_path", "other_folder_path",)},
         ),
         (_("Credentials"), {"fields": ("client_user", "client_password",)}),
     )
