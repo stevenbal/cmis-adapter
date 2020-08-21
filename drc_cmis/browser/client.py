@@ -80,8 +80,11 @@ class CMISDRCClient(CMISClient, CMISRequest):
 
     @property
     def vendor(self) -> str:
-        repo_info = self.get_request(self.base_url)
-        return repo_info["-default-"]["vendorName"]
+        repo_info = self.get_repository_info()
+        return repo_info["vendorName"]
+
+    def get_repository_info(self) -> dict:
+        return self.get_request(self.base_url)["-default-"]
 
     # generic querying
     def query(

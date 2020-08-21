@@ -85,10 +85,6 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         self.assertEqual(base_folder.baseTypeId, "cmis:folder")
         self.assertEqual(base_folder.name, self.cmis_client.base_folder_name)
 
-    @skipIf(
-        os.getenv("CMIS_BINDING") == "BROWSER",
-        reason="Function not implemented for browser binding",
-    )
     def test_get_repository_info(self):
         properties = self.cmis_client.get_repository_info()
 
@@ -104,8 +100,6 @@ class CMISClientFolderTests(DMSMixin, TestCase):
             "cmisVersionSupported",
             "changesIncomplete",
             "changesOnType",
-            "principalAnonymous",
-            "principalAnyone",
         ]
 
         for expected_property in expected_properties:
