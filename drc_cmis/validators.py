@@ -4,11 +4,14 @@ from drc_cmis.utils import folder
 from drc_cmis.utils.folder import PathElementTemplate, get_folder_structure
 
 
-def folder_path_validator(path: str, path_element_templates: list = None):
+def folder_path_validator(path: str, path_element_templates: list = None, required: bool = True):
     allowed_folder_templates = {pet.folder_name for pet in path_element_templates}
     required_folder_names = {pet.folder_name for pet in path_element_templates if pet.required}
+    count = 0
 
     for pe in get_folder_structure(path):
+        count += 1
+
         if "{{" in pe.folder_name and pe.folder_name not in allowed_folder_templates:
             raise ValidationError(
                 "Invalid templated path element: %(value)s",
@@ -21,6 +24,11 @@ def folder_path_validator(path: str, path_element_templates: list = None):
         raise ValidationError(
             "Required path elements are missing: %(value)s",
             params={"value": ", ".join(required_folder_names)}
+        )
+
+    if required and count == 0:
+        raise ValidationError(
+            "At minimum, one folder is required."
         )
 
 

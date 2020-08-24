@@ -7,14 +7,13 @@ from django.utils.crypto import constant_time_compare
 
 from cmislib.exceptions import UpdateConflictException
 
-from drc_cmis.utils.exceptions import (
-    DocumentConflictException,
-    DocumentLockConflictException,
-    DocumentNotLockedException,
-)
-from drc_cmis.utils import folder
+from .utils import folder as folder_utils
+from .utils.exceptions import (DocumentConflictException,
+                                       DocumentLockConflictException,
+                                       DocumentNotLockedException,
+                                       FolderDoesNotExistError)
 
-from .models import Vendor
+from .models import Vendor, CMISConfig
 
 # The Document/Folder/Oio/Gebruiksrechten classes used in practice depend on the client
 # (different classes exist for the webservice and browser binding)
@@ -28,7 +27,6 @@ class CMISClient:
 
     _main_repo_id = None
     _root_folder_id = None
-    _base_folder = None
 
     document_type = None
     gebruiksrechten_type = None
@@ -102,21 +100,24 @@ class CMISClient:
         # Create new folder, as it doesn't exist yet
         return self.create_folder(name, parent.objectId, properties)
 
-    def delete_cmis_folders_in_base(self):
-        """Deletes all the folders in the base folder
+    def get_folder_by_name(self, name: str, parent: Folder) -> Folder:
+        children_folders = parent.get_children_folders()
+        for folder in children_folders:
+            if folder.name == name:
+                return folder
+        raise FolderDoesNotExistError("Folder %(folder_name)s does not exist in %(parent_folder_name)s.", params={"folder_name": folder.name, "parent_folder": parent.name})
 
-        There are 2 cases:
-        1. The base folder is the root folder: only the zaaktype and temporary folders should be deleted
-        2. The base folder is a child of the root folder: the base folder is deleted.
-        """
-        # Case 2
-        if self.base_folder_name != "":
-            self.base_folder.delete_tree()
-            self._base_folder = None
-        # Case 1
-        else:
-            # TODO
-            pass
+    def delete_cmis_folders_in_base(self):
+        """Deletes all the folders in the base folder"""
+        config = CMISConfig.get_solo()
+
+        root_folder = self.get_folder(self.root_folder_id)
+        for folder_name in set([config.get_zaak_base_folder(), config.get_other_base_folder()]):
+            try:
+                folder = self.get_folder_by_name(folder_name, root_folder)
+                folder.delete_tree()
+            except FolderDoesNotExistError as e:
+                pass
 
     def update_document(
         self, drc_uuid: str, lock: str, data: dict, content: Optional[BytesIO] = None
@@ -301,8 +302,8 @@ class CMISClient:
         document.delete_object()
 
     def get_or_create_zaak_folder_path(self, zaaktype: dict, zaak: dict) -> Folder:
-        cmis_config = CMISConfig.objects.get_solo()
-        path_elements = get_folder_structure(cmis_config.zaak_folder_path)
+        cmis_config = CMISConfig.get_solo()
+        path_elements = folder_utils.get_folder_structure(cmis_config.zaak_folder_path)
 
         parent_folder = self.get_folder(self.root_folder_id)
         now = timezone.now()
@@ -320,14 +321,14 @@ class CMISClient:
         zaak_properties = self.zaakfolder_type.build_properties(zaak)
 
         ctx = {
-            folder.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
-            folder.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
-            folder.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
-            folder.ZAAKTYPE_PATH_ELEMENT_TEMPLATE.folder_name: (
+            folder_utils.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
+            folder_utils.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
+            folder_utils.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
+            folder_utils.ZAAKTYPE_PATH_ELEMENT_TEMPLATE.folder_name: (
                 f"zaaktype-{zaaktype.get('omschrijving')}-{zaaktype.get('identificatie')}",
                 zaaktype_properties
             ),
-            folder.ZAAK_PATH_ELEMENT_TEMPLATE.folder_name: (
+            folder_utils.ZAAK_PATH_ELEMENT_TEMPLATE.folder_name: (
                 f"zaak-{zaak['identificatie']}",
                 zaak_properties
             ),
@@ -345,16 +346,16 @@ class CMISClient:
         return parent_folder
 
     def get_or_create_other_folder_path(self) -> Folder:
-        cmis_config = CMISConfig.objects.get_solo()
-        path_elements = get_folder_structure(cmis_config.other_folder_path)
+        cmis_config = CMISConfig.get_solo()
+        path_elements = folder_utils.get_folder_structure(cmis_config.other_folder_path)
 
         parent_folder = self.get_folder(self.root_folder_id)
         now = timezone.now()
 
         ctx = {
-            folder.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
-            folder.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
-            folder.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
+            folder_utils.YEAR_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.year), {}),
+            folder_utils.MONTH_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.month), {}),
+            folder_utils.DAY_PATH_ELEMENT_TEMPLATE.folder_name: (str(now.day), {}),
         }
 
         for pe in path_elements:

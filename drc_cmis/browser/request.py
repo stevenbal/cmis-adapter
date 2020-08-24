@@ -33,10 +33,6 @@ class CMISRequest:
         return self.config.client_url
 
     @property
-    def base_folder_name(self):
-        return f"{self.config.base_folder_name}"
-
-    @property
     def time_zone(self):
         return self.config.time_zone
 

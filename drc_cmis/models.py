@@ -1,3 +1,4 @@
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -5,7 +6,8 @@ import pytz
 from djchoices import ChoiceItem, DjangoChoices
 from solo.models import SingletonModel
 
-from .validators import zaak_folder_path_validator, other_folder_path_validator
+from .utils.folder import get_folder_structure
+from .validators import other_folder_path_validator, zaak_folder_path_validator
 
 
 class CMISConfig(SingletonModel):
@@ -52,6 +54,18 @@ class CMISConfig(SingletonModel):
 
     class Meta:
         verbose_name = "CMIS Configuration"
+
+    def get_zaak_base_folder(self):
+        folders = get_folder_structure(self.zaak_folder_path)
+        if len(folders) > 0:
+            return folders[0].folder_name
+        raise ImproperlyConfigured("The 'zaak_folder_path' must be configured.")
+
+    def get_other_base_folder(self):
+        folders = get_folder_structure(self.other_folder_path)
+        if len(folders) > 0:
+            return folders[0].folder_name
+        raise ImproperlyConfigured("The 'other_folder_path' must be configured.")
 
 
 class Vendor(DjangoChoices):

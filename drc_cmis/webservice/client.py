@@ -61,32 +61,6 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
     zaakfolder_type = ZaakFolder
     zaaktypefolder_type = ZaakTypeFolder
 
-    @property
-    def base_folder(self) -> Folder:
-        """Return the base folder"""
-
-        if self._base_folder is None:
-            # If no base folder has been specified, all the documents/folders will be created in the root folder
-            if self.base_folder_name == "":
-                self._base_folder = self.get_folder(object_id=self.root_folder_id)
-            else:
-                root_folder = self.get_folder(self.root_folder_id)
-                folders = root_folder.get_children_folders()
-
-                # Check if the base folder has already been created
-                for folder in folders:
-                    if folder.name == self.base_folder_name:
-                        self._base_folder = folder
-                        break
-
-                # If the base folder hasn't been created yet, create it
-                if self._base_folder is None:
-                    self._base_folder = self.create_folder(
-                        self.base_folder_name, self.root_folder_id
-                    )
-
-        return self._base_folder
-
     def get_repository_info(self) -> dict:
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
@@ -388,11 +362,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             data_class = GebruiksRechtDoc
 
         if destination_folder is None:
-            now = datetime.datetime.now()
-            year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
-            month_folder = self.get_or_create_folder(str(now.month), year_folder)
-            day_folder = self.get_or_create_folder(str(now.day), month_folder)
-            destination_folder = self.get_or_create_folder("Related data", day_folder)
+            other_folder = self.get_or_create_other_folder_path()
+            destination_folder = self.get_or_create_folder("Related data", other_folder)
 
         properties = return_type.build_properties(data)
 
@@ -524,9 +495,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             content = BytesIO()
 
         # Create Document in default folder
-        year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
-        month_folder = self.get_or_create_folder(str(now.month), year_folder)
-        day_folder = self.get_or_create_folder(str(now.day), month_folder)
+        other_folder = self.get_or_create_other_folder_path()
 
         properties = Document.build_properties(
             data, new=True, identification=identification
@@ -535,7 +504,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
             repository_id=self.main_repo_id,
-            folder_id=day_folder.objectId,
+            folder_id=other_folder.objectId,
             properties=properties,
             cmis_action="createDocument",
             content_id=content_id,

@@ -4,10 +4,6 @@ from django.conf import settings
 
 
 class _Settings(object):
-    @property
-    def BASE_FOLDER_LOCATION(self):
-        return getattr(settings, "BASE_FOLDER_LOCATION", "DRC")
-
     def __getattr__(self, name):
         return globals()[name]
 
