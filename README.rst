@@ -56,6 +56,9 @@ For the supported bindings, the following features are implemented:
 Installation
 ============
 
+**NOTE: If you are using Open Zaak 1.3.1 or above, the CMIS-adapter is already
+included and does not require separate installation.**
+
 Requirements
 ------------
 

@@ -1,0 +1,25 @@
+The Documenten API CMIS adapter, or CMIS adapter, was commissioned by the 
+municipality of Utrecht and further developed for the municipality of 
+Súdwest-Fryslân. Just before its 1.0 release in 2020, the project became part
+of the Open Zaak project.
+
+Here is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS --
+people who laid the groundwork, have submitted patches, reported bugs, added
+translations, helped answer questions, and generally made Open Zaak that much
+better:
+
+    Joeri Bekker <joeri@maykinmedia.nl>
+    Jorik Kraaikamp <jorik@maykinmedia.nl>
+    Sergei Maertens <sergei@maykinmedia.nl>
+    Silvia Amabilino <silvia@maykimmedia.nl>
+
+A big THANK YOU goes to:
+
+    All municipalities who funded the project: Utrecht and Súdwest-Fryslân
+
+    Dimpact for making the CMIS adapter a part of the Open Zaak project.
+
+    BCT and Contezza for allowing us to test the CMIS adapter with their DMS
+    solutions.
+
+    All people behind Common Ground for their enthusiasm and vision.
