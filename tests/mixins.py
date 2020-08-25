@@ -1,13 +1,39 @@
-from drc_cmis.client import CMISDRCClient
+import os
+
+from drc_cmis.client_builder import get_cmis_client
+from drc_cmis.models import CMISConfig
 
 
 class DMSMixin:
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        if os.getenv("CMIS_BINDING") == "BROWSER":
+            CMISConfig.objects.create(
+                client_url="http://localhost:8082/alfresco/api/-default-/public/cmis/versions/1.1/browser",
+                binding="BROWSER",
+                client_user="admin",
+                client_password="admin",
+                base_folder_name="Zaken",
+            )
+        elif os.getenv("CMIS_BINDING") == "WEBSERVICE":
+            CMISConfig.objects.create(
+                client_url="http://localhost:8082/alfresco/cmisws",
+                binding="WEBSERVICE",
+                client_user="admin",
+                client_password="admin",
+                base_folder_name="Zaken",
+            )
+        else:
+            raise Exception(
+                "No CMIS binding set through CMIS_BINDING environment variable."
+            )
+
     def setUp(self):
         super().setUp()
-        self.cmis_client = CMISDRCClient()
-        self._removeTree()
-        self.cmis_client._base_folder = None
+        self.cmis_client = get_cmis_client()
+        self.cmis_client.delete_cmis_folders_in_base()
 
-    def _removeTree(self):
-        base_folder = self.cmis_client._get_base_folder
-        base_folder.delete_tree()
+    def tearDown(self) -> None:
+        self.cmis_client.delete_cmis_folders_in_base()

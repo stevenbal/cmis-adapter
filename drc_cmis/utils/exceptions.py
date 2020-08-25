@@ -3,6 +3,10 @@ class DMSException(Exception):
         self.message = message
 
 
+class FolderDoesNotExistError(DMSException):
+    pass
+
+
 class DocumentExistsError(DMSException):
     pass
 
@@ -24,6 +28,10 @@ class DocumentNotLockedException(DMSException):
 
 
 class DocumentLockedException(DMSException):
+    pass
+
+
+class LockDidNotMatchException(DMSException):
     pass
 
 

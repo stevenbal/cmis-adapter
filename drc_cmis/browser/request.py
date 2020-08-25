@@ -3,7 +3,7 @@ from json.decoder import JSONDecodeError
 
 import requests
 
-from drc_cmis.client.exceptions import (
+from drc_cmis.utils.exceptions import (
     CmisBaseException,
     CmisInvalidArgumentException,
     CmisNotSupportedException,
@@ -33,12 +33,16 @@ class CMISRequest:
         return self.config.client_url
 
     @property
-    def root_folder_url(self):
-        return f"{self.base_url}/root"
+    def base_folder_name(self):
+        return f"{self.config.base_folder_name}"
 
     @property
-    def base_folder(self):
-        return f"{self.config.base_folder}"
+    def time_zone(self):
+        return self.config.time_zone
+
+    @property
+    def root_folder_url(self):
+        return f"{self.base_url}/root"
 
     @property
     def user(self):
@@ -61,9 +65,10 @@ class CMISRequest:
             return response.json()
         return response.content
 
-    def post_request(self, url, data, files=None):
+    def post_request(self, url, data, headers=None, files=None):
         logger.debug(f"POST: {url} | {data}")
-        headers = {"Accept": "application/json"}
+        if headers is None:
+            headers = {"Accept": "application/json"}
         response = requests.post(
             url,
             data=data,
@@ -131,7 +136,10 @@ class CMISRequest:
                 )
 
         try:
-            return response.json()
+            if response.headers.get("Content-Type").startswith("application/json"):
+                return response.json()
+            else:
+                return response.content.decode("UTF-8")
         except JSONDecodeError:
             if not response.text:
                 return None

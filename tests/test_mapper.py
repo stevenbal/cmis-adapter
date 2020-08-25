@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from drc_cmis.client.mapper import mapper, reverse_mapper
+from drc_cmis.utils.mapper import mapper, reverse_mapper
 
 
 class MapperTests(TestCase):
@@ -10,8 +10,19 @@ class MapperTests(TestCase):
             mapper("identificatie", "document"), "drc:document__identificatie"
         )
 
-    def test_mapper_get_connection(self):
-        self.assertEqual(mapper("object", "connection"), "drc:connectie__zaakurl")
+    def test_mapper_get_gebruiksrechten(self):
+        self.assertIs(mapper("informatieobject"), None)
+        self.assertEqual(
+            mapper("informatieobject", "gebruiksrechten"),
+            "drc:gebruiksrechten__informatieobject",
+        )
+
+    def test_mapper_get_oio(self):
+        self.assertIs(mapper("informatieobject"), None)
+        self.assertEqual(mapper("informatieobject", "oio"), "drc:oio__informatieobject")
+
+    def test_mapper_get_unknown(self):
+        self.assertIsNone(mapper("identificatie", "unknown"))
 
     def test_mapper_get_zaaktype(self):
         self.assertEqual(
@@ -21,9 +32,6 @@ class MapperTests(TestCase):
     def test_mapper_get_zaak(self):
         self.assertEqual(mapper("identificatie", "zaak"), "drc:zaak__identificatie")
 
-    def test_mapper_get_unknown(self):
-        self.assertIsNone(mapper("identificatie", "unknown"))
-
 
 class ReverseMapperTests(TestCase):
     def test_mapper_get_document(self):
@@ -32,19 +40,17 @@ class ReverseMapperTests(TestCase):
             reverse_mapper("drc:document__identificatie", "document"), "identificatie"
         )
 
-    def test_mapper_get_connection(self):
+    def test_mapper_get_gebruiksrechten(self):
+        self.assertEqual(reverse_mapper("drc:gebruiksrechten__informatieobject"), None)
         self.assertEqual(
-            reverse_mapper("drc:connectie__zaakurl", "connection"), "object"
+            reverse_mapper("drc:gebruiksrechten__informatieobject", "gebruiksrechten"),
+            "informatieobject",
         )
 
-    def test_mapper_get_zaaktype(self):
+    def test_mapper_get_oio(self):
+        self.assertEqual(reverse_mapper("drc:oio__informatieobject"), None)
         self.assertEqual(
-            reverse_mapper("drc:zaaktype__identificatie", "zaaktype"), "identificatie"
-        )
-
-    def test_mapper_get_zaak(self):
-        self.assertEqual(
-            reverse_mapper("drc:zaak__identificatie", "zaak"), "identificatie"
+            reverse_mapper("drc:oio__informatieobject", "oio"), "informatieobject"
         )
 
     def test_mapper_get_unknown(self):
