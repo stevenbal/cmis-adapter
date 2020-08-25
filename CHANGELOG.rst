@@ -2,8 +2,8 @@
 Changelog
 =========
 
-1.0.0 (t.b.d.)
---------------
+1.0.0 (2020-08-25)
+------------------
 
 Version 1.0.0 is a major overhaul of the project to ensure stability and to
 allow for easier integration of newer Documenten API versions. Thanks to the

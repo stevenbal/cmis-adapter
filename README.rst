@@ -2,7 +2,7 @@
 Documenten API CMIS adapter
 ===========================
 
-:Version: 0.5.0
+:Version: 1.0.0
 :Source: https://github.com/open-zaak/cmis-adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
@@ -52,9 +52,24 @@ For the supported bindings, the following features are implemented:
 * Supports checking out/in of documents.
 * Supports custom data-model for storing additional meta data.
 
+Tested against:
+
+* `Corsa platform`_ using CMIS 1.0 Web Services binding (Thanks to `BCT`_)
+* `Alfresco`_ Enterprise 5.2.3 using CMIS 1.1 Browser binding (Thanks to 
+  `Contezza`_)
+* `Alfresco CE 6.1.2-ga`_ (Used for CI)
+  
+.. _`Corsa platform`: https://www.bctsoftware.com/corsa/
+.. _`BCT`: https://www.bctsoftware.com/
+.. _`Contezza`: https://contezza.nl/
+.. _`Alfresco CE 6.1.2-ga`: https://hub.docker.com/layers/alfresco/alfresco-content-repository-community/6.1.2-ga/images/sha256-6edaf25aded1b16991f06be7754a7030c9d67429353e39ce1da3fd307a5f2e6f?context=explore
+
 
 Installation
 ============
+
+**NOTE: If you are using Open Zaak 1.3.1 or above, the CMIS-adapter is already
+included and does not require separate installation.**
 
 Requirements
 ------------
