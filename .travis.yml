@@ -68,9 +68,9 @@ jobs:
       deploy:
         provider: pypi
         distributions: sdist bdist_wheel
-        user: jostcrow
+        user: "__token__"
         password:
-          secure: oktQFKZbjYS7oVfjl+DMJaUgt6ybjlxJZ63JiD2KPau9YLI8BDpOlDMUxm5dBBp9bx7FZLdR41kcRPZqxyyUdXIICeVUOxftXYhGnBLa+CBJnKY/wakPLDh7jicLUuwJUiYq0zyuxAOcXW78AEt8skOhtCKml/KXlqfj/2w0k9Q30DZo58zxLWZmciNXYD28iqbRwuGPXIheZ+LAQy2m+CCQAfb+AxQKZzC2BU1o/kNoTI4D9TCCye+/d5iFoL701mu20p0vnaV/g+lbkg5ASoREfagUgL1kKA9viAeBnOO4t+cGzhLDYWcO4YhoEOvBaYF9pCUk28wD4yjoZxspDqS59FDwXUy5SALOjfKRu+m5K/S6TNv9+VnXgpcnM0VyLgDjTnXxzVvmBRnXS6ZJtcP8682EcBsLySWxy64sjS/ERsUsvq6ouc9aIBLfrz0MlZxopHNfyO3/3v3DFs2RIOgyGqJjwHMEYhxagsAmTuxalG8u4YDNfPAtWCkMioqQZuFmlJ4Th2g+otxM70y4lyOIsGCOsP1Ef4X4UM4RBWee1XoOGDRaOey6z6lqeHvMYCiesnur80EuC7PYm2Oqfn14ItW1Te04cTSGgNkDGwC4nosZNGx/2SXpfHii/J193ZmzP2f+7JuVozWnffTfHNb+3zzf1CH+aMECVc4shNM=
+          secure: "RC4ijocQVP8Yj7Ie3ODhf+ZesnJq8oazykcagcnDreOPjFtN/omcbMjbt8R4iFxf1Jx9s1TKXF30gYjPVJ0UpU91iHQPs/uyL4uMpev/tN9nECzwJImiIYHArURuq+e+3yIrc5MpAxk0GfJRH8LGvokFtPPcXgcUMD3efZmjJO+k678UHrUfCqrug+lOnu5JVrZYlnceqBU0e6TvekvQuv3AAkyDfwNda3Jv8xGzOhFX1m2gjJRSqfdi/fEf+jI98pH0oKR3hWYVii6W/pGkpuIpa0pUB7co62t0o5m5FtRNDhhOzCCIsrB3SsbMmzbxp+PkATNV9H1a0rFiVvuDwmbreNhbSUD589ksAYINHSUGvYlEsHUbkvGG4oKZxrSnpHphSOaXexNuDeXTWQ6UqIQNU/eovTdjltxDz5vvFQbUMnv4ZfeSMiPgxFGPznXrcYHM8MBOxN+frKr2Yj7o1OIXjgHhR7kuvMMuYtVKrg1Q1sbh3lJ3UMaBpLH+cZUsRlzvwJUoHgsrIFy1U8C12/+zF7uywCRvdHiA6lQDG4uj3u58KBn2zNp/UiQ3vZu19q0j9XeExxwQD37O84p6cIJTykKpVMNeSGfaxHqATwp1o5yNVKeYoXCdWmgtS/vHhT8NTH5YkvoGtCYCQSs6AwjAyAD9UDvayanx2jvBPRk="
         on:
           tags: true
           repo: open-zaak/cmis-adapter
