@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -6,6 +8,7 @@ import pytz
 from djchoices import ChoiceItem, DjangoChoices
 from solo.models import SingletonModel
 
+from .utils.exceptions import NoOtherBaseFolderException, NoZaakBaseFolderException
 from .utils.folder import get_folder_structure
 from .validators import other_folder_path_validator, zaak_folder_path_validator
 
@@ -39,14 +42,14 @@ class CMISConfig(SingletonModel):
     zaak_folder_path = models.CharField(
         max_length=500,
         default="/DRC/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
-        validators=[zaak_folder_path_validator,],
-        help_text=_("The path where documents related to zaken are saved.")
+        validators=[zaak_folder_path_validator],
+        help_text=_("The path where documents related to zaken are saved."),
     )
     other_folder_path = models.CharField(
         max_length=500,
         default="/DRC/{{ year }}/{{ month }}/{{ day }}/",
         validators=[other_folder_path_validator],
-        help_text=_("The path where other documents are saved.")
+        help_text=_("The path where other documents are saved."),
     )
 
     def __str__(self):
@@ -55,15 +58,21 @@ class CMISConfig(SingletonModel):
     class Meta:
         verbose_name = "CMIS Configuration"
 
-    def get_zaak_base_folder(self):
+    def get_zaak_base_folder_name(self) -> str:
         folders = get_folder_structure(self.zaak_folder_path)
         if len(folders) > 0:
+            folder_name = re.search(r"^{{ (.+?) }}$", folders[0].folder_name)
+            if folder_name is not None:
+                raise NoZaakBaseFolderException("No zaak base folder in use.")
             return folders[0].folder_name
         raise ImproperlyConfigured("The 'zaak_folder_path' must be configured.")
 
-    def get_other_base_folder(self):
+    def get_other_base_folder_name(self) -> str:
         folders = get_folder_structure(self.other_folder_path)
         if len(folders) > 0:
+            folder_name = re.search(r"^{{ (.+?) }}$", folders[0].folder_name)
+            if folder_name is not None:
+                raise NoOtherBaseFolderException("No other base folder in use.")
             return folders[0].folder_name
         raise ImproperlyConfigured("The 'other_folder_path' must be configured.")
 

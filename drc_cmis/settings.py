@@ -1,7 +1,5 @@
 import sys
 
-from django.conf import settings
-
 
 class _Settings(object):
     def __getattr__(self, name):

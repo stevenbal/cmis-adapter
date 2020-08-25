@@ -5,7 +5,6 @@ from io import BytesIO
 from typing import List, Optional, Union
 from uuid import UUID
 
-from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 
 from drc_cmis.browser.drc_document import (
@@ -211,7 +210,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
         ], "'object_type' can be only 'gebruiksrechten' or 'oio'"
 
         if destination_folder is None:
-            other_folder = self.get_or_create_other_folder_path()
+            other_folder = self.get_or_create_other_folder()
             destination_folder = self.get_or_create_folder("Related data", other_folder)
 
         properties = {
@@ -299,7 +298,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         logger.debug("CMIS_CLIENT: create_document")
         self.check_document_exists(identification)
 
-        now = timezone.now()
         data.setdefault("versie", 1)
         data.setdefault(
             "object_type_id",
@@ -310,7 +308,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
             content = BytesIO()
 
         # Create Document in default folder
-        other_folder = self.get_or_create_other_folder_path()
+        other_folder = self.get_or_create_other_folder()
 
         properties = Document.build_properties(
             data, new=True, identification=identification

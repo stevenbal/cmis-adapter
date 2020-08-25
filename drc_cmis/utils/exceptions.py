@@ -131,3 +131,11 @@ class CmisVersioningException(CmisBaseException):
     """ VersioningException """
 
     pass
+
+
+class NoZaakBaseFolderException(Exception):
+    pass
+
+
+class NoOtherBaseFolderException(Exception):
+    pass

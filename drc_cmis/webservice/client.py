@@ -1,4 +1,3 @@
-import datetime
 import uuid
 from io import BytesIO
 from typing import List, Optional, Union
@@ -362,7 +361,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             data_class = GebruiksRechtDoc
 
         if destination_folder is None:
-            other_folder = self.get_or_create_other_folder_path()
+            other_folder = self.get_or_create_other_folder()
             destination_folder = self.get_or_create_folder("Related data", other_folder)
 
         properties = return_type.build_properties(data)
@@ -483,7 +482,6 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
 
         self.check_document_exists(identification)
 
-        now = datetime.datetime.now()
         data.setdefault("versie", "1")
         data.setdefault(
             "object_type_id",
@@ -495,7 +493,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             content = BytesIO()
 
         # Create Document in default folder
-        other_folder = self.get_or_create_other_folder_path()
+        other_folder = self.get_or_create_other_folder()
 
         properties = Document.build_properties(
             data, new=True, identification=identification

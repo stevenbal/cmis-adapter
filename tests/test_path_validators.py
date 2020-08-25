@@ -1,12 +1,13 @@
-from django.test import TestCase
-
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from drc_cmis.models import CMISConfig
 from drc_cmis.utils.folder import get_folder_structure
-from drc_cmis.validators import (folder_path_validator,
-                                 other_folder_path_validator,
-                                 zaak_folder_path_validator,)
+from drc_cmis.validators import (
+    folder_path_validator,
+    other_folder_path_validator,
+    zaak_folder_path_validator,
+)
 
 
 class FolderStructureTests(TestCase):
@@ -53,7 +54,9 @@ class FolderStructureTests(TestCase):
         self.assertEqual(result[0].object_type, "bar")
 
     def test_various_path_elements(self):
-        result = get_folder_structure("/folder1/folder2[x]/{{ folder3 }}/{{ folder4 }}[y]/")
+        result = get_folder_structure(
+            "/folder1/folder2[x]/{{ folder3 }}/{{ folder4 }}[y]/"
+        )
 
         self.assertEqual(len(result), 4)
         self.assertEqual(result[0].folder_name, "folder1")
@@ -75,7 +78,9 @@ class FolderStructureTests(TestCase):
 
 class ZakenFolderPathValidatorTests(TestCase):
     def test_default_zaak_folder_path(self):
-        zaak_folder_path_validator(CMISConfig._meta.get_field("zaak_folder_path").default)
+        zaak_folder_path_validator(
+            CMISConfig._meta.get_field("zaak_folder_path").default
+        )
         self.assert_(True)
 
     def test_missing_required_folder(self):
@@ -86,9 +91,12 @@ class ZakenFolderPathValidatorTests(TestCase):
         with self.assertRaises(ValidationError):
             zaak_folder_path_validator("/foo/{{ bar }}/")
 
+
 class OtherFolderPathValidatorTests(TestCase):
     def test_default_other_folder_path(self):
-        other_folder_path_validator(CMISConfig._meta.get_field("other_folder_path").default)
+        other_folder_path_validator(
+            CMISConfig._meta.get_field("other_folder_path").default
+        )
         self.assert_(True)
 
     def test_invalid_template_folder_folder(self):

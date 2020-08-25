@@ -25,7 +25,7 @@ class ZakenHandler:
 
         client = get_zds_client(zaak_url)
         zaak_data = client.retrieve("zaak", url=zaak_url)
-        self.cmis_client.get_or_create_zaak_folder_path(zaaktype_data, zaak_data)
+        self.cmis_client.get_or_create_zaak_folder(zaaktype_data, zaak_data)
 
 
 class RoutingHandler:
