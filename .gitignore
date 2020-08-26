@@ -117,3 +117,4 @@ pip-wheel-metadata/
 export_mapper.py
 uploads/
 alfresco/alfresco-community-installer-201707-linux-x64.bin
+test_app/database.db

@@ -4,7 +4,10 @@ import uuid
 from io import BytesIO
 from typing import List, Optional, Union
 
-from drc_cmis.utils.exceptions import CmisRuntimeException
+import pytz
+
+from drc_cmis.models import CMISConfig
+from drc_cmis.utils.exceptions import CmisRuntimeException, DocumentDoesNotExistError
 from drc_cmis.utils.mapper import (
     DOCUMENT_MAP,
     GEBRUIKSRECHTEN_MAP,
@@ -82,6 +85,7 @@ class CMISBaseObject(SOAPCMISRequest):
                     }
                 }
         """
+        config = CMISConfig.objects.get()
 
         props = {}
         for key, value in data.items():
@@ -91,8 +95,14 @@ class CMISBaseObject(SOAPCMISRequest):
                 continue
             if value is not None:
                 prop_type = get_cmis_type(cls.type_class, key)
-                if isinstance(value, datetime.date) or isinstance(value, datetime.date):
-                    value = value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                if isinstance(value, datetime.datetime):
+                    value = value.astimezone(pytz.timezone(config.time_zone)).strftime(
+                        "%Y-%m-%dT%H:%M:%S.000Z"
+                    )
+                elif isinstance(value, datetime.date):
+                    # In CMIS, there is no propertyDate, only propertyDateTime.
+                    # So dates need to be in the datetime format
+                    value = value.strftime("%Y-%m-%dT00:00:00.000Z")
                 props[prop_name] = {"value": str(value), "type": prop_type}
 
         return props
@@ -180,6 +190,8 @@ class Document(CMISContentObject):
                 }
         """
 
+        config = CMISConfig.objects.get()
+
         props = {}
         for key, value in data.items():
             prop_name = mapper(key, type="document")
@@ -188,8 +200,14 @@ class Document(CMISContentObject):
                 continue
             if value is not None:
                 prop_type = get_cmis_type(EnkelvoudigInformatieObject, key)
-                if isinstance(value, datetime.date) or isinstance(value, datetime.date):
-                    value = value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                if isinstance(value, datetime.datetime):
+                    value = value.astimezone(pytz.timezone(config.time_zone)).strftime(
+                        "%Y-%m-%dT%H:%M:%S.000Z"
+                    )
+                elif isinstance(value, datetime.date):
+                    # In CMIS, there is no propertyDate, only propertyDateTime.
+                    # So dates need to be in the datetime format
+                    value = value.strftime("%Y-%m-%dT00:00:00.000Z")
                 elif isinstance(value, bool):
                     value = str(value).lower()
                 props[prop_name] = {"value": str(value), "type": prop_type}
@@ -420,9 +438,17 @@ class Document(CMISContentObject):
             cmis_action="query",
         )
 
-        soap_response = self.request(
-            "DiscoveryService", soap_envelope=soap_envelope.toxml()
-        )
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error for queries that return no results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                error_string = f"Object met objectId '{self.objectId}' bestaat niet in het CMIS connection"
+                raise DocumentDoesNotExistError(error_string)
+            else:
+                raise exc
 
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
@@ -477,11 +503,13 @@ class Folder(CMISBaseObject):
     def delete_tree(self):
         """Delete the folder and all its contents"""
 
+        # With Corsa, locked documents cause an error, so 'continue_on_failure' is needed
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
             repository_id=self.main_repo_id,
             folder_id=self.objectId,
             cmis_action="deleteTree",
+            continue_on_failure="true",
         )
 
         self.request("ObjectService", soap_envelope=soap_envelope.toxml())

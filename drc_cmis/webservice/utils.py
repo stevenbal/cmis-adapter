@@ -167,6 +167,7 @@ def make_soap_envelope(
     checkin_comment: Optional[str] = None,
     source_folder_id: Optional[str] = None,
     target_folder_id: Optional[str] = None,
+    continue_on_failure: Optional[str] = None,
 ) -> minidom.Document:
     """Create SOAP envelope from data provided
 
@@ -183,6 +184,7 @@ def make_soap_envelope(
     :param checkin_comment: str, comment when checking in a document
     :param source_folder_id: str, folder objectId from which to copy a document
     :param target_folder_id: str, folder objectId to which to copy a document
+    :param continue_on_failure: str, whether to continue deleting after an error in the deleteTree call
     :return: minidom document
     """
 
@@ -358,6 +360,12 @@ def make_soap_envelope(
         target_folder_text = xml_doc.createTextNode(target_folder_id)
         target_folder_element.appendChild(target_folder_text)
         action_element.appendChild(target_folder_element)
+
+    if continue_on_failure is not None:
+        continue_element = xml_doc.createElement("ns:continueOnFailure")
+        continue_text = xml_doc.createTextNode(continue_on_failure)
+        continue_element.appendChild(continue_text)
+        action_element.appendChild(continue_element)
 
     entry_element.appendChild(body_element)
 

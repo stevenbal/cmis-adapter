@@ -81,3 +81,4 @@ class CMISConfig(SingletonModel):
 
 class Vendor(DjangoChoices):
     alfresco = ChoiceItem()
+    bct = ChoiceItem()

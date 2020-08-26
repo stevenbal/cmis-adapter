@@ -4,7 +4,7 @@ import os
 import uuid
 from unittest import skipIf
 
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.utils import timezone
 
 from freezegun import freeze_time
@@ -89,28 +89,36 @@ class CMISDocumentTests(DMSMixin, TestCase):
                 converted_prop_name = prop_name.split("__")[-1]
                 self.assertEqual(properties[converted_prop_name], prop_value)
 
+    @tag("alfresco")
     def test_checkout_document(self):
         identification = str(uuid.uuid4())
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         pwc = document.checkout()
 
         self.assertEqual(pwc.versionLabel, "pwc")
 
+    @tag("alfresco")
     def test_checkin_document(self):
         identification = str(uuid.uuid4())
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         pwc = document.checkout()
@@ -119,14 +127,18 @@ class CMISDocumentTests(DMSMixin, TestCase):
         new_doc = pwc.checkin(checkin_comment="Testing Check-in...")
         self.assertEqual(new_doc.versionLabel, "2.0")
 
+    @tag("alfresco")
     def test_get_document(self):
         identification = str(uuid.uuid4())
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         document.checkout()
@@ -139,8 +151,11 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
         document.checkout()
 
@@ -154,8 +169,11 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         # Retrieve pwc from the original document
@@ -364,14 +382,18 @@ class CMISDocumentTests(DMSMixin, TestCase):
         self.assertEqual(all_versions[2].versionLabel, "1.1")
         self.assertEqual(all_versions[3].versionLabel, "1.0")
 
+    @tag("alfresco")
     def test_delete_document_with_pwc(self):
         identification = str(uuid.uuid4())
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         pwc = document.checkout()
@@ -386,8 +408,11 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
         }
+        content = io.BytesIO(b"some file content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data
+            identification=identification,
+            data=data,
+            content=content,
         )
 
         pwc = document.checkout()
