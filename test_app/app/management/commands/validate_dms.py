@@ -17,7 +17,8 @@ class Command(BaseCommand):
         parser.add_argument("binding", type=str)
         parser.add_argument("client_user", type=str)
         parser.add_argument("client_password", type=str)
-        parser.add_argument("base_folder_name", type=str)
+        parser.add_argument("zaak_folder_path", type=str)
+        parser.add_argument("other_folder_path", type=str)
 
     def handle(self, *args, **options):
         if CMISConfig.objects.count() == 0:
@@ -26,7 +27,8 @@ class Command(BaseCommand):
                 binding=options["binding"],
                 client_user=options["client_user"],
                 client_password=options["client_password"],
-                base_folder_name=options["base_folder_name"],
+                zaak_folder_path=options["zaak_folder_path"],
+                other_folder_path=options["other_folder_path"],
             )
         else:
             config = CMISConfig.objects.get()
@@ -34,14 +36,15 @@ class Command(BaseCommand):
             config.binding = options["binding"]
             config.client_user = options["client_user"]
             config.client_password = options["client_password"]
-            config.base_folder_name = options["base_folder_name"]
+            config.other_folder_path = options["other_folder_path"]
+            config.zaak_folder_path = options["zaak_folder_path"]
             config.save()
 
         # General
         cmis_client = get_cmis_client()
         cmis_client.get_repository_info()
         get_root_folder_id(cmis_client)
-        get_base_folder(cmis_client)
+        get_other_base_folder(cmis_client)
         print("General: Success")
 
         try:
@@ -75,18 +78,18 @@ class Command(BaseCommand):
             print("Documents: Success")
         except Exception as exc:
             # Clean up
-            cmis_client.base_folder.delete_tree()
+            cmis_client.get_or_create_other_folder().delete_tree()
             print("Cleaned up")
             raise exc
 
         # Clean up
-        cmis_client.base_folder.delete_tree()
+        cmis_client.get_or_create_other_folder().delete_tree()
         print("Cleaned up")
 
 
 # ---* General *---
-def get_base_folder(client):
-    client.base_folder
+def get_other_base_folder(client):
+    client.get_or_create_other_folder()
 
 
 def get_root_folder_id(client):
@@ -100,53 +103,70 @@ def get_folder(client):
 
 def create_folder(client):
     client.create_folder(
-        f"TestFolder-{get_random_string()}", client.base_folder.objectId
+        f"TestFolder-{get_random_string()}", client.get_or_create_other_folder().objectId
     )
 
 
 def get_or_create_folder(client):
-    client.get_or_create_folder(f"TestFolder-{get_random_string()}", client.base_folder)
+    client.get_or_create_folder(f"TestFolder-{get_random_string()}", client.get_or_create_other_folder())
 
 
 def create_zaaktype_folder(client):
-    properties = {
-        "drc:zaaktype__url": {
-            "value": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
-            "type": "propertyString",
-        },
-        "drc:zaaktype__identificatie": {"value": "1", "type": "propertyString"},
-        "cmis:objectTypeId": {
-            "value": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
-            "type": "propertyId",
-        },
-    }
+    config = CMISConfig.objects.get()
+    if config.binding == "BROWSER":
+        properties = {
+            "drc:zaaktype__url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "drc:zaaktype__identificatie": "1",
+            "cmis:objectTypeId": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+        }
+    elif config.binding == "WEBSERVICE":
+        properties = {
+            "drc:zaaktype__url": {
+                "value": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+                "type": "propertyString",
+            },
+            "drc:zaaktype__identificatie": {"value": "1", "type": "propertyString"},
+            "cmis:objectTypeId": {
+                "value": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+                "type": "propertyId",
+            },
+        }
+
     client.create_folder(
         f"TestZaaktypeFolder-{get_random_string()}",
-        client.base_folder.objectId,
+        client.get_or_create_other_folder().objectId,
         properties,
     )
 
 
 def create_zaak_folder(client):
-    properties = {
-        "drc:zaaktype__url": {
-            "value": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
-            "type": "propertyString",
-        },
-        "drc:zaaktype__identificatie": {"value": "1", "type": "propertyString"},
-        "cmis:objectTypeId": {
-            "value": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
-            "type": "propertyId",
-        },
-    }
+    config = CMISConfig.objects.get()
+    if config.binding == "BROWSER":
+        properties = {
+            "drc:zaaktype__url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "drc:zaaktype__identificatie": "1",
+            "cmis:objectTypeId": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+        }
+    elif config.binding == "WEBSERVICE":
+        properties = {
+            "drc:zaaktype__url": {
+                "value": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+                "type": "propertyString",
+            },
+            "drc:zaaktype__identificatie": {"value": "1", "type": "propertyString"},
+            "cmis:objectTypeId": {
+                "value": f"{client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+                "type": "propertyId",
+            },
+        }
     client.create_folder(
-        f"TestZaakFolder-{get_random_string()}", client.base_folder.objectId, properties
+        f"TestZaakFolder-{get_random_string()}", client.get_or_create_other_folder().objectId, properties
     )
 
 
 def delete_folder(client):
     folder = client.create_folder(
-        f"TestFolder-{get_random_string()}", client.base_folder.objectId
+        f"TestFolder-{get_random_string()}", client.get_or_create_other_folder().objectId
     )
     folder.delete_tree()
 
@@ -320,7 +340,7 @@ def create_document_copy(client):
         identification=uuid.uuid4(), data=data, content=content
     )
 
-    client.copy_document(document, client.base_folder)
+    client.copy_document(document, client.get_or_create_other_folder())
 
 
 def move_document(client):
@@ -332,7 +352,7 @@ def move_document(client):
     document = client.create_document(
         identification=uuid.uuid4(), data=data, content=content
     )
-    folder = client.create_folder("TestFolderForMove", client.base_folder.objectId)
+    folder = client.create_folder("TestFolderForMove", client.get_or_create_other_folder().objectId)
     document.move_object(folder)
 
 

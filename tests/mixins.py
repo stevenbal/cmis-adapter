@@ -15,7 +15,8 @@ class DMSMixin:
                 binding="BROWSER",
                 client_user="admin",
                 client_password="admin",
-                base_folder_name="Zaken",
+                zaak_folder_path="/Zaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
+                other_folder_path="/DRC/{{ year }}/{{ month }}/{{ day }}/",
             )
         elif os.getenv("CMIS_BINDING") == "WEBSERVICE":
             CMISConfig.objects.create(
@@ -23,7 +24,8 @@ class DMSMixin:
                 binding="WEBSERVICE",
                 client_user="admin",
                 client_password="admin",
-                base_folder_name="Zaken",
+                zaak_folder_path="/Zaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
+                other_folder_path="/DRC/{{ year }}/{{ month }}/{{ day }}/",
             )
         else:
             raise Exception(

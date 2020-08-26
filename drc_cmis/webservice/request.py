@@ -64,10 +64,6 @@ class SOAPCMISRequest:
         return self.config.client_url
 
     @property
-    def base_folder_name(self) -> str:
-        return self.config.base_folder_name
-
-    @property
     def main_repo_id(self) -> str:
         """Get ID of the CMS main repository"""
 

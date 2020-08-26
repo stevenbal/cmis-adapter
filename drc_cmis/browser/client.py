@@ -5,7 +5,6 @@ from io import BytesIO
 from typing import List, Optional, Union
 from uuid import UUID
 
-from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 
 from drc_cmis.browser.drc_document import (
@@ -50,24 +49,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
     folder_type = Folder
     zaakfolder_type = ZaakFolder
     zaaktypefolder_type = ZaakTypeFolder
-
-    @property
-    def base_folder(self) -> Folder:
-        if not self._base_folder:
-            if self.base_folder_name == "":
-                self._base_folder = self.get_folder(self.root_folder_id)
-            else:
-                base = self.get_request(self.root_folder_url)
-                for folder_response in base.get("objects"):
-                    folder = Folder(folder_response["object"])
-                    if folder.name == self.base_folder_name:
-                        self._base_folder = folder
-                        break
-                if not self._base_folder:
-                    self._base_folder = self.create_folder(
-                        name=self.base_folder_name, parent_id=self.root_folder_id
-                    )
-        return self._base_folder
 
     @property
     def root_folder_id(self) -> str:
@@ -229,11 +210,8 @@ class CMISDRCClient(CMISClient, CMISRequest):
         ], "'object_type' can be only 'gebruiksrechten' or 'oio'"
 
         if destination_folder is None:
-            now = timezone.now()
-            year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
-            month_folder = self.get_or_create_folder(str(now.month), year_folder)
-            day_folder = self.get_or_create_folder(str(now.day), month_folder)
-            destination_folder = self.get_or_create_folder("Related data", day_folder)
+            other_folder = self.get_or_create_other_folder()
+            destination_folder = self.get_or_create_folder("Related data", other_folder)
 
         properties = {
             mapper(key, type=object_type): value
@@ -320,7 +298,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         logger.debug("CMIS_CLIENT: create_document")
         self.check_document_exists(identification)
 
-        now = timezone.now()
         data.setdefault("versie", 1)
         data.setdefault(
             "object_type_id",
@@ -331,15 +308,13 @@ class CMISDRCClient(CMISClient, CMISRequest):
             content = BytesIO()
 
         # Create Document in default folder
-        year_folder = self.get_or_create_folder(str(now.year), self.base_folder)
-        month_folder = self.get_or_create_folder(str(now.month), year_folder)
-        day_folder = self.get_or_create_folder(str(now.day), month_folder)
+        other_folder = self.get_or_create_other_folder()
 
         properties = Document.build_properties(
             data, new=True, identification=identification
         )
 
-        data = create_json_request_body(day_folder, properties)
+        data = create_json_request_body(other_folder, properties)
 
         json_response = self.post_request(self.root_folder_url, data=data)
         cmis_doc = Document(json_response)

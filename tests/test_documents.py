@@ -398,8 +398,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
             document.get_latest_version()
 
     def test_move_document_to_folder(self):
-        base_folder = self.cmis_client.base_folder
-        new_folder = self.cmis_client.create_folder("Folder", base_folder.objectId)
+        other_folder = self.cmis_client.get_or_create_other_folder()
+        new_folder = self.cmis_client.create_folder("Folder", other_folder.objectId)
 
         identification = str(uuid.uuid4())
         properties = {
@@ -492,8 +492,8 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
         self.assertEqual(parent_folders[0].name, "Related data")
 
     def test_move_oio_to_folder(self):
-        base_folder = self.cmis_client.base_folder
-        new_folder = self.cmis_client.create_folder("Folder", base_folder.objectId)
+        other_folder = self.cmis_client.get_or_create_other_folder()
+        new_folder = self.cmis_client.create_folder("Folder", other_folder.objectId)
 
         oio = self.cmis_client.create_content_object(data={}, object_type="oio")
 
@@ -630,12 +630,12 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
 
 class CMISFolderTests(DMSMixin, TestCase):
     def test_get_children_folders(self):
-        base_folder = self.cmis_client.base_folder
-        self.cmis_client.create_folder("TestFolder1", base_folder.objectId)
-        self.cmis_client.create_folder("TestFolder2", base_folder.objectId)
-        self.cmis_client.create_folder("TestFolder3", base_folder.objectId)
+        other_folder = self.cmis_client.get_or_create_other_folder()
+        self.cmis_client.create_folder("TestFolder1", other_folder.objectId)
+        self.cmis_client.create_folder("TestFolder2", other_folder.objectId)
+        self.cmis_client.create_folder("TestFolder3", other_folder.objectId)
 
-        children = base_folder.get_children_folders()
+        children = other_folder.get_children_folders()
 
         self.assertEqual(len(children), 3)
         expected_children = ["TestFolder1", "TestFolder2", "TestFolder3"]
@@ -643,9 +643,9 @@ class CMISFolderTests(DMSMixin, TestCase):
             self.assertIn(folder.name, expected_children)
 
     def test_delete_tree(self):
-        base_folder = self.cmis_client.base_folder
+        other_folder = self.cmis_client.get_or_create_other_folder()
         first_child = self.cmis_client.create_folder(
-            "FirstChildFolder", base_folder.objectId
+            "FirstChildFolder", other_folder.objectId
         )
 
         test_folder1 = self.cmis_client.create_folder(
@@ -658,7 +658,7 @@ class CMISFolderTests(DMSMixin, TestCase):
             "TestFolder3", first_child.objectId
         )
 
-        base_children = base_folder.get_children_folders()
+        base_children = other_folder.get_children_folders()
         child_children = first_child.get_children_folders()
 
         self.assertEqual(len(base_children), 1)
@@ -666,7 +666,7 @@ class CMISFolderTests(DMSMixin, TestCase):
 
         first_child.delete_tree()
 
-        base_children = base_folder.get_children_folders()
+        base_children = other_folder.get_children_folders()
         self.assertEqual(len(base_children), 0)
 
         with self.assertRaises(FolderDoesNotExistError):
