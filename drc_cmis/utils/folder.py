@@ -8,19 +8,24 @@ PathElement = namedtuple("PathElement", ["folder_name", "object_type"])
 PathElementTemplate = namedtuple("PathElementTemplate", ["folder_name", "required"])
 
 YEAR_PATH_ELEMENT_TEMPLATE = PathElementTemplate(
-    folder_name="{{ year }}", required=False,
+    folder_name="{{ year }}",
+    required=False,
 )
 MONTH_PATH_ELEMENT_TEMPLATE = PathElementTemplate(
-    folder_name="{{ month }}", required=False,
+    folder_name="{{ month }}",
+    required=False,
 )
 DAY_PATH_ELEMENT_TEMPLATE = PathElementTemplate(
-    folder_name="{{ day }}", required=False,
+    folder_name="{{ day }}",
+    required=False,
 )
 ZAAKTYPE_PATH_ELEMENT_TEMPLATE = PathElementTemplate(
-    folder_name="{{ zaaktype }}", required=True,
+    folder_name="{{ zaaktype }}",
+    required=True,
 )
 ZAAK_PATH_ELEMENT_TEMPLATE = PathElementTemplate(
-    folder_name="{{ zaak }}", required=True,
+    folder_name="{{ zaak }}",
+    required=True,
 )
 
 

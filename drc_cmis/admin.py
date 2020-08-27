@@ -26,7 +26,15 @@ class CMISConfigAdmin(SingletonModelAdmin):
                 )
             },
         ),
-        (_("Credentials"), {"fields": ("client_user", "client_password",)}),
+        (
+            _("Credentials"),
+            {
+                "fields": (
+                    "client_user",
+                    "client_password",
+                )
+            },
+        ),
     )
 
     def cmis_enabled(self, obj):

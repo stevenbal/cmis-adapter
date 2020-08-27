@@ -146,31 +146,52 @@ class SOAPCMISRequest:
             error = soap_response.text
             if soap_response.status_code == 401:
                 raise CmisPermissionDeniedException(
-                    status=soap_response.status_code, url=url, message=error, code=401,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=401,
                 )
             elif soap_response.status_code == 400:
                 raise CmisInvalidArgumentException(
-                    status=soap_response.status_code, url=url, message=error, code=400,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=400,
                 )
             elif soap_response.status_code == 404:
                 raise CmisObjectNotFoundException(
-                    status=soap_response.status_code, url=url, message=error, code=404,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=404,
                 )
             elif soap_response.status_code == 403:
                 raise CmisPermissionDeniedException(
-                    status=soap_response.status_code, url=url, message=error, code=403,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=403,
                 )
             elif soap_response.status_code == 405:
                 raise CmisNotSupportedException(
-                    status=soap_response.status_code, url=url, message=error, code=405,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=405,
                 )
             elif soap_response.status_code == 409:
                 raise CmisUpdateConflictException(
-                    status=soap_response.status_code, url=url, message=error, code=409,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=409,
                 )
             elif soap_response.status_code == 500:
                 raise CmisRuntimeException(
-                    status=soap_response.status_code, url=url, message=error, code=500,
+                    status=soap_response.status_code,
+                    url=url,
+                    message=error,
+                    code=500,
                 )
             else:
                 raise CmisBaseException(

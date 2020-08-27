@@ -103,12 +103,15 @@ def get_folder(client):
 
 def create_folder(client):
     client.create_folder(
-        f"TestFolder-{get_random_string()}", client.get_or_create_other_folder().objectId
+        f"TestFolder-{get_random_string()}",
+        client.get_or_create_other_folder().objectId,
     )
 
 
 def get_or_create_folder(client):
-    client.get_or_create_folder(f"TestFolder-{get_random_string()}", client.get_or_create_other_folder())
+    client.get_or_create_folder(
+        f"TestFolder-{get_random_string()}", client.get_or_create_other_folder()
+    )
 
 
 def create_zaaktype_folder(client):
@@ -160,13 +163,16 @@ def create_zaak_folder(client):
             },
         }
     client.create_folder(
-        f"TestZaakFolder-{get_random_string()}", client.get_or_create_other_folder().objectId, properties
+        f"TestZaakFolder-{get_random_string()}",
+        client.get_or_create_other_folder().objectId,
+        properties,
     )
 
 
 def delete_folder(client):
     folder = client.create_folder(
-        f"TestFolder-{get_random_string()}", client.get_or_create_other_folder().objectId
+        f"TestFolder-{get_random_string()}",
+        client.get_or_create_other_folder().objectId,
     )
     folder.delete_tree()
 
@@ -352,7 +358,9 @@ def move_document(client):
     document = client.create_document(
         identification=uuid.uuid4(), data=data, content=content
     )
-    folder = client.create_folder("TestFolderForMove", client.get_or_create_other_folder().objectId)
+    folder = client.create_folder(
+        "TestFolderForMove", client.get_or_create_other_folder().objectId
+    )
     document.move_object(folder)
 
 

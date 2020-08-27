@@ -336,7 +336,8 @@ class Document(CMISContentObject):
         )
 
         soap_response = self.request(
-            "ObjectService", soap_envelope=soap_envelope.toxml(),
+            "ObjectService",
+            soap_envelope=soap_envelope.toxml(),
         )
 
         xml_response = extract_xml_from_soap(soap_response)
@@ -397,7 +398,8 @@ class Document(CMISContentObject):
             )
 
             self.request(
-                "VersioningService", soap_envelope=soap_envelope.toxml(),
+                "VersioningService",
+                soap_envelope=soap_envelope.toxml(),
             )
             refreshed_document = self.get_latest_version()
             return refreshed_document.delete_object()

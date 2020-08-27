@@ -286,7 +286,10 @@ class CMISDRCClient(CMISClient, CMISRequest):
             raise DocumentDoesNotExistError(error_string)
 
     def create_document(
-        self, identification: str, data: dict, content: BytesIO = None,
+        self,
+        identification: str,
+        data: dict,
+        content: BytesIO = None,
     ) -> Document:
         """Create a cmis document.
 

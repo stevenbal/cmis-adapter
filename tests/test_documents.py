@@ -418,7 +418,9 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         # Document created in temporary folder
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         parent_folder = document.get_parent_folders()[0]
@@ -536,7 +538,8 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
             "Een hele set onredelijke voorwaarden",
         )
         self.assertNotIn(
-            "drc:gebruiksrechten__uuid", properties,
+            "drc:gebruiksrechten__uuid",
+            properties,
         )
 
     @skipIf(
@@ -558,13 +561,16 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
             "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
         )
         self.assertEqual(
-            properties["drc:oio__object_type"]["value"], "besluit",
+            properties["drc:oio__object_type"]["value"],
+            "besluit",
         )
         self.assertEqual(
-            properties["drc:oio__besluit"]["value"], "http://another.test.url/",
+            properties["drc:oio__besluit"]["value"],
+            "http://another.test.url/",
         )
         self.assertNotIn(
-            "drc:oio__uuid", properties,
+            "drc:oio__uuid",
+            properties,
         )
 
     @skipIf(
@@ -596,7 +602,8 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
             "Een hele set onredelijke voorwaarden",
         )
         self.assertNotIn(
-            "drc:gebruiksrechten__uuid", properties,
+            "drc:gebruiksrechten__uuid",
+            properties,
         )
 
     @skipIf(
@@ -618,13 +625,16 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
             "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
         )
         self.assertEqual(
-            properties["drc:oio__object_type"], "besluit",
+            properties["drc:oio__object_type"],
+            "besluit",
         )
         self.assertEqual(
-            properties["drc:oio__besluit"], "http://another.test.url/",
+            properties["drc:oio__besluit"],
+            "http://another.test.url/",
         )
         self.assertNotIn(
-            "drc:oio__uuid", properties,
+            "drc:oio__uuid",
+            properties,
         )
 
 

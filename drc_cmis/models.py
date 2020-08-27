@@ -25,7 +25,9 @@ class CMISConfig(SingletonModel):
         "http://domain_name:port_number/alfresco/api/-default-/public/cmis/versions/1.1/browser",
     )
     binding = models.CharField(
-        choices=BINDING_CHOICES, default="BROWSER", max_length=200,
+        choices=BINDING_CHOICES,
+        default="BROWSER",
+        max_length=200,
     )
     time_zone = models.CharField(
         default="UTC",
