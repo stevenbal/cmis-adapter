@@ -27,7 +27,8 @@ after_script:
 
 after_success:
   - pip install codecov
-  - codecov -e TOXENV,DJANGO
+  - export envname=py${TRAVIS_PYTHON_VERSION/./}-django${DJANGO/./}-$(echo $CMIS_BINDING | tr '[:upper:]' '[:lower:]')
+  - codecov -e TOXENV,DJANGO --file reports/coverage-${envname}.xml
 
 jobs:
   fast_finish: true
