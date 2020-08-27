@@ -13,7 +13,15 @@ class CMISConfigAdmin(SingletonModelAdmin):
         "cmis_enabled",
     ]
     fieldsets = (
-        (_("General"), {"fields": ("cmis_enabled",)}),
+        (
+            _("General"),
+            {
+                "fields": (
+                    "cmis_enabled",
+                    "dms_vendor",
+                )
+            },
+        ),
         (
             _("Configuration"),
             {
@@ -42,6 +50,24 @@ class CMISConfigAdmin(SingletonModelAdmin):
 
     cmis_enabled.short_description = _("Enabled")
     cmis_enabled.boolean = True
+
+    def dms_vendor(self, obj):
+        if not self.cmis_enabled:
+            return ""
+
+        if not obj or not obj.client_url:
+            return _("(CMIS configuration incomplete)")
+
+        try:
+            from client_builder import get_cmis_client
+
+            return get_cmis_client().vendor
+        except KeyError:
+            return _("(Unknown)")
+        except Exception:
+            return _("(Connection error)")
+
+    dms_vendor.short_description = _("DMS Vendor")
 
     def has_change_permission(self, *args, **kwargs):
         return settings.CMIS_ENABLED
