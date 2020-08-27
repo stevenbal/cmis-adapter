@@ -78,10 +78,12 @@ class FolderStructureTests(TestCase):
 
 class ZakenFolderPathValidatorTests(TestCase):
     def test_default_zaak_folder_path(self):
-        zaak_folder_path_validator(
-            CMISConfig._meta.get_field("zaak_folder_path").default
-        )
-        self.assert_(True)
+        try:
+            zaak_folder_path_validator(
+                CMISConfig._meta.get_field("zaak_folder_path").default
+            )
+        except ValidationError:
+            self.fail("Validator should pass")
 
     def test_missing_required_folder(self):
         with self.assertRaises(ValidationError):
@@ -94,10 +96,12 @@ class ZakenFolderPathValidatorTests(TestCase):
 
 class OtherFolderPathValidatorTests(TestCase):
     def test_default_other_folder_path(self):
-        other_folder_path_validator(
-            CMISConfig._meta.get_field("other_folder_path").default
-        )
-        self.assert_(True)
+        try:
+            other_folder_path_validator(
+                CMISConfig._meta.get_field("other_folder_path").default
+            )
+        except ValidationError:
+            self.fail("Validator should pass")
 
     def test_invalid_template_folder_folder(self):
         with self.assertRaises(ValidationError):

@@ -6,8 +6,10 @@ python:
  - "3.8"
 
 env:
-  - DJANGO=2.2
-  # - DJANGO=3.0
+  - DJANGO=2.2 CMIS_BINDING=BROWSER
+  - DJANGO=2.2 CMIS_BINDING=WEBSERVICE
+  # - DJANGO=3.0 CMIS_BINDING=BROWSER
+  # - DJANGO=3.0 CMIS_BINDING=WEBSERVICE
 
 install:
   - pip install tox tox-travis
@@ -25,7 +27,8 @@ after_script:
 
 after_success:
   - pip install codecov
-  - codecov -e TOXENV,DJANGO
+  - export envname=py${TRAVIS_PYTHON_VERSION/./}-django${DJANGO/./}-$(echo $CMIS_BINDING | tr '[:upper:]' '[:lower:]')
+  - codecov -e TOXENV,DJANGO --file reports/coverage-${envname}.xml
 
 jobs:
   fast_finish: true

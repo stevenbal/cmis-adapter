@@ -12,7 +12,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="cmisconfig", name="base_folder_name",),
+        migrations.RemoveField(
+            model_name="cmisconfig",
+            name="base_folder_name",
+        ),
         migrations.AddField(
             model_name="cmisconfig",
             name="other_folder_path",

@@ -202,13 +202,19 @@ class CMISClientFolderTests(DMSMixin, TestCase):
             FolderDoesNotExistError, self.cmis_client.get_folder, base_folder.objectId
         )
         self.assertRaises(
-            FolderDoesNotExistError, self.cmis_client.get_folder, folder1.objectId,
+            FolderDoesNotExistError,
+            self.cmis_client.get_folder,
+            folder1.objectId,
         )
         self.assertRaises(
-            FolderDoesNotExistError, self.cmis_client.get_folder, folder2.objectId,
+            FolderDoesNotExistError,
+            self.cmis_client.get_folder,
+            folder2.objectId,
         )
         self.assertRaises(
-            FolderDoesNotExistError, self.cmis_client.get_folder, folder3.objectId,
+            FolderDoesNotExistError,
+            self.cmis_client.get_folder,
+            folder3.objectId,
         )
 
     def test_get_vendor(self):
@@ -284,7 +290,8 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
             gebruiksrechten.informatieobject, properties["informatieobject"]
         )
         self.assertEqual(
-            gebruiksrechten.startdatum, properties["startdatum"],
+            gebruiksrechten.startdatum,
+            properties["startdatum"],
         )
         self.assertEqual(
             gebruiksrechten.omschrijving_voorwaarden,
@@ -517,7 +524,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.cmis_client.create_oio(oio)
 
         # Test the new folder structure
-        zaaktype_folders = self.cmis_client.query(return_type_name="zaaktypefolder",)
+        zaaktype_folders = self.cmis_client.query(
+            return_type_name="zaaktypefolder",
+        )
         self.assertEqual(len(zaaktype_folders), 1)
         self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
 
@@ -593,7 +602,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.cmis_client.create_oio(data=oio2)
 
         # Test that the second folder structure
-        zaaktype_folders = self.cmis_client.query(return_type_name="zaaktypefolder",)
+        zaaktype_folders = self.cmis_client.query(
+            return_type_name="zaaktypefolder",
+        )
         self.assertEqual(len(zaaktype_folders), 2)
         children_folders_names = [folder.name for folder in zaaktype_folders]
         self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders_names)
@@ -676,7 +687,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Test that the document is in the temporary folder
@@ -695,7 +708,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.cmis_client.create_oio(oio)
 
         # Test the new folder structure
-        zaaktype_folders = self.cmis_client.query(return_type_name="zaaktypefolder",)
+        zaaktype_folders = self.cmis_client.query(
+            return_type_name="zaaktypefolder",
+        )
         self.assertEqual(len(zaaktype_folders), 1)
 
         self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
@@ -775,7 +790,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.cmis_client.create_oio(data=oio2)
 
         # Test the second folder structure
-        zaaktype_folders = self.cmis_client.query(return_type_name="zaaktypefolder",)
+        zaaktype_folders = self.cmis_client.query(
+            return_type_name="zaaktypefolder",
+        )
         self.assertEqual(len(zaaktype_folders), 2)
         children_folders_names = [folder.name for folder in zaaktype_folders]
         self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders_names)
@@ -988,7 +1005,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Get the temporary folder
@@ -1035,7 +1054,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Creating the oio leaves the document in the temporary folder
@@ -1056,7 +1077,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         oio_zaak = self.cmis_client.create_oio(oio_zaak_data)
 
         # Get new folder structure
-        zaaktype_folders = self.cmis_client.query(return_type_name="zaaktypefolder",)
+        zaaktype_folders = self.cmis_client.query(
+            return_type_name="zaaktypefolder",
+        )
         self.assertEqual(len(zaaktype_folders), 1)
 
         self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
@@ -1115,7 +1138,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Link document to zaak
@@ -1232,7 +1257,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Create gebruiksrechten
@@ -1296,7 +1323,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Create gebruiksrechten (also in temporary folder)
@@ -1325,7 +1354,8 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         gebruiksrechten_parent = gebruiksrechten.get_parent_folders()[0]
         self.assertNotEqual(
-            related_data_folder.objectId, gebruiksrechten_parent.objectId,
+            related_data_folder.objectId,
+            gebruiksrechten_parent.objectId,
         )
 
         # Check that the parent folder of the Gebruiksrechten is in the zaak folder
@@ -1364,7 +1394,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Creating the oio moves the document to the zaak folder
@@ -1486,14 +1518,17 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         self.assertIsNotNone(document.uuid)
         self.assertEqual(document.identificatie, identification)
         self.assertEqual(document.bronorganisatie, "159351741")
         self.assertEqual(
-            document.creatiedatum, properties["creatiedatum"],
+            document.creatiedatum,
+            properties["creatiedatum"],
         )
         self.assertEqual(document.titel, "detailed summary")
         self.assertEqual(document.auteur, "test_auteur")
@@ -1528,10 +1563,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         self.assertIsNotNone(document.uuid)
         self.assertEqual(
-            document.creatiedatum, properties["creatiedatum"],
+            document.creatiedatum,
+            properties["creatiedatum"],
         )
         self.assertEqual(
-            document.begin_registratie, properties["begin_registratie"],
+            document.begin_registratie,
+            properties["begin_registratie"],
         )
 
     def test_create_existing_document_raises_error(self):
@@ -1693,7 +1730,9 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"Content before update")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         new_properties = {
@@ -1715,7 +1754,8 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.assertEqual(updated_doc.identificatie, identification)
         self.assertEqual(updated_doc.bronorganisatie, "159351741")
         self.assertEqual(
-            updated_doc.creatiedatum, properties["creatiedatum"],
+            updated_doc.creatiedatum,
+            properties["creatiedatum"],
         )
         self.assertEqual(updated_doc.titel, "detailed summary")
         self.assertEqual(updated_doc.auteur, "updated auteur")
@@ -1741,7 +1781,8 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         }
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties,
+            identification=identification,
+            data=properties,
         )
 
         new_properties = {
@@ -1771,7 +1812,9 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content,
+            identification=identification,
+            data=properties,
+            content=content,
         )
 
         # Make a different folder

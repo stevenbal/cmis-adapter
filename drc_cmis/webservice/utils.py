@@ -217,7 +217,8 @@ def make_soap_envelope(
     # Username token
     username_token = xml_doc.createElement("wsse:UsernameToken")
     username_token.setAttribute(
-        "wsu:Id", f"UsernameToken-{security_header_id}",
+        "wsu:Id",
+        f"UsernameToken-{security_header_id}",
     )
     username_tag = xml_doc.createElement("wsse:Username")
     username_text = xml_doc.createTextNode(auth[0])
@@ -241,7 +242,8 @@ def make_soap_envelope(
     # Time stamp
     time_stamp_tag = xml_doc.createElement("wsu:Timestamp")
     time_stamp_tag.setAttribute(
-        "wsu:Id", f"TS-{security_header_id}",
+        "wsu:Id",
+        f"TS-{security_header_id}",
     )
 
     created_tag = xml_doc.createElement("wsu:Created")

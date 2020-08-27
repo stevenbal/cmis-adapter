@@ -309,7 +309,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         )
 
         soap_response = self.request(
-            "ObjectService", soap_envelope=soap_envelope.toxml(),
+            "ObjectService",
+            soap_envelope=soap_envelope.toxml(),
         )
 
         # Creating the document only returns its ID
@@ -390,7 +391,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         )
 
         soap_response = self.request(
-            "ObjectService", soap_envelope=soap_envelope.toxml(),
+            "ObjectService",
+            soap_envelope=soap_envelope.toxml(),
         )
 
         xml_response = extract_xml_from_soap(soap_response)
