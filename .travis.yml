@@ -6,8 +6,10 @@ python:
  - "3.8"
 
 env:
-  - DJANGO=2.2
-  # - DJANGO=3.0
+  - DJANGO=2.2 CMIS_BINDING=BROWSER
+  - DJANGO=2.2 CMIS_BINDING=WEBSERVICE
+  # - DJANGO=3.0 CMIS_BINDING=BROWSER
+  # - DJANGO=3.0 CMIS_BINDING=WEBSERVICE
 
 install:
   - pip install tox tox-travis
