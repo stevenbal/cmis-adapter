@@ -175,8 +175,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 "ObjectService", soap_envelope=soap_envelope.toxml()
             )
         except CmisRuntimeException as exc:
-            object_not_found_error = f"Object not found: {object_id}"
-            if object_not_found_error in exc.message:
+            if "objectNotFound" in exc.message:
                 error_string = f"Folder met objectId '{object_id}' bestaat niet in het CMIS connection"
                 raise FolderDoesNotExistError(error_string)
             else:

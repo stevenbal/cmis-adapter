@@ -55,6 +55,8 @@ class Command(BaseCommand):
             get_or_create_folder(cmis_client)
             create_zaaktype_folder(cmis_client)
             create_zaak_folder(cmis_client)
+            create_cmis_folder_in_zaaktype(cmis_client)
+            create_cmis_folder_in_zaak(cmis_client)
             print("Folders: Success")
 
             # Content objects
@@ -68,8 +70,7 @@ class Command(BaseCommand):
 
             # Documents
             create_document(cmis_client)
-            lock_document(cmis_client)
-            unlock_document(cmis_client)
+            lock_unlock_document(cmis_client)
             get_pwc(cmis_client)
             update_document(cmis_client)
             create_document_copy(cmis_client)
@@ -135,7 +136,7 @@ def create_zaaktype_folder(client):
             },
         }
 
-    client.create_folder(
+    return client.create_folder(
         f"TestZaaktypeFolder-{get_random_string()}",
         client.get_or_create_other_folder().objectId,
         properties,
@@ -162,11 +163,21 @@ def create_zaak_folder(client):
                 "type": "propertyId",
             },
         }
-    client.create_folder(
+    return client.create_folder(
         f"TestZaakFolder-{get_random_string()}",
         client.get_or_create_other_folder().objectId,
         properties,
     )
+
+
+def create_cmis_folder_in_zaaktype(client):
+    zaaktype_folder = create_zaaktype_folder(client)
+    client.create_folder(f"TestFolder-{get_random_string()}", zaaktype_folder.objectId)
+
+
+def create_cmis_folder_in_zaak(client):
+    zaak_folder = create_zaak_folder(client)
+    client.create_folder(f"TestFolder-{get_random_string()}", zaak_folder.objectId)
 
 
 def delete_folder(client):
@@ -267,27 +278,19 @@ def create_document(client):
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    content = io.BytesIO(b"Content before update")
+    content = io.BytesIO(b"Test content")
     client.create_document(identification=uuid.uuid4(), data=data, content=content)
 
 
-def lock_document(client):
+def lock_unlock_document(client):
     data = {
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    document = client.create_document(identification=uuid.uuid4(), data=data)
-    client.lock_document(
-        drc_uuid=document.uuid, lock="00569792-f72f-420c-8b72-9c2fb9dd7601"
+    content = io.BytesIO(b"Test content")
+    document = client.create_document(
+        identification=uuid.uuid4(), data=data, content=content
     )
-
-
-def unlock_document(client):
-    data = {
-        "creatiedatum": timezone.now(),
-        "titel": "detailed summary",
-    }
-    document = client.create_document(identification=uuid.uuid4(), data=data)
     client.lock_document(
         drc_uuid=document.uuid, lock="00569792-f72f-420c-8b72-9c2fb9dd7601"
     )
@@ -301,7 +304,10 @@ def get_pwc(client):
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    document = client.create_document(identification=uuid.uuid4(), data=data)
+    content = io.BytesIO(b"Test content")
+    document = client.create_document(
+        identification=uuid.uuid4(), data=data, content=content
+    )
     client.lock_document(
         drc_uuid=document.uuid, lock="00569792-f72f-420c-8b72-9c2fb9dd7601"
     )
@@ -334,6 +340,9 @@ def update_document(client):
         content=new_content,
         lock="00569792-f72f-420c-8b72-9c2fb9dd7601",
     )
+    client.unlock_document(
+        drc_uuid=document.uuid, lock="00569792-f72f-420c-8b72-9c2fb9dd7601"
+    )
 
 
 def create_document_copy(client):
@@ -341,7 +350,7 @@ def create_document_copy(client):
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    content = io.BytesIO(b"Content before update")
+    content = io.BytesIO(b"Test content")
     document = client.create_document(
         identification=uuid.uuid4(), data=data, content=content
     )
@@ -354,7 +363,7 @@ def move_document(client):
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    content = io.BytesIO(b"Content before update")
+    content = io.BytesIO(b"Test content")
     document = client.create_document(
         identification=uuid.uuid4(), data=data, content=content
     )
@@ -369,7 +378,7 @@ def delete_document(client):
         "creatiedatum": timezone.now(),
         "titel": "detailed summary",
     }
-    content = io.BytesIO(b"Content before update")
+    content = io.BytesIO(b"Test content")
     document = client.create_document(
         identification=uuid.uuid4(), data=data, content=content
     )

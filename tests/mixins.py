@@ -1,7 +1,7 @@
 import os
 
 from drc_cmis.client_builder import get_cmis_client
-from drc_cmis.models import CMISConfig
+from drc_cmis.models import CMISConfig, Vendor
 
 
 class DMSMixin:
@@ -15,8 +15,8 @@ class DMSMixin:
                 binding="BROWSER",
                 client_user="admin",
                 client_password="admin",
-                zaak_folder_path="/Zaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
-                other_folder_path="/DRC/{{ year }}/{{ month }}/{{ day }}/",
+                zaak_folder_path="/TestZaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
+                other_folder_path="/TestDRC/{{ year }}/{{ month }}/{{ day }}/",
             )
         elif os.getenv("CMIS_BINDING") == "WEBSERVICE":
             CMISConfig.objects.create(
@@ -24,8 +24,8 @@ class DMSMixin:
                 binding="WEBSERVICE",
                 client_user="admin",
                 client_password="admin",
-                zaak_folder_path="/Zaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
-                other_folder_path="/DRC/{{ year }}/{{ month }}/{{ day }}/",
+                zaak_folder_path="/TestZaken/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/",
+                other_folder_path="/TestDRC/{{ year }}/{{ month }}/{{ day }}/",
             )
         else:
             raise Exception(

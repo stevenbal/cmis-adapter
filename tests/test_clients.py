@@ -4,13 +4,14 @@ import os
 import uuid
 from unittest import skip, skipIf
 
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.utils import timezone
 
+import pytz
 import requests_mock
 from freezegun import freeze_time
 
-from drc_cmis.models import CMISConfig
+from drc_cmis.models import CMISConfig, Vendor
 from drc_cmis.utils.exceptions import (
     DocumentDoesNotExistError,
     DocumentExistsError,
@@ -32,7 +33,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 drc_folder_exists = True
                 break
         self.assertFalse(drc_folder_exists)
@@ -44,7 +45,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 drc_folder_exists = True
                 break
         self.assertTrue(drc_folder_exists)
@@ -62,6 +63,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         day_folder = children[0]
         self.assertEqual(day_folder.name, "27")
 
+    @tag("alfresco")
     def test_create_zaaktype_folder(self):
         # Test folder where to create the zaaktype
         test_destination_folder = self.cmis_client.get_or_create_other_folder()
@@ -84,6 +86,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         self.assertEqual("zaaktype-", zaaktype_folder.name[:9])
         self.assertEqual(zaaktype_folder.objectTypeId, "F:drc:zaaktypefolder")
 
+    @tag("alfresco")
     def test_create_zaak_folder(self):
         # Test folder where to create the zaaktype and zaak folder
         test_destination_folder = self.cmis_client.get_or_create_other_folder()
@@ -122,21 +125,17 @@ class CMISClientFolderTests(DMSMixin, TestCase):
     def test_get_repository_info(self):
         properties = self.cmis_client.get_repository_info()
 
-        expected_properties = [
+        some_expected_properties = [
             "repositoryId",
             "repositoryName",
-            "repositoryDescription",
             "vendorName",
             "productName",
             "productVersion",
             "rootFolderId",
-            "latestChangeLogToken",
             "cmisVersionSupported",
-            "changesIncomplete",
-            "changesOnType",
         ]
 
-        for expected_property in expected_properties:
+        for expected_property in some_expected_properties:
             self.assertIn(expected_property, properties)
 
     def test_create_folder(self):
@@ -217,6 +216,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
             folder3.objectId,
         )
 
+    @tag("alfresco")
     def test_get_vendor(self):
         vendor = self.cmis_client.vendor
         self.assertEqual(vendor.lower(), "alfresco")
@@ -234,7 +234,7 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 drc_folder_exists = True
                 break
         self.assertFalse(drc_folder_exists)
@@ -246,7 +246,7 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 drc_folder_exists = True
                 break
         self.assertTrue(drc_folder_exists)
@@ -290,8 +290,8 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
             gebruiksrechten.informatieobject, properties["informatieobject"]
         )
         self.assertEqual(
-            gebruiksrechten.startdatum,
-            properties["startdatum"],
+            gebruiksrechten.startdatum.astimezone(pytz.timezone("UTC")),
+            properties["startdatum"].astimezone(pytz.timezone("UTC")),
         )
         self.assertEqual(
             gebruiksrechten.omschrijving_voorwaarden,
@@ -1504,6 +1504,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         identification = str(uuid.uuid4())
         properties = {
+            "uuid": str(uuid.uuid4()),
             "bronorganisatie": "159351741",
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
@@ -1548,36 +1549,56 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
 
-    def test_create_document_with_begin_registratie(self):
+    def test_create_document_with_dates_and_datetimes(self):
 
         identification = str(uuid.uuid4())
         properties = {
             "begin_registratie": timezone.now(),
-            "creatiedatum": timezone.now(),
+            "creatiedatum": timezone.now().date(),
+            "integriteit_datum": timezone.now().date(),
+            "ondertekening_datum": timezone.now().date(),
+            "verzenddatum": timezone.now().date(),
+            "ontvangstdatum": timezone.now().date(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties
+            identification=identification, data=properties, content=content
         )
 
         self.assertIsNotNone(document.uuid)
-        self.assertEqual(
-            document.creatiedatum,
-            properties["creatiedatum"],
-        )
-        self.assertEqual(
-            document.begin_registratie,
-            properties["begin_registratie"],
-        )
+
+        # In OpenZaak, date fields that come back as datetimes through CMIS are converted with .date() to dates
+        for key, value in properties.items():
+            if isinstance(value, datetime.date) and not isinstance(
+                value, datetime.datetime
+            ):
+                with self.subTest(key):
+                    self.assertEqual(
+                        getattr(document, key).date(),
+                        timezone.now().date(),
+                    )
+
+        with self.subTest("begin_registratie"):
+            self.assertEqual(
+                document.begin_registratie.astimezone(pytz.timezone("UTC")),
+                properties["begin_registratie"].astimezone(pytz.timezone("UTC")),
+            )
 
     def test_create_existing_document_raises_error(self):
         identification = str(uuid.uuid4())
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
-        self.cmis_client.create_document(identification=identification, data=data)
+        content = io.BytesIO(b"some file content")
+
+        self.cmis_client.create_document(
+            identification=identification, data=data, content=content
+        )
 
         with self.assertRaises(DocumentExistsError):
             self.cmis_client.create_document(identification=identification, data=data)
@@ -1587,7 +1608,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 drc_folder_exists = True
                 break
         self.assertFalse(drc_folder_exists)
@@ -1595,16 +1616,21 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
         identification = str(uuid.uuid4())
-        self.cmis_client.create_document(identification=identification, data=data)
+        content = io.BytesIO(b"some file content")
+
+        self.cmis_client.create_document(
+            identification=identification, data=data, content=content
+        )
 
         # Test that the folder structure is correct
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
         children = root_folder.get_children_folders()
         drc_folder_exists = False
         for child_folder in children:
-            if child_folder.name == "DRC":
+            if child_folder.name == "TestDRC":
                 other_base_folder = child_folder
                 drc_folder_exists = True
                 break
@@ -1626,9 +1652,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         lock = str(uuid.uuid4())
 
@@ -1643,9 +1672,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         lock = str(uuid.uuid4())
 
@@ -1658,9 +1690,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         lock = str(uuid.uuid4())
 
@@ -1679,9 +1714,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         lock = str(uuid.uuid4())
 
@@ -1696,9 +1734,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         lock = str(uuid.uuid4())
 
@@ -1726,6 +1767,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "link": "http://een.link",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
+            "uuid": str(uuid.uuid4()),
         }
         content = io.BytesIO(b"Content before update")
 
@@ -1778,11 +1820,13 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         properties = {
             "titel": "detailed summary",
             "auteur": "test_auteur",
+            "uuid": str(uuid.uuid4()),
         }
 
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification=identification,
-            data=properties,
+            identification=identification, data=properties, content=content
         )
 
         new_properties = {
@@ -1808,6 +1852,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "link": "http://een.link",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
+            "uuid": str(uuid.uuid4()),
         }
         content = io.BytesIO(b"some file content")
 
@@ -1836,9 +1881,19 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
                 or "uuid" in property_name
             ):
                 continue
-            self.assertEqual(
-                property_details["value"], document.properties[property_name]["value"]
-            )
+
+            if isinstance(property_details["value"], datetime.datetime):
+                self.assertEqual(
+                    property_details["value"].astimezone(pytz.timezone("UTC")),
+                    document.properties[property_name]["value"].astimezone(
+                        pytz.timezone("UTC")
+                    ),
+                )
+            else:
+                self.assertEqual(
+                    property_details["value"],
+                    document.properties[property_name]["value"],
+                )
 
         self.assertEqual(copied_document.kopie_van, document.uuid)
         self.assertNotEqual(copied_document.uuid, document.uuid)
@@ -1847,9 +1902,12 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "uuid": str(uuid.uuid4()),
         }
+        content = io.BytesIO(b"some file content")
+
         document = self.cmis_client.create_document(
-            identification="00569792-f72f-420c-8b72-9c2fb9dd7601", data=data
+            identification=str(uuid.uuid4()), data=data, content=content
         )
         self.cmis_client.delete_document(drc_uuid=document.uuid)
         with self.assertRaises(DocumentDoesNotExistError):
