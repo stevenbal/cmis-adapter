@@ -2,7 +2,7 @@
 Documenten API CMIS adapter
 ===========================
 
-:Version: 1.0.0
+:Version: 1.1.0
 :Source: https://github.com/open-zaak/cmis-adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
@@ -301,7 +301,7 @@ temporary folder. By default this is:
 .. code-block::
 
     CMIS Root
-    +-- [base-folder] (cmis:folder)
+    +-- DRC (cmis:folder)
         +-- [year] (cmis:folder)
             +-- [month] (cmis:folder)
                 +-- [day] (cmis:folder)
@@ -339,7 +339,7 @@ if it exists, to be **moved** or **copied** to the zaak folder.
 .. code-block::
 
     CMIS Root
-    +-- [base-folder] (cmis:folder)
+    +-- DRC (cmis:folder)
         +-- [zaaktype-folder] (drc:zaaktypefolder)
             +-- [year] (cmis:folder)
                 +-- [month] (cmis:folder)
@@ -397,21 +397,45 @@ copied and stays in its temporary folder.
 DMS folder structure overview
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A complete overview of all folder- and document types are shown below:
+You can configure the folders used by the CMIS adapter via the admin interface.
+Some folders are templated (indicated with ``{{ }}``) which means their value
+depends on the current date or the related Zaak.
+
+A complete overview of all default folders and documents are shown below:
+
+**Zaak folder path**
+
+Storage location for documents related to a Zaak.
+
+Default: ``/DRC/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/``
 
 .. code-block::
 
     CMIS Root
-    +-- [base-folder] (cmis:folder)
+    +-- DRC (cmis:folder)
         +-- [zaaktype-folder] (drc:zaaktypefolder)
-        |   +-- [year] (cmis:folder)
-        |       +-- [month] (cmis:folder)
-        |           +-- [day] (cmis:folder)
-        |               +-- [zaak-folder] (drc:zaakfolder)
-        |                   +-- [filename] (drc:document)
-        |                   +-- Related data (cmis:folder)
-        |                       +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
-        |                       +-- [filename]-oio (drc:oio)
+            +-- [year] (cmis:folder)
+                +-- [month] (cmis:folder)
+                    +-- [day] (cmis:folder)
+                        +-- [zaak-folder] (drc:zaakfolder)
+                            +-- [filename] (drc:document)
+                            +-- Related data (cmis:folder)
+                                +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
+                                +-- [filename]-oio (drc:oio)
+
+You can for example change this to: ``/DRC/{{ zaaktype }}/{{ zaak }}/`` to 
+remove the year/month/day folder structure entirely.
+
+**Other folder path**
+
+Storage location for documents not (yet) related to a Zaak.
+
+Default: ``/DRC/{{ year }}/{{ month }}/{{ day }}/``
+
+.. code-block::
+
+    CMIS Root
+    +-- DRC (cmis:folder)
         +-- [year] (cmis:folder)
             +-- [month] (cmis:folder)
                 +-- [day] (cmis:folder)

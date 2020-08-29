@@ -2,6 +2,16 @@
 Changelog
 =========
 
+
+1.1.0 (2020-08-26)
+------------------
+
+* Added configurable paths to be used in the DMS when adding documents.
+* Added connection status in admin.
+* Fixed code coverage report.
+* Fixed minor Corsa compatibility issues.
+* Fixed minor documentation issues.
+
 1.0.0 (2020-08-25)
 ------------------
 
