@@ -108,6 +108,27 @@ class CMISDocumentTests(DMSMixin, TestCase):
         self.assertEqual(pwc.versionLabel, "pwc")
 
     @tag("alfresco")
+    def test_document_with_pdf_attachment(self):
+        identification = str(uuid.uuid4())
+        data = {
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+        }
+        # Contains non-UTF-8 characters
+        content = io.BytesIO(
+            b"%PDF-1.4\n%\xc3\xa4\xc3\xbc\xc3\xb6\n2 0 obj\n<</Length 3 0 R/Filter/FlateDecode>>\nstream\nx\x9c"
+        )
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=data,
+            content=content,
+        )
+
+        posted_content = document.get_content_stream()
+        content.seek(0)
+        self.assertEqual(posted_content.read(), content.read())
+
+    @tag("alfresco")
     def test_checkin_document(self):
         identification = str(uuid.uuid4())
         data = {
