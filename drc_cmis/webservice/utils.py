@@ -146,12 +146,16 @@ def extract_content(soap_response_body: str) -> BytesIO:
     # After the filename comes the file content
     last_header = (
         f"Content-Disposition: attachment;name=\"{extracted_data['filename']}\""
-    )
+    ).encode("utf-8")
     idx_content = soap_response_body.find(last_header) + len(last_header)
     content_with_boundary = soap_response_body[idx_content:]
-    content = re.search("\r\n\r\n(.+?)\r\n--uuid:.+?--", content_with_boundary).group(1)
+    content = re.search(
+        "\r\n\r\n(.+?)\r\n--uuid:.+?--".encode("utf-8"),
+        content_with_boundary,
+        re.DOTALL,
+    ).group(1)
 
-    return BytesIO(content.encode())
+    return BytesIO(content)
 
 
 def make_soap_envelope(
@@ -373,7 +377,7 @@ def make_soap_envelope(
 
 
 def extract_xml_from_soap(soap_response):
-    begin_xml = soap_response.find("<soap:Envelope")
-    end_xml = soap_response.find("</soap:Envelope>") + len("</soap:Envelope>")
+    begin_xml = soap_response.find(b"<soap:Envelope")
+    end_xml = soap_response.find(b"</soap:Envelope>") + len(b"</soap:Envelope>")
 
     return soap_response[begin_xml:end_xml]
