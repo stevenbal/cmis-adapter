@@ -65,7 +65,12 @@ class CMISDRCClient(CMISClient, CMISRequest):
         return repo_info["vendorName"]
 
     def get_repository_info(self) -> dict:
-        return self.get_request(self.base_url)["-default-"]
+        logger.debug(
+            "CMIS_ADAPTER: get_repository_info: GET request url: %s", self.base_url
+        )
+        response = self.get_request(self.base_url)["-default-"]
+        logger.debug("CMIS_ADAPTER: get_repository_info: response: %s", response)
+        return response
 
     # generic querying
     def query(
@@ -78,12 +83,13 @@ class CMISDRCClient(CMISClient, CMISRequest):
         statement = query(*rhs) if rhs else query()
 
         body = {"cmisaction": "query", "statement": statement}
+        logger.debug("CMIS_ADAPTER: query: request data: %s", body)
         response = self.post_request(self.base_url, body)
-        logger.debug(response)
+        logger.debug("CMIS_ADAPTER: query: response: %s", response)
+
         return self.get_all_results(response, return_type)
 
     def create_folder(self, name: str, parent_id: str, properties: dict = None):
-        logger.debug("CMIS: DRC_DOCUMENT: create_folder")
         data = {
             "objectId": parent_id,
             "cmisaction": "createFolder",
@@ -100,7 +106,11 @@ class CMISDRCClient(CMISClient, CMISRequest):
                 data[f"propertyValue[{prop_count}]"] = value
                 prop_count += 1
 
+        logger.debug("CMIS_ADAPTER: create_folder: request data: %s", data)
+
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: create_folder: response data: %s", json_response)
+
         return Folder(json_response)
 
     def get_folder(self, uuid: str) -> Folder:
@@ -111,7 +121,9 @@ class CMISDRCClient(CMISClient, CMISRequest):
         )
 
         body = {"cmisaction": "query", "statement": query(uuid)}
+        logger.debug("CMIS_ADAPTER: get_folder: request data: %s", body)
         json_response = self.post_request(self.base_url, body)
+        logger.debug("CMIS_ADAPTER: get_folder: response data: %s", json_response)
 
         try:
             return self.get_first_result(json_response, Folder)
@@ -128,8 +140,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param destination_folder: Folder, the folder in which to place the copied gebruiksrechten
         :return: the copied object
         """
-        logger.debug("Gebruiksrechten (Browser binding): make_copy")
-
         # copy the properties from the source object
         properties = {
             property_name: property_details["value"]
@@ -151,8 +161,13 @@ class CMISDRCClient(CMISClient, CMISRequest):
         )
 
         data = create_json_request_body(destination_folder, properties)
+        logger.debug("CMIS_ADAPTER: copy_gebruiksrechten: request data: %s", data)
 
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug(
+            "CMIS_ADAPTER: copy_gebruiksrechten: response data: %s", json_response
+        )
+
         return Gebruiksrechten(json_response)
 
     def copy_document(self, document: Document, destination_folder: Folder) -> Document:
@@ -162,7 +177,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param destination_folder: Folder, the folder in which to place the copied document
         :return: the copied document
         """
-        logger.debug("Document (Browser binding): make_copy")
 
         # copy the properties from the source document
         properties = {
@@ -185,9 +199,12 @@ class CMISDRCClient(CMISClient, CMISRequest):
         properties["cmis:name"] = file_name
 
         data = create_json_request_body(destination_folder, properties)
+        logger.debug("CMIS_ADAPTER: copy_document: request data: %s", data)
 
         content = document.get_content_stream()
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: copy_document: response data: %s", json_response)
+
         cmis_doc = Document(json_response)
         content.seek(0)
 
@@ -245,7 +262,11 @@ class CMISDRCClient(CMISClient, CMISRequest):
             json_data[f"propertyValue[{prop_count}]"] = prop_value
             prop_count += 1
 
+        logger.debug("CMIS_ADAPTER: create_content_object: request data: %s", json_data)
         json_response = self.post_request(self.root_folder_url, data=json_data)
+        logger.debug(
+            "CMIS_ADAPTER: create_content_object: response data: %s", json_response
+        )
 
         if object_type == "gebruiksrechten":
             return Gebruiksrechten(json_response)
@@ -273,8 +294,12 @@ class CMISDRCClient(CMISClient, CMISRequest):
             "cmisaction": "query",
             "statement": query(object_type, object_type, str(drc_uuid)),
         }
+        logger.debug("CMIS_ADAPTER: get_content_object: request data: %s", data)
 
         json_response = self.post_request(self.base_url, data)
+        logger.debug(
+            "CMIS_ADAPTER: get_content_object: response data: %s", json_response
+        )
 
         try:
             return self.get_first_result(
@@ -298,7 +323,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param content: BytesIO, The content of the document.
         :return: document
         """
-        logger.debug("CMIS_CLIENT: create_document")
         self.check_document_exists(identification)
 
         data.setdefault("versie", 1)
@@ -318,8 +342,10 @@ class CMISDRCClient(CMISClient, CMISRequest):
         )
 
         data = create_json_request_body(other_folder, properties)
+        logger.debug("CMIS_ADAPTER: create_document: request data: %s", data)
 
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: create_document: response data: %s", json_response)
         cmis_doc = Document(json_response)
         content.seek(0)
         return cmis_doc.set_content_stream(content)
@@ -328,7 +354,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         """
         Check out the CMIS document and store the lock value for check in/unlock.
         """
-        logger.debug("CMIS checkout of document %s (lock value %s)", uuid, lock)
         cmis_doc = self.get_document(drc_uuid)
 
         already_locked = DocumentLockedException(
@@ -349,22 +374,16 @@ class CMISDRCClient(CMISClient, CMISRequest):
         except CmisUpdateConflictException as exc:
             raise already_locked from exc
 
-        logger.debug(
-            "CMIS checkout of document %s with lock value %s succeeded", uuid, lock
-        )
-
     def unlock_document(
         self, drc_uuid: str, lock: str, force: bool = False
     ) -> Document:
         """Unlock a document with objectId workspace://SpacesStore/<uuid>"""
-        logger.debug(f"CMIS_BACKEND: unlock_document {drc_uuid} start with: {lock}")
         cmis_doc = self.get_document(drc_uuid)
         pwc = cmis_doc.get_private_working_copy()
 
         if constant_time_compare(pwc.lock, lock) or force:
             pwc.update_properties({mapper("lock"): ""})
             new_doc = pwc.checkin("Updated via Documenten API")
-            logger.debug("Unlocked document with UUID %s (forced: %s)", uuid, force)
             return new_doc
 
         raise LockDidNotMatchException("Lock did not match", code="unlock-failed")
@@ -378,7 +397,6 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param drc_uuid: str, the drc:document__uuid
         :return: :class:`AtomPubDocument` object, the latest version of this document
         """
-        logger.debug("CMIS_CLIENT: get_cmis_document")
         assert (
             not via_identification
         ), "Support for 'via_identification' is being dropped"
@@ -402,7 +420,9 @@ class CMISDRCClient(CMISClient, CMISRequest):
             "cmisaction": "query",
             "statement": query(drc_uuid, filter_string),
         }
+        logger.debug("CMIS_ADAPTER: get_document: request data: %s", data)
         json_response = self.post_request(self.base_url, data)
+        logger.debug("CMIS_ADAPTER: get_document: response data: %s", json_response)
 
         return extract_latest_version(self.document_type, json_response.get("results"))
 
@@ -410,13 +430,15 @@ class CMISDRCClient(CMISClient, CMISRequest):
         """Query by identification (``identificatie``) if a document is in the repository"""
 
         # FIXME: should be both bronorganisatie and identification check, not just identification
-        logger.debug("CMIS_CLIENT: _check_document_exists")
-
         column = mapper("identificatie", type="document")
         query = CMISQuery(f"SELECT * FROM drc:document WHERE {column} = '%s'")
 
         data = {"cmisaction": "query", "statement": query(str(identification))}
+        logger.debug("CMIS_ADAPTER: check_document_exists: request data: %s", data)
         json_response = self.post_request(self.base_url, data)
+        logger.debug(
+            "CMIS_ADAPTER: check_document_exists: response data: %s", json_response
+        )
         if json_response["numItems"] > 0:
             error_string = f"Document identificatie {identification} is niet uniek."
             raise DocumentExistsError(error_string)
