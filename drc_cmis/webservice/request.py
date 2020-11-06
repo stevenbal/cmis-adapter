@@ -1,4 +1,4 @@
-from typing import BinaryIO, List, Optional, Tuple
+from typing import BinaryIO, List, Optional, Tuple, Union
 
 import requests
 
@@ -104,7 +104,8 @@ class SOAPCMISRequest:
         path: str,
         soap_envelope: str,
         attachments: Optional[List[Tuple[str, BinaryIO]]] = None,
-    ) -> str:
+        keep_binary: bool = False,
+    ) -> Union[str, bytes]:
         """Make request with MTOM attachment.
 
         :param path: string, path where to post the request
@@ -112,7 +113,8 @@ class SOAPCMISRequest:
         (in the form of `cid:<contentId>`)
         :param attachments: list of tuples, each tuple contains the content ID used in the XML (string) and the I/O
         stream for the attachment.
-        :return: string, the content of the response
+        :param keep_binary: whether to keep the body of the response as binary or convert it to a string.
+        :return: string or bytes, the content of the response
         """
         url = f"{self.base_url}/{path.lstrip('/')}"
 
@@ -204,4 +206,6 @@ class SOAPCMISRequest:
                     code=soap_response.status_code,
                 )
 
-        return soap_response.content
+        if keep_binary:
+            return soap_response.content
+        return soap_response.content.decode("utf-8")

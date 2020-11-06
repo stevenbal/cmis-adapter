@@ -140,7 +140,7 @@ def extract_content_stream_properties_from_xml(xml_data: str) -> dict:
 
 # FIXME find a better way to do this
 def extract_content(soap_response_body: str) -> BytesIO:
-    xml_response = extract_xml_from_soap(soap_response_body)
+    xml_response = extract_xml_from_soap(soap_response_body, binary=True)
     extracted_data = extract_content_stream_properties_from_xml(xml_response)
 
     # After the filename comes the file content
@@ -376,8 +376,14 @@ def make_soap_envelope(
     return xml_doc
 
 
-def extract_xml_from_soap(soap_response):
-    begin_xml = soap_response.find(b"<soap:Envelope")
-    end_xml = soap_response.find(b"</soap:Envelope>") + len(b"</soap:Envelope>")
+def extract_xml_from_soap(soap_response, binary=False):
+    soap_envelope_start = "<soap:Envelope"
+    soap_envelope_end = "</soap:Envelope>"
+    if binary:
+        soap_envelope_start = soap_envelope_start.encode("UTF-8")
+        soap_envelope_end = soap_envelope_end.encode("UTF-8")
+
+    begin_xml = soap_response.find(soap_envelope_start)
+    end_xml = soap_response.find(soap_envelope_end) + len(soap_envelope_end)
 
     return soap_response[begin_xml:end_xml]
