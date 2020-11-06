@@ -76,7 +76,7 @@ class CMISBaseObject(CMISRequest):
         for key, value in data.items():
             prop_name = mapper(key, type=cls.type_name)
             if not prop_name:
-                logger.debug("No property name found for key '%s'", key)
+                logger.debug("CMIS_ADAPTER: No property name found for key '%s'", key)
                 continue
             if value is not None:
                 if isinstance(value, datetime.date) or isinstance(value, datetime.date):
@@ -90,7 +90,9 @@ class CMISContentObject(CMISBaseObject):
     def delete_object(self):
         """Delete all versions of an object"""
         data = {"objectId": self.objectId, "cmisaction": "delete"}
+        logger.debug("CMIS_ADAPTER: delete_object: request data: %s", data)
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: delete_object: response data: %s", json_response)
         return json_response
 
     def get_parent_folders(self) -> List["Folder"]:
@@ -98,13 +100,16 @@ class CMISContentObject(CMISBaseObject):
 
         An object has multiple parent folders if it has been multifiled.
         """
-        logger.debug("CMIS: DRC_DOCUMENT: get_object_parents")
         params = {
             "objectId": self.objectId,
             "cmisselector": "parents",
         }
+        logger.debug("CMIS_ADAPTER: get_parent_folders: request params: %s", params)
 
         json_response = self.get_request(self.root_folder_url, params=params)
+        logger.debug(
+            "CMIS_ADAPTER: get_parent_folders: response data: %s", json_response
+        )
         return self.get_all_objects(json_response, Folder)
 
     def move_object(self, target_folder: "Folder"):
@@ -117,12 +122,11 @@ class CMISContentObject(CMISBaseObject):
             "targetFolderId": target_folder.objectId,
         }
 
-        logger.debug(f"From: {source_folder.name} To: {target_folder.name}")
-        logger.debug(
-            f"From: {source_folder.objectTypeId} To: {target_folder.objectTypeId}"
-        )
+        logger.debug("CMIS_ADAPTER: move_object: request data: %s", data)
+
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: move_object: response data: %s", json_response)
         self.data = json_response
         self.properties = json_response.get("properties")
         return self
@@ -136,16 +140,12 @@ class Document(CMISContentObject):
     def build_properties(
         cls, data: dict, new: bool = True, identification: str = ""
     ) -> dict:
-        logger.debug(
-            "Building CMIS properties, document identification: %s",
-            identification or "(not set)",
-        )
 
         props = {}
         for key, value in data.items():
             prop_name = mapper(key, type="document")
             if not prop_name:
-                logger.debug("No property name found for key '%s'", key)
+                logger.debug("CMIS_ADAPTER: No property name found for key '%s'", key)
                 continue
             props[prop_name] = value
 
@@ -170,13 +170,13 @@ class Document(CMISContentObject):
         return props
 
     def checkout(self):
-        logger.debug("CMIS: DRC_DOCUMENT: checkout")
         data = {"objectId": self.objectId, "cmisaction": "checkOut"}
+        logger.debug("CMIS_ADAPTER: checkout: request data: %s", data)
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: checkout: response data: %s", json_response)
         return Document(json_response)
 
     def update_properties(self, properties: dict, content: Optional[BytesIO] = None):
-        logger.debug("CMIS: DRC_DOCUMENT: update_properties")
 
         if content is not None:
             self.set_content_stream(content)
@@ -194,9 +194,13 @@ class Document(CMISContentObject):
             data["propertyId[%s]" % prop_count] = prop_key
             data["propertyValue[%s]" % prop_count] = prop_value
             prop_count += 1
+        logger.debug("CMIS_ADAPTER: update_properties: request data: %s", data)
 
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug(
+            "CMIS_ADAPTER: update_properties: response data: %s", json_response
+        )
         self.data = json_response
         self.properties = json_response.get("properties")
 
@@ -206,7 +210,10 @@ class Document(CMISContentObject):
         """
         Retrieve the private working copy version of a document.
         """
-        logger.debug("Fetching the PWC for the current document (UUID '%s')", self.uuid)
+        logger.debug(
+            "CMIS_ADAPTER: Fetching the PWC for the current document (UUID '%s')",
+            self.uuid,
+        )
 
         if self.versionSeriesCheckedOutId is None:
             all_versions = self.get_all_versions()
@@ -219,7 +226,14 @@ class Document(CMISContentObject):
                 "cmisselector": "object",  # get the object rather than the content
                 "objectId": self.versionSeriesCheckedOutId,
             }
+            logger.debug(
+                "CMIS_ADAPTER: get_private_working_copy: request params: %s", params
+            )
+
             data = self.get_request(self.root_folder_url, params)
+            logger.debug(
+                "CMIS_ADAPTER: get_private_working_copy: response data: %s", data
+            )
             return type(self)(data)
 
     def get_latest_version(self):
@@ -230,25 +244,29 @@ class Document(CMISContentObject):
             "cmisaction": "query",
             "statement": query(self.uuid),
         }
+        logger.debug("CMIS_ADAPTER: get_latest_version: request data: %s", data)
         json_response = self.post_request(self.base_url, data)
+        logger.debug(
+            "CMIS_ADAPTER: get_latest_version: response data: %s", json_response
+        )
 
         return extract_latest_version(type(self), json_response.get("results"))
 
     def checkin(self, checkin_comment, major=True):
-        logger.debug("CMIS: DRC_DOCUMENT: checkin")
         props = {
             "objectId": self.objectId,
             "cmisaction": "checkIn",
             "checkinComment": checkin_comment,
             "major": major,
         }
+        logger.debug("CMIS_ADAPTER: checkin: request data: %s", props)
 
         # invoke the URL
         json_response = self.post_request(self.root_folder_url, props)
+        logger.debug("CMIS_ADAPTER: checkin: response data: %s", json_response)
         return Document(json_response)
 
     def set_content_stream(self, content_file):
-        logger.debug("CMIS: DRC_DOCUMENT: set_content_stream")
         data = {"objectId": self.objectId, "cmisaction": "setContent"}
 
         mimetype = None
@@ -260,14 +278,22 @@ class Document(CMISContentObject):
             mimetype = "application/binary"
 
         files = {self.name: (self.name, content_file, mimetype)}
+        logger.debug("CMIS_ADAPTER: set_content_stream: request data: %s", data)
 
         json_response = self.post_request(self.root_folder_url, data=data, files=files)
+        logger.debug(
+            "CMIS_ADAPTER: set_content_stream: response data: %s", json_response
+        )
         return Document(json_response)
 
     def get_content_stream(self) -> BytesIO:
-        logger.debug("CMIS: DRC_DOCUMENT: get_content_stream")
         params = {"objectId": self.objectId, "cmisaction": "content"}
+        logger.debug("CMIS_ADAPTER: get_content_stream: request params: %s", params)
         file_content = self.get_request(self.root_folder_url, params=params)
+        logger.debug(
+            "CMIS_ADAPTER: get_content_stream: retrieved file length %i",
+            len(file_content),
+        )
         return BytesIO(file_content)
 
     def get_all_versions(self) -> List["Document"]:
@@ -281,7 +307,9 @@ class Document(CMISContentObject):
         """
 
         params = {"objectId": self.objectId, "cmisselector": "versions"}
+        logger.debug("CMIS_ADAPTER: get_all_versions: request params: %s", params)
         all_versions = self.get_request(self.root_folder_url, params=params)
+        logger.debug("CMIS_ADAPTER: get_all_versions: response data: %s", all_versions)
         return [Document(data) for data in all_versions]
 
     def delete_object(self) -> None:
@@ -298,7 +326,16 @@ class Document(CMISContentObject):
                 "cmisaction": "cancelCheckout",
                 "objectId": latest_version.objectId,
             }
-            self.post_request(self.root_folder_url, data=cancel_checkout_data)
+            logger.debug(
+                "CMIS_ADAPTER: delete_object: request data: %s", cancel_checkout_data
+            )
+
+            response = self.post_request(
+                self.root_folder_url, data=cancel_checkout_data
+            )
+
+            logger.debug("CMIS_ADAPTER: delete_object: response data: %s", response)
+
             refreshed_document = self.get_latest_version()
             return refreshed_document.delete_object()
         return super().delete_object()
@@ -320,17 +357,22 @@ class Folder(CMISBaseObject):
     table = "cmis:folder"
 
     def get_children_folders(self):
-        logger.debug("CMIS: DRC_DOCUMENT: get_children")
         data = {
             "cmisaction": "query",
             "statement": f"SELECT * FROM cmis:folder WHERE IN_FOLDER('{self.objectId}')",
         }
+        logger.debug("CMIS_ADAPTER: get_children_folders: request data: %s", data)
         json_response = self.post_request(self.base_url, data=data)
+        logger.debug(
+            "CMIS_ADAPTER: get_children_folders: response data: %s", json_response
+        )
         return self.get_all_results(json_response, Folder)
 
     def delete_tree(self, **kwargs):
         data = {"objectId": self.objectId, "cmisaction": "deleteTree"}
-        self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: delete_tree: request data: %s", data)
+        json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug("CMIS_ADAPTER: delete_tree: response data: %s", json_response)
 
 
 class ZaakTypeFolder(CMISBaseObject):

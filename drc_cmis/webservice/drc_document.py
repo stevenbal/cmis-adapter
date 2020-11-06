@@ -91,7 +91,7 @@ class CMISBaseObject(SOAPCMISRequest):
         for key, value in data.items():
             prop_name = mapper(key, type=cls.type_name)
             if not prop_name:
-                logger.debug("No property name found for key '%s'", key)
+                logger.debug("CMIS_ADAPTER: No property name found for key '%s'", key)
                 continue
             if value is not None:
                 prop_type = get_cmis_type(cls.type_class, key)
@@ -118,8 +118,15 @@ class CMISContentObject(CMISBaseObject):
             object_id=self.objectId,
             cmis_action="deleteObject",
         )
+        logger.debug(
+            "delete_object: SOAP deleteObject request: %s", soap_envelope.toxml()
+        )
 
-        self.request("ObjectService", soap_envelope=soap_envelope.toxml())
+        response = self.request("ObjectService", soap_envelope=soap_envelope.toxml())
+
+        logger.debug(
+            "CMIS_ADAPTER: delete_object: SOAP deleteObject response: %s", response
+        )
 
     def get_parent_folders(self) -> List["Folder"]:
         """Get all the parent folders of an object"""
@@ -130,10 +137,18 @@ class CMISContentObject(CMISBaseObject):
             object_id=self.objectId,
             cmis_action="getObjectParents",
         )
+        logger.debug(
+            "get_parent_folders: SOAP getObjectParents request: %s",
+            soap_envelope.toxml(),
+        )
 
         soap_response = self.request(
             "NavigationService", soap_envelope=soap_envelope.toxml()
         )
+        logger.debug(
+            "get_parent_folders: SOAP getObjectParents response: %s", soap_response
+        )
+
         xml_response = extract_xml_from_soap(soap_response)
 
         extracted_data = extract_object_properties_from_xml(
@@ -154,10 +169,18 @@ class CMISContentObject(CMISBaseObject):
             source_folder_id=source_folder.objectId,
             cmis_action="moveObject",
         )
+        logger.debug(
+            "CMIS_ADAPTER: move_object: SOAP moveObject request: %s",
+            soap_envelope.toxml(),
+        )
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
         )
+        logger.debug(
+            "CMIS_ADAPTER: move_object: SOAP moveObject response: %s", soap_response
+        )
+
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "moveObject")[
             0
@@ -196,7 +219,7 @@ class Document(CMISContentObject):
         for key, value in data.items():
             prop_name = mapper(key, type="document")
             if not prop_name:
-                logger.debug("No property name found for key '%s'", key)
+                logger.debug("CMIS_ADAPTER: No property name found for key '%s'", key)
                 continue
             if value is not None:
                 prop_type = get_cmis_type(EnkelvoudigInformatieObject, key)
@@ -256,9 +279,16 @@ class Document(CMISContentObject):
             object_id=object_id,
             cmis_action="getObject",
         )
+        logger.debug(
+            "CMIS_ADAPTER: get_document: SOAP getObject request: %s",
+            soap_envelope.toxml(),
+        )
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
+        )
+        logger.debug(
+            "CMIS_ADAPTER: get_document: SOAP getObject response: %s", soap_response
         )
 
         xml_response = extract_xml_from_soap(soap_response)
@@ -277,12 +307,19 @@ class Document(CMISContentObject):
             cmis_action="checkOut",
             object_id=str(self.objectId),
         )
+        logger.debug(
+            "CMIS_ADAPTER: checkout: SOAP checkOut request: %s", soap_envelope.toxml()
+        )
 
         # FIXME temporary solution due to alfresco raising a 500 AFTER locking the document
         try:
             soap_response = self.request(
                 "VersioningService", soap_envelope=soap_envelope.toxml()
             )
+            logger.debug(
+                "CMIS_ADAPTER: checkout: SOAP checkOut response: %s", soap_response
+            )
+
             xml_response = extract_xml_from_soap(soap_response)
             extracted_data = extract_object_properties_from_xml(
                 xml_response, "checkOut"
@@ -303,10 +340,15 @@ class Document(CMISContentObject):
             major=str(major).lower(),
             checkin_comment=checkin_comment,
         )
+        logger.debug(
+            "CMIS_ADAPTER: checkin: SOAP checkIn request: %s", soap_envelope.toxml()
+        )
 
         soap_response = self.request(
             "VersioningService", soap_envelope=soap_envelope.toxml()
         )
+        logger.debug("CMIS_ADAPTER: checkin: SOAP checkIn response: %s", soap_response)
+
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "checkIn")[0]
         doc_id = extracted_data["properties"]["objectId"]["value"]
@@ -321,8 +363,14 @@ class Document(CMISContentObject):
             cmis_action="getAllVersions",
             object_id=object_id,
         )
+        logger.debug(
+            "get_all_versions: SOAP getAllVersions request: %s", soap_envelope.toxml()
+        )
         soap_response = self.request(
             "VersioningService", soap_envelope=soap_envelope.toxml()
+        )
+        logger.debug(
+            "get_all_versions: SOAP getAllVersions response: %s", soap_response
         )
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(
@@ -352,10 +400,17 @@ class Document(CMISContentObject):
             cmis_action="updateProperties",
             object_id=self.objectId,
         )
+        logger.debug(
+            "update_properties: SOAP updateProperties request: %s",
+            soap_envelope.toxml(),
+        )
 
         soap_response = self.request(
             "ObjectService",
             soap_envelope=soap_envelope.toxml(),
+        )
+        logger.debug(
+            "update_properties: SOAP updateProperties response: %s", soap_response
         )
 
         xml_response = extract_xml_from_soap(soap_response)
@@ -371,9 +426,16 @@ class Document(CMISContentObject):
             object_id=self.objectId,
             cmis_action="getContentStream",
         )
+        logger.debug(
+            "get_content_stream: SOAP getContentStream request: %s",
+            soap_envelope.toxml(),
+        )
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
+        )
+        logger.debug(
+            "get_content_stream: SOAP getContentStream response: %s", soap_response
         )
 
         # FIXME find a better way to do this
@@ -390,11 +452,18 @@ class Document(CMISContentObject):
             cmis_action="setContentStream",
             content_id=content_id,
         )
+        logger.debug(
+            "set_content_stream: SOAP setContentStream request: %s",
+            soap_envelope.toxml(),
+        )
 
-        self.request(
+        soap_response = self.request(
             "ObjectService",
             soap_envelope=soap_envelope.toxml(),
             attachments=attachments,
+        )
+        logger.debug(
+            "set_content_stream: SOAP setContentStream response: %s", soap_response
         )
 
     def delete_object(self):
@@ -414,11 +483,18 @@ class Document(CMISContentObject):
                 object_id=latest_version.objectId,
                 cmis_action="cancelCheckOut",
             )
+            logger.debug(
+                "delete_object: SOAP cancelCheckOut request: %s", soap_envelope.toxml()
+            )
 
-            self.request(
+            soap_response = self.request(
                 "VersioningService",
                 soap_envelope=soap_envelope.toxml(),
             )
+            logger.debug(
+                "delete_object: SOAP cancelCheckOut response: %s", soap_response
+            )
+
             refreshed_document = self.get_latest_version()
             return refreshed_document.delete_object()
 
@@ -437,6 +513,9 @@ class Document(CMISContentObject):
             statement=query(self.uuid),
             cmis_action="query",
         )
+        logger.debug(
+            "get_latest_version: SOAP query request: %s", soap_envelope.toxml()
+        )
 
         try:
             soap_response = self.request(
@@ -449,6 +528,9 @@ class Document(CMISContentObject):
                 raise DocumentDoesNotExistError(error_string)
             else:
                 raise exc
+        logger.debug(
+            "CMIS_ADAPTER: get_latest_version: SOAP query response: %s", soap_response
+        )
 
         xml_response = extract_xml_from_soap(soap_response)
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
@@ -483,6 +565,9 @@ class Folder(CMISBaseObject):
             statement=query(str(self.objectId)),
             cmis_action="query",
         )
+        logger.debug(
+            "get_children_folders: SOAP query request: %s", soap_envelope.toxml()
+        )
 
         try:
             soap_response = self.request(
@@ -494,6 +579,9 @@ class Folder(CMISBaseObject):
                 return []
             else:
                 raise exc
+        logger.debug(
+            "CMIS_ADAPTER: get_children_folders: SOAP query response: %s", soap_response
+        )
 
         xml_response = extract_xml_from_soap(soap_response)
 
@@ -511,8 +599,17 @@ class Folder(CMISBaseObject):
             cmis_action="deleteTree",
             continue_on_failure="true",
         )
+        logger.debug(
+            "CMIS_ADAPTER: delete_tree: SOAP deleteTree request: %s",
+            soap_envelope.toxml(),
+        )
 
-        self.request("ObjectService", soap_envelope=soap_envelope.toxml())
+        soap_response = self.request(
+            "ObjectService", soap_envelope=soap_envelope.toxml()
+        )
+        logger.debug(
+            "CMIS_ADAPTER: delete_tree: SOAP deleteTree response: %s", soap_response
+        )
 
 
 class ZaakTypeFolder(CMISBaseObject):
