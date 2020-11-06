@@ -1,4 +1,4 @@
-from typing import BinaryIO, List, Optional, Tuple
+from typing import BinaryIO, List, Optional, Tuple, Union
 
 import requests
 
@@ -104,7 +104,8 @@ class SOAPCMISRequest:
         path: str,
         soap_envelope: str,
         attachments: Optional[List[Tuple[str, BinaryIO]]] = None,
-    ) -> str:
+        keep_binary: bool = False,
+    ) -> Union[str, bytes]:
         """Make request with MTOM attachment.
 
         :param path: string, path where to post the request
@@ -112,7 +113,8 @@ class SOAPCMISRequest:
         (in the form of `cid:<contentId>`)
         :param attachments: list of tuples, each tuple contains the content ID used in the XML (string) and the I/O
         stream for the attachment.
-        :return: string, the content of the response
+        :param keep_binary: whether to keep the body of the response as binary or convert it to a string.
+        :return: string or bytes, the content of the response
         """
         url = f"{self.base_url}/{path.lstrip('/')}"
 
@@ -121,7 +123,9 @@ class SOAPCMISRequest:
             envelope_header += f"{key}: {value}\n"
 
         # Format the body of the request
-        body = f"\n{self._boundary}\n{envelope_header}\n{soap_envelope}\n\n"
+        body = f"\n{self._boundary}\n{envelope_header}\n{soap_envelope}\n\n".encode(
+            "utf-8"
+        )
 
         # Adding the attachments
         if attachments is not None:
@@ -136,11 +140,12 @@ class SOAPCMISRequest:
                 for key, value in file_attachment_headers.items():
                     xml_attachment_header += f"{key}: {value}\n"
 
-                attachment_content = attachment[1]
-                attachment_content.seek(0)
-                body += f"{self._boundary}\n{xml_attachment_header}\n{attachment_content.read().decode('UTF-8')}"
+                attachment_stream = attachment[1]
+                attachment_stream.seek(0)
+                body += f"{self._boundary}\n{xml_attachment_header}\n".encode("utf-8")
+                body += attachment_stream.read()  # Reads binary
 
-        body += f"{self._boundary}--\n"
+        body += f"{self._boundary}--\n".encode("utf-8")
         soap_response = requests.post(url, data=body, headers=self._headers, files=[])
         if not soap_response.ok:
             error = soap_response.text
@@ -201,4 +206,6 @@ class SOAPCMISRequest:
                     code=soap_response.status_code,
                 )
 
-        return soap_response.content.decode("UTF-8")
+        if keep_binary:
+            return soap_response.content
+        return soap_response.content.decode("utf-8")

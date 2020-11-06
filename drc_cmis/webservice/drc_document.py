@@ -432,7 +432,7 @@ class Document(CMISContentObject):
         )
 
         soap_response = self.request(
-            "ObjectService", soap_envelope=soap_envelope.toxml()
+            "ObjectService", soap_envelope=soap_envelope.toxml(), keep_binary=True
         )
         logger.debug(
             "get_content_stream: SOAP getContentStream response: %s", soap_response
