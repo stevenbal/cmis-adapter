@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.1.1 (2020-09-06)
+------------------
+
+* Fixed binary content uploads (such as PDFs) in SOAP binding (#24)
+* Added more logging for all calls (#26)
 
 1.1.0 (2020-08-26)
 ------------------
@@ -22,7 +27,7 @@ effort possible.
 
 * Added support for CMIS 1.0 SOAP bindings
 * Major rewrite of the code to support multiple CMIS bindings
-* Renamed from "GEMMA DRC-CMIS" (`gemma-drc-cmis`) to "Documenten API CMIS 
+* Renamed from "GEMMA DRC-CMIS" (`gemma-drc-cmis`) to "Documenten API CMIS
   adapter" (`cmis-adapter`)
 * Code repository was moved from `GemeenteUtrecht` to `open-zaak` and now lives
   under the maintenance of the Open Zaak project team.
