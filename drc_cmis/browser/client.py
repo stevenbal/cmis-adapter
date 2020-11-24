@@ -313,23 +313,26 @@ class CMISDRCClient(CMISClient, CMISRequest):
     def create_document(
         self,
         identification: str,
+        bronorganisatie: str,
         data: dict,
         content: BytesIO = None,
     ) -> Document:
         """Create a cmis document.
 
         :param identification: string, A unique identifier for the document.
+        :param bronorganisatie: string, The identifier of the organisation.
         :param data: dict, A dict with all the data that needs to be saved on the document.
         :param content: BytesIO, The content of the document.
         :return: document
         """
-        self.check_document_exists(identification)
+        self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", 1)
         data.setdefault(
             "object_type_id",
             f"{self.get_object_type_id_prefix('document')}drc:document",
         )
+        data["bronorganisatie"] = bronorganisatie
 
         if content is None:
             content = BytesIO()
@@ -426,19 +429,28 @@ class CMISDRCClient(CMISClient, CMISRequest):
 
         return extract_latest_version(self.document_type, json_response.get("results"))
 
-    def check_document_exists(self, identification: Union[str, UUID]):
-        """Query by identification (``identificatie``) if a document is in the repository"""
+    def check_document_exists(
+        self, identification: Union[str, UUID], bronorganisatie: str
+    ):
+        """Check if a document with the same (identificatie, bronorganisatie) already exists in the repository"""
 
-        # FIXME: should be both bronorganisatie and identification check, not just identification
-        column = mapper("identificatie", type="document")
-        query = CMISQuery(f"SELECT * FROM drc:document WHERE {column} = '%s'")
+        cmis_identificatie = mapper("identificatie", type="document")
+        cmis_bronorganisatie = mapper("bronorganisatie", type="document")
 
-        data = {"cmisaction": "query", "statement": query(str(identification))}
+        query = CMISQuery(
+            f"SELECT * FROM drc:document WHERE {cmis_identificatie} = '%s' AND {cmis_bronorganisatie} = '%s'"
+        )
+
+        data = {
+            "cmisaction": "query",
+            "statement": query(str(identification), bronorganisatie),
+        }
         logger.debug("CMIS_ADAPTER: check_document_exists: request data: %s", data)
         json_response = self.post_request(self.base_url, data)
         logger.debug(
             "CMIS_ADAPTER: check_document_exists: response data: %s", json_response
         )
         if json_response["numItems"] > 0:
-            error_string = f"Document identificatie {identification} is niet uniek."
-            raise DocumentExistsError(error_string)
+            raise DocumentExistsError(
+                "Een document met dezelfde identificatie en bronorganisatie al bestaat."
+            )
