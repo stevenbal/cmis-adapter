@@ -139,19 +139,12 @@ def extract_content_stream_properties_from_xml(xml_data: str) -> dict:
 
 
 # FIXME find a better way to do this
-def extract_content(soap_response_body: str) -> BytesIO:
-    xml_response = extract_xml_from_soap(soap_response_body, binary=True)
-    extracted_data = extract_content_stream_properties_from_xml(xml_response)
-
-    # After the filename comes the file content
-    last_header = (
-        f"Content-Disposition: attachment;name=\"{extracted_data['filename']}\""
-    ).encode("utf-8")
-    idx_content = soap_response_body.find(last_header) + len(last_header)
-    content_with_boundary = soap_response_body[idx_content:]
+def extract_content(soap_response_body: bytes) -> BytesIO:
     content = re.search(
-        "\r\n\r\n(.+?)\r\n--uuid:.+?--".encode("utf-8"),
-        content_with_boundary,
+        "Content-Disposition: attachment;.+?\r\n\r\n(.+?)\r\n--uuid:.+?--".encode(
+            "utf-8"
+        ),
+        soap_response_body,
         re.DOTALL,
     ).group(1)
 
