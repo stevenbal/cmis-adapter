@@ -558,23 +558,29 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             return Gebruiksrechten(extracted_data[0])
 
     def create_document(
-        self, identification: str, data: dict, content: BytesIO = None
+        self,
+        identification: str,
+        bronorganisatie: str,
+        data: dict,
+        content: BytesIO = None,
     ) -> Document:
         """Create a custom Document (with the EnkelvoudigInformatieObject properties)
 
         :param identification: string, the document ``identificatie``
+        :param bronorganisatie: string, The identifier of the organisation.
         :param data: dict, the properties of the document
         :param content: BytesIO, the content of the document
         :return: Document, the document created
         """
 
-        self.check_document_exists(identification)
+        self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", "1")
         data.setdefault(
             "object_type_id",
             f"{self.get_object_type_id_prefix('document')}drc:document",
         )
+        data["bronorganisatie"] = bronorganisatie
 
         content_id = str(uuid.uuid4())
         if content is None:
@@ -753,19 +759,25 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         return extract_latest_version(self.document_type, extracted_data)
 
-    def check_document_exists(self, identification: Union[str, UUID]) -> None:
-        """Query by identification if a document is in the repository
+    def check_document_exists(
+        self, identification: Union[str, UUID], bronorganisatie: str
+    ) -> None:
+        """Check if a document with the same (identificatie, bronorganisatie) already exists in the repository
 
         :param identification: string, document ``identificatie``
+        :param bronorganisatie: string, document ``bronorganisatie``
         """
+        cmis_identificatie = mapper("identificatie", type="document")
+        cmis_bronorganisatie = mapper("bronorganisatie", type="document")
+
         query = CMISQuery(
-            "SELECT * FROM drc:document WHERE drc:document__identificatie = '%s'"
+            f"SELECT * FROM drc:document WHERE {cmis_identificatie} = '%s' AND {cmis_bronorganisatie} = '%s'"
         )
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
             repository_id=self.main_repo_id,
-            statement=query(str(identification)),
+            statement=query(str(identification), bronorganisatie),
             cmis_action="query",
         )
         logger.debug(
@@ -791,5 +803,6 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
         if len(extracted_data) > 0:
-            error_string = f"Document identificatie {identification} is niet uniek."
-            raise DocumentExistsError(error_string)
+            raise DocumentExistsError(
+                "Een document met dezelfde identificatie en bronorganisatie al bestaat."
+            )

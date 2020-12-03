@@ -506,6 +506,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Test that the document is in the temporary folder
@@ -583,6 +584,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="64d15843-1990-4af2-b6c8-d5a0be52402f",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Create an oio linked to this document
@@ -673,7 +675,6 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
-            "bronorganisatie": "159351741",
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
             "auteur": "test_auteur",
@@ -690,6 +691,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Test that the document is in the temporary folder
@@ -771,6 +773,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="64d15843-1990-4af2-b6c8-d5a0be52402f",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Create an oio linked to this document
@@ -873,6 +876,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Creating the oio, passing the zaak url with 'zaak' key instead of 'object'
@@ -922,6 +926,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Creating the oio, passing the besluit url with 'besluit' key instead of 'object'
@@ -967,6 +972,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Creating the oio, passing the zaak url with 'zaak' key instead of 'object'
@@ -1008,6 +1014,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Get the temporary folder
@@ -1057,6 +1064,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Creating the oio leaves the document in the temporary folder
@@ -1141,6 +1149,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Link document to zaak
@@ -1260,6 +1269,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Create gebruiksrechten
@@ -1326,6 +1336,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Create gebruiksrechten (also in temporary folder)
@@ -1397,6 +1408,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Creating the oio moves the document to the zaak folder
@@ -1459,6 +1471,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             identification="64d15843-1990-4af2-b6c8-d5a0be52402f",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Create the gebruiksrechten
@@ -1505,7 +1518,6 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         identification = str(uuid.uuid4())
         properties = {
             "uuid": str(uuid.uuid4()),
-            "bronorganisatie": "159351741",
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
             "auteur": "test_auteur",
@@ -1520,6 +1532,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         document = self.cmis_client.create_document(
             identification=identification,
+            bronorganisatie="159351741",
             data=properties,
             content=content,
         )
@@ -1565,7 +1578,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content
+            identification=identification,
+            bronorganisatie="159351741",
+            data=properties,
+            content=content,
         )
 
         self.assertIsNotNone(document.uuid)
@@ -1597,11 +1613,19 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
 
         with self.assertRaises(DocumentExistsError):
-            self.cmis_client.create_document(identification=identification, data=data)
+            self.cmis_client.create_document(
+                identification=identification,
+                bronorganisatie="159351741",
+                data=data,
+                content=content,
+            )
 
     def test_create_document_creates_folder_structure(self):
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
@@ -1622,7 +1646,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
 
         # Test that the folder structure is correct
@@ -1657,7 +1684,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         lock = str(uuid.uuid4())
 
@@ -1677,7 +1707,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         lock = str(uuid.uuid4())
 
@@ -1695,7 +1728,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         lock = str(uuid.uuid4())
 
@@ -1719,7 +1755,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         lock = str(uuid.uuid4())
 
@@ -1739,7 +1778,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         lock = str(uuid.uuid4())
 
@@ -1757,7 +1799,6 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
     def test_update_document(self):
         identification = str(uuid.uuid4())
         properties = {
-            "bronorganisatie": "159351741",
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
             "auteur": "test_auteur",
@@ -1775,6 +1816,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         new_properties = {
@@ -1826,7 +1868,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=identification, data=properties, content=content
+            identification=identification,
+            bronorganisatie="159351741",
+            data=properties,
+            content=content,
         )
 
         new_properties = {
@@ -1842,7 +1887,6 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         # Create first document
         identification = str(uuid.uuid4())
         properties = {
-            "bronorganisatie": "159351741",
             "creatiedatum": timezone.now(),
             "titel": "detailed summary",
             "auteur": "test_auteur",
@@ -1858,6 +1902,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         document = self.cmis_client.create_document(
             identification=identification,
+            bronorganisatie="159351741",
             data=properties,
             content=content,
         )
@@ -1907,8 +1952,78 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content = io.BytesIO(b"some file content")
 
         document = self.cmis_client.create_document(
-            identification=str(uuid.uuid4()), data=data, content=content
+            identification=str(uuid.uuid4()),
+            bronorganisatie="159351741",
+            data=data,
+            content=content,
         )
         self.cmis_client.delete_document(drc_uuid=document.uuid)
         with self.assertRaises(DocumentDoesNotExistError):
             self.cmis_client.get_document(drc_uuid=document.uuid)
+
+    def test_same_identificatie_different_bronorganisatie(self):
+        identification = str(uuid.uuid4())
+        properties = {
+            "uuid": str(uuid.uuid4()),
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "http://een.link",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        doc_1 = self.cmis_client.create_document(
+            identification=identification,
+            bronorganisatie="111222333",
+            data=properties,
+            content=content,
+        )
+
+        doc_2 = self.cmis_client.create_document(
+            identification=identification,
+            bronorganisatie="333222111",
+            data=properties,
+            content=content,
+        )
+
+        self.assertEqual(doc_1.identificatie, doc_2.identificatie)
+        self.assertEqual(doc_1.bronorganisatie, "111222333")
+        self.assertEqual(doc_2.bronorganisatie, "333222111")
+
+    def test_same_bronorganisatie_different_identificatie(self):
+        properties = {
+            "uuid": str(uuid.uuid4()),
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "http://een.link",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        doc_1 = self.cmis_client.create_document(
+            identification="IDENTIFICATIE-1",
+            bronorganisatie="111222333",
+            data=properties,
+            content=content,
+        )
+
+        doc_2 = self.cmis_client.create_document(
+            identification="IDENTIFICATIE-2",
+            bronorganisatie="111222333",
+            data=properties,
+            content=content,
+        )
+
+        self.assertEqual(doc_1.bronorganisatie, doc_2.bronorganisatie)
+        self.assertEqual(doc_1.identificatie, "IDENTIFICATIE-1")
+        self.assertEqual(doc_2.identificatie, "IDENTIFICATIE-2")

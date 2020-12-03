@@ -22,6 +22,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
     )
     def test_build_properties_webservice(self):
         properties = {
+            "bronorganisatie": "159351741",
             "integriteitwaarde": "Something",
             "verwijderd": "false",
             "ontvangstdatum": "2020-07-28",
@@ -31,6 +32,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
 
         types = {
+            "bronorganisatie": "propertyString",
             "integriteitwaarde": "propertyString",
             "verwijderd": "propertyBoolean",
             "ontvangstdatum": "propertyDateTime",
@@ -40,7 +42,9 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         identification = str(uuid.uuid4())
         document = self.cmis_client.create_document(
-            identification=identification, data=properties
+            identification=identification,
+            data=properties,
+            bronorganisatie="159351741",
         )
 
         built_properties = document.build_properties(data=properties)
@@ -74,7 +78,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         identification = str(uuid.uuid4())
         document = self.cmis_client.create_document(
-            identification=identification, data=properties
+            identification=identification, bronorganisatie="159351741", data=properties
         )
 
         built_properties = document.build_properties(data=properties)
@@ -101,6 +105,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         pwc = document.checkout()
@@ -122,6 +127,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         posted_content = document.get_content_stream()
@@ -140,6 +146,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         pwc = document.checkout()
@@ -160,6 +167,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         document.checkout()
@@ -177,6 +185,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
         document.checkout()
 
@@ -195,6 +204,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         # Retrieve pwc from the original document
@@ -210,7 +220,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Content before update")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            bronorganisatie="159351741",
+            content=content,
         )
         self.assertEqual(
             document.creatiedatum.strftime("%Y-%m-%d"),
@@ -245,7 +258,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            bronorganisatie="159351741",
+            content=content,
         )
 
         content_stream = document.get_content_stream()
@@ -263,7 +279,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            content=content,
+            bronorganisatie="159351741",
         )
 
         all_versions = document.get_all_versions()
@@ -293,7 +312,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            bronorganisatie="159351741",
+            content=content,
         )
 
         # With browser binding creating a document with content creates 2 versions
@@ -324,7 +346,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            content=content,
+            bronorganisatie="159351741",
         )
 
         all_versions = document.get_all_versions()
@@ -368,7 +393,10 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
-            identification=identification, data=data, content=content
+            identification=identification,
+            data=data,
+            content=content,
+            bronorganisatie="159351741",
         )
 
         # With browser binding, adding the content changes the document version
@@ -415,6 +443,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         pwc = document.checkout()
@@ -434,6 +463,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=data,
             content=content,
+            bronorganisatie="159351741",
         )
 
         pwc = document.checkout()
@@ -467,6 +497,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification=identification,
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         parent_folder = document.get_parent_folders()[0]
@@ -498,6 +529,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
             identification="d1bf9324-46c8-43ae-8bdb-d1a70d682f68",
             data=properties,
             content=content,
+            bronorganisatie="159351741",
         )
 
         parent_folders = document.get_parent_folders()
