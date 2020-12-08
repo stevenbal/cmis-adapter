@@ -113,14 +113,12 @@ class CMISDRCClient(CMISClient, CMISRequest):
 
         return Folder(json_response)
 
-    def get_folder(self, uuid: str) -> Folder:
-        """Retrieve folder with objectId constructed with the uuid given"""
+    def get_folder(self, object_id: str) -> Folder:
+        """Retrieve folder with objectId given"""
 
-        query = CMISQuery(
-            "SELECT * FROM cmis:folder WHERE cmis:objectId = 'workspace://SpacesStore/%s'"
-        )
+        query = CMISQuery("SELECT * FROM cmis:folder WHERE cmis:objectId = '%s'")
 
-        body = {"cmisaction": "query", "statement": query(uuid)}
+        body = {"cmisaction": "query", "statement": query(object_id)}
         logger.debug("CMIS_ADAPTER: get_folder: request data: %s", body)
         json_response = self.post_request(self.base_url, body)
         logger.debug("CMIS_ADAPTER: get_folder: response data: %s", json_response)
@@ -128,7 +126,9 @@ class CMISDRCClient(CMISClient, CMISRequest):
         try:
             return self.get_first_result(json_response, Folder)
         except GetFirstException:
-            error_string = f"Folder met objectId 'workspace://SpacesStore/{uuid}' bestaat niet in het CMIS connection"
+            error_string = (
+                f"Folder met objectId '{object_id}' bestaat niet in het CMIS connection"
+            )
             raise FolderDoesNotExistError(error_string)
 
     def copy_gebruiksrechten(

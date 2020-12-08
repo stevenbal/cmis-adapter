@@ -554,10 +554,23 @@ class ObjectInformatieObject(CMISContentObject):
 class Folder(CMISBaseObject):
     table = "cmis:folder"
 
-    def get_children_folders(self) -> List:
-        """Get all the folders in the current folder"""
+    def get_children_folders(self, child_type: dict = None) -> List:
+        """Get all the folders in the current folder
 
-        query = CMISQuery("SELECT * FROM cmis:folder WHERE cmis:parentId = '%s'")
+        :param child_type: dict, With keys "value" and "type". The value contains the object type ID of
+        the children folders to retrieve.
+        """
+
+        if child_type is not None:
+            object_type_id = child_type["value"]
+            # Alfresco case: the object type ID has an extra prefix (F:drc:zaakfolder, instead of drc:zaakfolder)
+            # The prefix needs to be removed for the query
+            if len(object_type_id.split(":")) > 2:
+                object_type_id = ":".join(object_type_id.split(":")[1:])
+        else:
+            object_type_id = "cmis:folder"
+
+        query = CMISQuery(f"SELECT * FROM {object_type_id} WHERE cmis:parentId = '%s'")
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),

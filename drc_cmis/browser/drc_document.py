@@ -356,10 +356,29 @@ class ObjectInformatieObject(CMISContentObject):
 class Folder(CMISBaseObject):
     table = "cmis:folder"
 
-    def get_children_folders(self):
+    def get_children_folders(self, child_type: Union[str, dict] = None) -> List:
+        """Get all the folders in the current folder
+
+        :param child_type: str or dict, Contains the object type ID of the children folders to retrieve.
+        If it is a dict, then the child type is the value of the key "value".
+        """
+
+        if child_type is not None:
+            if isinstance(child_type, dict):
+                object_type_id = child_type["value"]
+            else:
+                object_type_id = child_type
+
+            # Alfresco case: the object type ID has an extra prefix (F:drc:zaakfolder, instead of drc:zaakfolder)
+            # The prefix needs to be removed for the query
+            if len(object_type_id.split(":")) > 2:
+                object_type_id = ":".join(object_type_id.split(":")[1:])
+        else:
+            object_type_id = "cmis:folder"
+
         data = {
             "cmisaction": "query",
-            "statement": f"SELECT * FROM cmis:folder WHERE IN_FOLDER('{self.objectId}')",
+            "statement": f"SELECT * FROM {object_type_id} WHERE IN_FOLDER('{self.objectId}')",
         }
         logger.debug("CMIS_ADAPTER: get_children_folders: request data: %s", data)
         json_response = self.post_request(self.base_url, data=data)
