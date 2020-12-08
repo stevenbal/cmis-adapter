@@ -186,6 +186,29 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         self.assertEqual(retrieved_folder.name, "TestFolder")
         self.assertEqual(retrieved_folder.objectId, new_folder_id)
 
+    def test_get_or_create_zaak_folder_when_folder_exist(self):
+        zaaktype = {
+            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "identificatie": 1,
+            "omschrijving": "Melding Openbare Ruimte",
+            "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+        }
+        zaak = {
+            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
+            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "bronorganisatie": "509381406",
+            "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
+        }
+        created_zaak_folder = self.cmis_client.get_or_create_zaak_folder(
+            zaaktype=zaaktype, zaak=zaak
+        )
+        retrieved_zaak_folder = self.cmis_client.get_or_create_zaak_folder(
+            zaaktype=zaaktype, zaak=zaak
+        )
+
+        self.assertEqual(created_zaak_folder.objectId, retrieved_zaak_folder.objectId)
+
     def test_delete_other_base_folder(self):
         base_folder = self.cmis_client.get_or_create_other_folder()
         folder1 = self.cmis_client.create_folder("TestFolder1", base_folder.objectId)

@@ -541,6 +541,45 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISContentObjectsTests(DMSMixin, TestCase):
+    # TODO the same for zaak folder
+    def test_get_or_create_cmis_folder(self):
+        other_folder = self.cmis_client.get_or_create_other_folder()
+        new_folder = self.cmis_client.create_folder("Folder", other_folder.objectId)
+
+        child_folder = self.cmis_client.get_or_create_folder("ChildFolder", new_folder)
+
+        self.assertEqual(child_folder.name, "ChildFolder")
+        self.assertEqual(child_folder.parentId, new_folder.objectId)
+
+        self.cmis_client.get_or_create_folder("ChildFolder", new_folder)
+
+        new_folder_children = new_folder.get_children_folders()
+        self.assertEqual(len(new_folder_children), 1)
+
+    def test_get_or_create_zaak_folder(self):
+        zaaktype = {
+            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "identificatie": 1,
+            "omschrijving": "Melding Openbare Ruimte",
+            "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
+        }
+        zaak = {
+            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
+            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "bronorganisatie": "509381406",
+            "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
+        }
+
+        zaak_folder = self.cmis_client.get_or_create_zaak_folder(zaaktype, zaak)
+        zaak_parent = self.cmis_client.get_folder(object_id=zaak_folder.parentId)
+
+        self.assertEqual(len(zaak_parent.get_children_folders()), 1)
+
+        self.cmis_client.get_or_create_folder(zaak_folder.name, zaak_parent)
+
+        self.assertEqual(len(zaak_parent.get_children_folders()), 1)
+
     def test_delete_object(self):
         gebruiksrechten = self.cmis_client.create_content_object(
             data={}, object_type="gebruiksrechten"
