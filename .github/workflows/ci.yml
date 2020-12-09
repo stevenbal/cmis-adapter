@@ -1,0 +1,43 @@
+name: Run CI
+
+# Run this workflow every time a new commit pushed to your repository
+on:
+  push:
+    branches:
+      - master
+    tags:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Run the test suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.7', '3.8']
+        django: ['2.2']
+        binding: ['BROWSER', 'WEBSERVICE']
+
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.python }}
+
+        - name: Bring up Alfresco
+          run: cd alfresco && docker-compose up -d
+
+        - name: Install dependencies
+          run: pip install tox tox-travis
+
+        - name: Run tests
+          run: |
+            tox
+            pip install codecov
+            export envname=py${TRAVIS_PYTHON_VERSION/./}-django${DJANGO/./}-$(echo $CMIS_BINDING | tr '[:upper:]' '[:lower:]')
+            codecov -e TOXENV,DJANGO --file reports/coverage-${envname}.xml
+          env:
+            TRAVIS_PYTHON_VERSION: ${{ matrix.python }}
+            DJANGO: ${{ matrix.django }}
+            CMIS_BINDING: ${{ matrix.binding }}

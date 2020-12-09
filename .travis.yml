@@ -33,35 +33,6 @@ after_success:
 jobs:
   fast_finish: true
   include:
-    - stage: test
-      python: "3.7"
-      env: TOXENV=isort
-      before_install: skip
-      before_script: skip
-      after_script: skip
-      after_success: skip
-
-    - python: "3.7"
-      env: TOXENV=black
-      before_install: skip
-      before_script: skip
-      after_script: skip
-      after_success: skip
-
-    - python: "3.7"
-      env: TOXENV=flake8
-      before_install: skip
-      before_script: skip
-      after_script: skip
-      after_success: skip
-
-    # - python: "3.7"
-    #   env: TOXENV=docs
-    #   before_install: skip
-    #   before_script: skip
-    #   after_script: skip
-    #   after_success: skip
-
     - stage: deploy
       name: Deploy to PyPI
       language: python
