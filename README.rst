@@ -7,7 +7,7 @@ Documenten API CMIS adapter
 :Keywords: CMIS, Documenten API, VNG, Common Ground
 :PythonVersion: 3.7
 
-|build-status| |coverage| |black| |python-versions| |django-versions| |pypi-version|
+|build-status| |coverage| |linting| |black| |python-versions| |django-versions| |pypi-version|
 
 A CMIS backend-connector for the `Documenten API`_.
 
@@ -21,7 +21,7 @@ Introduction
 
 The Documenten API CMIS adapter allows Django implementations of the Documenten
 API to easily connect to a CMIS-compatible Document Management System (DMS).
-Most notably it's used by `Open Zaak`_ to use a DMS as backend for the 
+Most notably it's used by `Open Zaak`_ to use a DMS as backend for the
 Documenten API rather then using its own backend.
 
 .. _`Open Zaak`: https://github.com/open-zaak/open-zaak/
@@ -55,10 +55,10 @@ For the supported bindings, the following features are implemented:
 Tested against:
 
 * `Corsa platform`_ using CMIS 1.0 Web Services binding (Thanks to `BCT`_)
-* `Alfresco`_ Enterprise 5.2.3 using CMIS 1.1 Browser binding (Thanks to 
+* `Alfresco`_ Enterprise 5.2.3 using CMIS 1.1 Browser binding (Thanks to
   `Contezza`_)
 * `Alfresco CE 6.1.2-ga`_ (Used for CI)
-  
+
 .. _`Corsa platform`: https://www.bctsoftware.com/corsa/
 .. _`BCT`: https://www.bctsoftware.com/
 .. _`Contezza`: https://contezza.nl/
@@ -97,18 +97,18 @@ Install
         ...
     ]
 
-3. Create a mapping file to match Documenten API attributes to custom 
+3. Create a mapping file to match Documenten API attributes to custom
    properties in your DMS model. See `Mapping configuration`_.
 
 4. In your ``settings.py``, add these settings to enable it:
 
 .. code-block:: python
 
-    # Enables the CMIS-backend and the Django admin interface for configuring 
+    # Enables the CMIS-backend and the Django admin interface for configuring
     # the DMS settings.
     CMIS_ENABLED = True
 
-    # Absolute path to the mapping of Documenten API attributes to (custom) 
+    # Absolute path to the mapping of Documenten API attributes to (custom)
     # properties in your DMS content model.
     CMIS_MAPPER_FILE = /path/to/cmis_mapper.json
 
@@ -121,12 +121,12 @@ There are 2 important concepts:
 
 * Content model - The DMS configuration to store (custom) properties on folders
   and documents. These properties are called CMIS properties.
-* CMIS-mapper - a JSON-file containing the translation from Documenten API 
+* CMIS-mapper - a JSON-file containing the translation from Documenten API
   attributes to CMIS properties.
 
-Mapping the Documenten API attributes to (custom) CMIS properties in the DMS 
-content model should be done with great care. When the DMS stores these 
-properties, the Documenten API relies on their existance to create proper responses. 
+Mapping the Documenten API attributes to (custom) CMIS properties in the DMS
+content model should be done with great care. When the DMS stores these
+properties, the Documenten API relies on their existance to create proper responses.
 
 Below is a snippet of the CMIS-mapper:
 
@@ -138,14 +138,14 @@ Below is a snippet of the CMIS-mapper:
       }
     }
 
-The ``DOCUMENT_MAP`` describes the mapping for the 
-``EnkelvoudigInformatieObject`` resource in the Documenten API. In this 
-snippet, only the ``EnkelvoudigInformatieObject.titel`` attribute is mapped to 
+The ``DOCUMENT_MAP`` describes the mapping for the
+``EnkelvoudigInformatieObject`` resource in the Documenten API. In this
+snippet, only the ``EnkelvoudigInformatieObject.titel`` attribute is mapped to
 a custom CMIS property called ``drc:document_titel``.
 
-Communication between the Documenten API using the CMIS-adapter, is done via 
-CMIS. Therefore, when creating a document via the Documenten API, the 
-attributes are translated to CMIS properties as shown below (note that this is 
+Communication between the Documenten API using the CMIS-adapter, is done via
+CMIS. Therefore, when creating a document via the Documenten API, the
+attributes are translated to CMIS properties as shown below (note that this is
 a stripped down request example).
 
 .. code-block:: xml
@@ -165,11 +165,11 @@ a stripped down request example).
     </soapenv:Body>
     </soapenv:Envelope>
 
-An example of the mapping configuration, with all possible Documenten API 
-resources and attributes is shown in ``test_app/cmis_mapper.json`` 
-(`cmis_mapper.json`_). The related DMS content model, that has the definitions 
-for all these CMIS properties, for `Alfresco`_ (an open source DMS) is in 
-``/alfresco/extension/alfreso-zsdms-model.xml`` (`alfreso-zsdms-model.xml`_). 
+An example of the mapping configuration, with all possible Documenten API
+resources and attributes is shown in ``test_app/cmis_mapper.json``
+(`cmis_mapper.json`_). The related DMS content model, that has the definitions
+for all these CMIS properties, for `Alfresco`_ (an open source DMS) is in
+``/alfresco/extension/alfreso-zsdms-model.xml`` (`alfreso-zsdms-model.xml`_).
 Both the mapping and the model should be aligned.
 
 .. _`cmis_mapper.json`: https://github.com/open-zaak/cmis-adapter/blob/master/test_app/cmis_mapper.json
@@ -178,8 +178,8 @@ Both the mapping and the model should be aligned.
 Mappings
 --------
 
-The content model and the CMIS-mapper configurations need to be aligned. For 
-each object, the API resource, the CMIS objecttype, CMIS basetype and the 
+The content model and the CMIS-mapper configurations need to be aligned. For
+each object, the API resource, the CMIS objecttype, CMIS basetype and the
 (configuratble) CMIS-mapper object is described.
 
 **Document**
@@ -200,7 +200,7 @@ The mapping between API-attributes and CMIS properties can be found in the `cmis
 
 **Gebruiksrechten**
 
-Usage rights. These rights don't need to be enforced by the DMS but are stored 
+Usage rights. These rights don't need to be enforced by the DMS but are stored
 for use outside the DMS.
 
 +-------------------------+---------------------------------+
@@ -217,7 +217,7 @@ The mapping between API-attributes and CMIS properties can be found in the `cmis
 
 **ObjectInformatieObject**
 
-Relation between a document and another object, like a Zaak, Besluit or 
+Relation between a document and another object, like a Zaak, Besluit or
 something else.
 
 +-------------------------+---------------------------------+
@@ -275,19 +275,19 @@ The mapping between API-attributes and CMIS properties can be found in the `cmis
 DMS Content model configuration
 -------------------------------
 
-The CMIS mapper configuration must match the content model in the DMS. Each 
-property, like ``drc:document__titel`` in the example above, must be defined 
+The CMIS mapper configuration must match the content model in the DMS. Each
+property, like ``drc:document__titel`` in the example above, must be defined
 in the content model.
 
-The example shown in ``/alfresco/extension/alfreso-zsdms-model.xml`` 
-indicates all attributes, types and whether the property is indexed (queryable) 
-or not. If these attributes are incorrectly configured, the Documenten API 
+The example shown in ``/alfresco/extension/alfreso-zsdms-model.xml``
+indicates all attributes, types and whether the property is indexed (queryable)
+or not. If these attributes are incorrectly configured, the Documenten API
 might not work correctly.
 
 DMS folder structure
 --------------------
 
-Open Zaak uses a folder structure in the DMS similar to the 
+Open Zaak uses a folder structure in the DMS similar to the
 `Zaak- en Documentservices 1.2`_. However, due to way the Documenten API works
 there are differences.
 
@@ -295,7 +295,7 @@ there are differences.
 
 **Creating a document**
 
-When a document is created via the Documenten API, the document is placed in a 
+When a document is created via the Documenten API, the document is placed in a
 temporary folder. By default this is:
 
 .. code-block::
@@ -317,8 +317,8 @@ If nothing else happens, this document will remain here.
 
 **Creating gebruiksrechten**
 
-A document can have Gebruiksrechten. These are stored as a separate document 
-(``gebruiksrechten``) in a folder called ``Related data``. This folder is 
+A document can have Gebruiksrechten. These are stored as a separate document
+(``gebruiksrechten``) in a folder called ``Related data``. This folder is
 always in the same folder as the document itself and is of type ``cmis:folder``.
 
 The Gebruiksrechten will always be moved or copied along with the document.
@@ -350,8 +350,8 @@ if it exists, to be **moved** or **copied** to the zaak folder.
                                 +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
                                 +-- [filename]-oio (drc:oio)
 
-A document is **moved** when the document was **not related** to a Zaak before 
-(and thus it was in the temporary folder). The document is **copied** to the 
+A document is **moved** when the document was **not related** to a Zaak before
+(and thus it was in the temporary folder). The document is **copied** to the
 new zaak folder when the document was **already related** to a Zaak.
 
 The relation of a document to a Zaak is implicitly described by its path. In
@@ -372,26 +372,26 @@ When a document is related to a Besluit, there's a few different scenario's:
 
 1. The Besluit is **related** to a Zaak and...
 
-   1. The document is **not related** to a Zaak (and thus the document is in 
-      the temporary folder): The document is **moved** to the Zaak folder of 
+   1. The document is **not related** to a Zaak (and thus the document is in
+      the temporary folder): The document is **moved** to the Zaak folder of
       the Zaak that is related to the Besluit.
    2. The document is **already related** to a Zaak: The document is **copied**
       to the new Zaak folder.
 
 2. The Besluit is **not related** to a Zaak and...
 
-   1. The document is **not related** to a Zaak: The document **stays** in its 
+   1. The document is **not related** to a Zaak: The document **stays** in its
       temporary folder.
    2. The document is **related** to a Zaak: The document is **copied** to the
       temporary folder.
 
-In all cases, the relation of a document to a Besluit is stored as a separate 
+In all cases, the relation of a document to a Besluit is stored as a separate
 document (``oio``) in the ``Related data`` folder, relative to wherever the new
 document is stored.
 
 **Relating a document to another object**
 
-When a document is related to any other object, the document is not moved or 
+When a document is related to any other object, the document is not moved or
 copied and stays in its temporary folder.
 
 DMS folder structure overview
@@ -423,7 +423,7 @@ Default: ``/DRC/{{ zaaktype }}/{{ year }}/{{ month }}/{{ day }}/{{ zaak }}/``
                                 +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
                                 +-- [filename]-oio (drc:oio)
 
-You can for example change this to: ``/DRC/{{ zaaktype }}/{{ zaak }}/`` to 
+You can for example change this to: ``/DRC/{{ zaaktype }}/{{ zaak }}/`` to
 remove the year/month/day folder structure entirely.
 
 **Other folder path**
@@ -465,8 +465,13 @@ Licensed under the EUPL_
 
 .. _`Alfresco`: https://www.alfresco.com/ecm-software/alfresco-community-editions
 
-.. |build-status| image:: https://travis-ci.org/open-zaak/cmis-adapter.svg?branch=master
-    :target: https://travis-ci.org/open-zaak/cmis-adapter
+.. |build-status| image:: https://github.com/open-zaak/cmis-adapter/workflows/Run%20CI/badge.svg
+    :target: https://github.com/open-zaak/cmis-adapter/actions?query=workflow%3A%22Run+CI%22
+    :alt: Run CI
+
+.. |linting| image:: https://github.com/open-zaak/cmis-adapter/workflows/Code%20quality%20checks/badge.svg
+    :target: https://github.com/open-zaak/cmis-adapter/actions?query=workflow%3A%22Code+quality+checks%22
+    :alt: Code linting
 
 .. |coverage| image:: https://codecov.io/gh/open-zaak/cmis-adapter/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/open-zaak/cmis-adapter
