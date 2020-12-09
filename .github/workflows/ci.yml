@@ -29,15 +29,14 @@ jobs:
         run: cd alfresco && docker-compose up -d
 
       - name: Install dependencies
-        run: pip install tox tox-travis
+        run: pip install tox tox-travis codecov
 
       - name: Run tests
         run: |
+          export TOXENV=py${PYTHON_VERSION/./}-django${DJANGO/./}-$(echo $CMIS_BINDING | tr '[:upper:]' '[:lower:]')
           tox
-          pip install codecov
-          export envname=py${TRAVIS_PYTHON_VERSION/./}-django${DJANGO/./}-$(echo $CMIS_BINDING | tr '[:upper:]' '[:lower:]')
-          codecov -e TOXENV,DJANGO --file reports/coverage-${envname}.xml
+          codecov -e TOXENV,DJANGO --file reports/coverage-${TOXENV}.xml
         env:
-          TRAVIS_PYTHON_VERSION: ${{ matrix.python }}
+          PYTHON_VERSION: ${{ matrix.python }}
           DJANGO: ${{ matrix.django }}
           CMIS_BINDING: ${{ matrix.binding }}
