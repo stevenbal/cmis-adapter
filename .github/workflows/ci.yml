@@ -12,13 +12,14 @@ on:
 
 jobs:
   tests:
-    name: Run the test suite
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python: ['3.7', '3.8']
         django: ['2.2']
         binding: ['BROWSER', 'WEBSERVICE']
+
+    name: Run the test suite (Python ${{ matrix.python }}, Django ${{ matrix.django }}, ${{ matrix.binding }} binding)
 
     steps:
       - uses: actions/checkout@v2
