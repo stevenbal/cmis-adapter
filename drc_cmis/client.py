@@ -100,8 +100,12 @@ class CMISClient:
         :param properties: dict, contains the properties of the folder to create
         :return: Folder, the folder that was created/retrieved
         """
+        if properties is None:
+            child_type = None
+        else:
+            child_type = properties.get("cmis:objectTypeId")
 
-        children_folders = parent.get_children_folders()
+        children_folders = parent.get_children_folders(child_type=child_type)
         for folder in children_folders:
             if folder.name == name:
                 return folder
@@ -110,7 +114,9 @@ class CMISClient:
         return self.create_folder(name, parent.objectId, properties)
 
     def get_folder_by_name(self, name: str, parent: Folder) -> Folder:
-        children_folders = parent.get_children_folders()
+        children_folders = parent.get_children_folders(
+            child_type=parent.properties.get("cmis:objectTypeId")
+        )
         for folder in children_folders:
             if folder.name == name:
                 return folder
