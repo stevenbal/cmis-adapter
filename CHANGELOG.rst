@@ -2,6 +2,17 @@
 Changelog
 =========
 
+1.1.2 (2020-12-10)
+------------------
+
+Bugfix release
+
+* Fixed missing unique-together validation on identificatie-bronorganisatie
+* Fixed packaging, now Javascript is included
+* Fixed file content extraction for Corsa DMS
+* Fixed CMIS queries w/r to duplicate folders
+* Switched CI from Travis to Github Actions
+
 1.1.1 (2020-09-06)
 ------------------
 
