@@ -35,6 +35,15 @@ class CMISConfig(SingletonModel):
         max_length=200,
         help_text="The time zone of the DMS. Only needed when using Browser binding.",
     )
+    main_repo_id = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text=_(
+            "ID of the main repository in the CMS. "
+            "Only needed if there are multiple repositories present and Webservice binding is used."
+        ),
+        verbose_name=_("Main repository ID"),
+    )
     client_user = models.CharField(
         max_length=200, default="admin", help_text="Username for logging into DMS"
     )

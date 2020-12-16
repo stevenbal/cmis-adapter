@@ -139,3 +139,7 @@ class NoZaakBaseFolderException(Exception):
 
 class NoOtherBaseFolderException(Exception):
     pass
+
+
+class CmisRepositoryDoesNotExist(Exception):
+    pass
