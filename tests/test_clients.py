@@ -2,7 +2,7 @@ import datetime
 import io
 import os
 import uuid
-from unittest import skip, skipIf
+from unittest import skipIf
 
 from django.test import TestCase, tag
 from django.utils import timezone
@@ -11,8 +11,9 @@ import pytz
 import requests_mock
 from freezegun import freeze_time
 
-from drc_cmis.models import CMISConfig, Vendor
+from drc_cmis.models import CMISConfig
 from drc_cmis.utils.exceptions import (
+    CmisRepositoryDoesNotExist,
     DocumentDoesNotExistError,
     DocumentExistsError,
     DocumentLockedException,
@@ -23,6 +24,58 @@ from drc_cmis.utils.exceptions import (
 
 from .mixins import DMSMixin
 from .utils import mock_service_oas_get
+
+
+@skipIf(
+    os.getenv("CMIS_BINDING") != "WEBSERVICE",
+    "Browser binding doesn't need to set the main_repo_id property",
+)
+@tag("alfresco")
+class CMISClientTests(DMSMixin, TestCase):
+    def test_set_main_repo_id_if_not_set_in_settings(self):
+        config = CMISConfig.objects.get()
+
+        self.assertEqual(config.main_repo_id, "")
+
+        self.cmis_client._main_repo_id = None
+
+        main_repo_id = self.cmis_client.main_repo_id
+
+        self.assertIsNotNone(main_repo_id)
+
+        # In alfresco the repo ID is a UUID
+        uuid.UUID(main_repo_id)
+
+    def test_that_main_repo_id_is_checked(self):
+        config = CMISConfig.objects.get()
+        config.main_repo_id = "some-rubbish-id"
+        config.save()
+
+        self.cmis_client._main_repo_id = None
+
+        with self.assertRaises(CmisRepositoryDoesNotExist):
+            try:
+                self.cmis_client.main_repo_id
+            except Exception as e:
+                # Needed or the test clean-up fails!
+                config.main_repo_id = ""
+                config.save()
+                raise e
+
+    def test_setting_correct_repo_id(self):
+        # Finding what the main repo id is
+        self.cmis_client._main_repo_id = None
+        main_repo_id = self.cmis_client.main_repo_id
+
+        # Updating the settings:
+        config = CMISConfig.objects.get()
+        config.main_repo_id = main_repo_id
+        config.save()
+
+        # Retrieving the main repo ID with the settings set
+        self.cmis_client._main_repo_id = None
+        main_repo_id = self.cmis_client.main_repo_id
+        uuid.UUID(main_repo_id)
 
 
 @freeze_time("2020-07-27 12:00:00")
