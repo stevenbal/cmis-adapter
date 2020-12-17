@@ -380,3 +380,8 @@ def extract_xml_from_soap(soap_response, binary=False):
     end_xml = soap_response.find(soap_envelope_end) + len(soap_envelope_end)
 
     return soap_response[begin_xml:end_xml]
+
+
+def pretty_xml(xml_envelope: str) -> str:
+    dom = minidom.parseString(xml_envelope)
+    return dom.toprettyxml()
