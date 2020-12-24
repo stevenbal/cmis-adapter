@@ -7,6 +7,10 @@ class Id:
     pass
 
 
+class Url:
+    pass
+
+
 @dataclass
 class EnkelvoudigInformatieObject:
     version_label: Decimal
@@ -25,14 +29,14 @@ class EnkelvoudigInformatieObject:
     verwijderd: bool
     status: str
     ontvangstdatum: date
-    informatieobjecttype: str
+    informatieobjecttype: Url
     auteur: str
     vertrouwelijkheidaanduiding: str
     begin_registratie: datetime
     ondertekening_datum: date
     bronorganisatie: str
     integriteit_datum: date
-    link: str
+    link: Url
     creatiedatum: date
     versie: Decimal
     lock: str
@@ -49,7 +53,7 @@ class Gebruiksrechten:
     name: str
     einddatum: datetime
     omschrijving_voorwaarden: str
-    informatieobject: str
+    informatieobject: Url
     startdatum: datetime
     kopie_van: str
 
@@ -61,24 +65,24 @@ class Oio:
     object_type_id: Id
     name: str
     object_type: str
-    besluit: str
-    zaak: str
-    informatieobject: str
+    besluit: Url
+    zaak: Url
+    informatieobject: Url
 
 
 @dataclass
 class ZaakFolderData:
     object_type_id: Id
-    url: str
+    url: Url
     identificatie: str
-    zaaktype: str
+    zaaktype: Url
     bronorganisatie: str
 
 
 @dataclass
 class ZaakTypeFolderData:
     object_type_id: Id
-    url: str
+    url: Url
     identificatie: str
 
 
@@ -89,6 +93,7 @@ CONVERTER = {
     Decimal: "propertyDecimal",
     bool: "propertyBoolean",
     Id: "propertyId",
+    Url: "propertyString",
 }
 
 
