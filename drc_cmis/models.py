@@ -82,3 +82,29 @@ class CMISConfig(SingletonModel):
 class Vendor(DjangoChoices):
     alfresco = ChoiceItem()
     bct = ChoiceItem()
+
+
+class UrlMapping(models.Model):
+    long_pattern = models.CharField(
+        max_length=1000,
+        verbose_name=_("Long pattern"),
+        help_text=_("Part of the URL to replace."),
+        unique=True,
+    )
+    short_pattern = models.CharField(
+        max_length=18,
+        verbose_name=_("Short pattern"),
+        help_text=_("Replacement string to make the URL shorter."),
+        unique=True,
+    )
+    config = models.ForeignKey(
+        to=CMISConfig,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = _("URL mapping")
+        verbose_name_plural = _("URL mappings")
+
+    def __string__(self):
+        return f"{self.long_pattern}: {self.short_pattern}"
