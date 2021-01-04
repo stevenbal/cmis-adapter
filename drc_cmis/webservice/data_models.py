@@ -71,6 +71,11 @@ class Oio:
 
 
 @dataclass
+class Folder:
+    object_type_id: Id
+
+
+@dataclass
 class ZaakFolderData:
     object_type_id: Id
     url: Url
@@ -95,6 +100,13 @@ CONVERTER = {
     Id: "propertyId",
     Url: "propertyString",
 }
+
+
+def get_type(model: type, name: str) -> type:
+    """Return the type of a field"""
+    type_annotations = getattr(model, "__annotations__")
+    if type_annotations.get(name):
+        return type_annotations.get(name)
 
 
 def get_cmis_type(model: type, name: str) -> str:

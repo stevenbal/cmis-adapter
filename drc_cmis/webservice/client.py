@@ -1,9 +1,11 @@
 import logging
+import re
 import uuid
 from io import BytesIO
 from typing import List, Optional, Union
 from uuid import UUID
 
+from django.conf import settings
 from django.utils.crypto import constant_time_compare
 
 from cmislib.domain import CmisId
@@ -30,7 +32,9 @@ from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
     Gebruiksrechten as GebruiksRechtDoc,
     Oio,
+    Url,
     get_cmis_type,
+    get_type,
 )
 from drc_cmis.webservice.drc_document import (
     CMISBaseObject,
@@ -48,6 +52,7 @@ from drc_cmis.webservice.utils import (
     extract_repo_info_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
+    shrink_url,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,11 +107,36 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         :param rhs: list of strings, with the RHS of the SQL query
         :return: type, either Folder, Document, Oio or Gebruiksrechten
         """
+
         return_type = self.get_return_type(return_type_name)
+
+        processed_rhs = rhs
+        # Any query that filters based on URL fields needs to be converted to use the short URL version
+        if settings.CMIS_URL_MAPPING_ENABLED and lhs is not None and rhs is not None:
+            processed_rhs = []
+
+            # Join all the queries and find which fields are used to filter
+            joined_lhs = " ".join(lhs)
+            column_names = re.findall(r"([a-z]+?:.+?__[a-z]+)", joined_lhs)
+
+            for index, item_rhs in enumerate(rhs):
+                column_name = column_names[index]
+                property_name = reverse_mapper(
+                    column_name, type=return_type_name.lower()
+                )
+                if (
+                    property_name is not None
+                    and get_type(return_type.type_class, property_name) == Url
+                    and item_rhs != ""
+                ):
+                    processed_rhs.append(shrink_url(item_rhs))
+                else:
+                    processed_rhs.append(item_rhs)
+
         table = return_type.table
         where = (" WHERE " + " AND ".join(lhs)) if lhs else ""
         query = CMISQuery("SELECT * FROM %s%s" % (table, where))
-        statement = query(*rhs) if rhs else query()
+        statement = query(*processed_rhs) if processed_rhs else query()
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
@@ -232,13 +262,21 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
 
         # copy the properties from the source document
         drc_properties = {}
+        drc_url_properties = {}
         for property_name, property_details in document.properties.items():
             if (
                 "cmis:" not in property_name and property_details["value"] is not None
             ) or property_name == "cmis:objectTypeId":
-                drc_properties[
-                    reverse_mapper(property_name, type="document")
-                ] = property_details["value"]
+                drc_property_name = reverse_mapper(property_name, type="document")
+
+                # Urls are handled separately, because they are already in the 'short' form
+                if get_type(EnkelvoudigInformatieObject, drc_property_name) == Url:
+                    drc_url_properties[property_name] = {
+                        "value": property_details["value"],
+                        "type": "propertyString",
+                    }
+                else:
+                    drc_properties[drc_property_name] = property_details["value"]
 
         cmis_properties = Document.build_properties(drc_properties, new=False)
 
@@ -260,6 +298,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                     "value": str(uuid.uuid4()),
                     "type": "propertyString",
                 },
+                **drc_url_properties,
             }
         )
 
@@ -314,13 +353,23 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
 
         # copy the properties from the source document
         drc_properties = {}
+        drc_url_properties = {}
         for property_name, property_details in source_object.properties.items():
             if (
                 "cmis:" not in property_name and property_details["value"] is not None
             ) or property_name == "cmis:objectTypeId":
-                drc_properties[
-                    reverse_mapper(property_name, type="gebruiksrechten")
-                ] = property_details["value"]
+                drc_property_name = reverse_mapper(
+                    property_name, type="gebruiksrechten"
+                )
+
+                # Urls are handled separately, because they are already in the 'short' form
+                if get_type(GebruiksRechtDoc, drc_property_name) == Url:
+                    drc_url_properties[property_name] = {
+                        "value": property_details["value"],
+                        "type": "propertyString",
+                    }
+                else:
+                    drc_properties[drc_property_name] = property_details["value"]
 
         cmis_properties = Gebruiksrechten.build_properties(drc_properties)
 
@@ -339,6 +388,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                     "value": str(uuid.uuid4()),
                     "type": "propertyString",
                 },
+                **drc_url_properties,
             }
         )
 

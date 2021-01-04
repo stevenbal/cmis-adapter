@@ -4,6 +4,8 @@ import uuid
 from io import BytesIO
 from typing import List, Optional, Union
 
+from django.conf import settings
+
 import pytz
 
 from drc_cmis.models import CMISConfig
@@ -20,18 +22,23 @@ from drc_cmis.utils.query import CMISQuery
 from drc_cmis.utils.utils import extract_latest_version, get_random_string
 from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
+    Folder as _Folder,
     Gebruiksrechten as GebruiksrechtenDoc,
     Oio as OioDoc,
+    Url,
     ZaakFolderData,
     ZaakTypeFolderData,
     get_cmis_type,
+    get_type,
 )
 from drc_cmis.webservice.request import SOAPCMISRequest
 from drc_cmis.webservice.utils import (
+    expand_url,
     extract_content,
     extract_object_properties_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
+    shrink_url,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,21 +60,33 @@ class CMISBaseObject(SOAPCMISRequest):
         except AttributeError:
             pass
 
-        if name in self.properties:
-            return self.properties[name]["value"]
+        def resolve_attribute(name: str) -> str:
+            if name in self.properties:
+                return self.properties[name]["value"]
 
-        convert_name = f"cmis:{name}"
-        if convert_name in self.properties:
+            convert_name = f"cmis:{name}"
+            if convert_name in self.properties:
+                return self.properties[convert_name]["value"]
+
+            convert_name = f"drc:{name}"
+            if self.name_map is not None and name in self.name_map:
+                convert_name = self.name_map.get(name)
+
+            if convert_name not in self.properties:
+                raise AttributeError(f"No property '{convert_name}'")
+
             return self.properties[convert_name]["value"]
 
-        convert_name = f"drc:{name}"
-        if self.name_map is not None and name in self.name_map:
-            convert_name = self.name_map.get(name)
+        value = resolve_attribute(name)
 
-        if convert_name not in self.properties:
-            raise AttributeError(f"No property '{convert_name}'")
+        if (
+            get_type(self.type_class, name) == Url
+            and settings.CMIS_URL_MAPPING_ENABLED
+            and value is not None
+        ):
+            return expand_url(value)
 
-        return self.properties[convert_name]["value"]
+        return value
 
     @classmethod
     def build_properties(cls, data: dict) -> dict:
@@ -95,7 +114,13 @@ class CMISBaseObject(SOAPCMISRequest):
                 continue
             if value is not None:
                 prop_type = get_cmis_type(cls.type_class, key)
-                if isinstance(value, datetime.datetime):
+
+                if (
+                    get_type(cls.type_class, key) == Url
+                    and settings.CMIS_URL_MAPPING_ENABLED
+                ):
+                    value = shrink_url(value)
+                elif isinstance(value, datetime.datetime):
                     value = value.astimezone(pytz.timezone(config.time_zone)).strftime(
                         "%Y-%m-%dT%H:%M:%S.000Z"
                     )
@@ -193,6 +218,7 @@ class Document(CMISContentObject):
     table = "drc:document"
     name_map = DOCUMENT_MAP
     type_name = "document"
+    type_class = EnkelvoudigInformatieObject
 
     @classmethod
     def build_properties(
@@ -223,7 +249,14 @@ class Document(CMISContentObject):
                 continue
             if value is not None:
                 prop_type = get_cmis_type(EnkelvoudigInformatieObject, key)
-                if isinstance(value, datetime.datetime):
+
+                if (
+                    settings.CMIS_URL_MAPPING_ENABLED
+                    and get_type(EnkelvoudigInformatieObject, key) == Url
+                    and value != ""
+                ):
+                    value = shrink_url(value)
+                elif isinstance(value, datetime.datetime):
                     value = value.astimezone(pytz.timezone(config.time_zone)).strftime(
                         "%Y-%m-%dT%H:%M:%S.000Z"
                     )
@@ -233,6 +266,7 @@ class Document(CMISContentObject):
                     value = value.strftime("%Y-%m-%dT00:00:00.000Z")
                 elif isinstance(value, bool):
                     value = str(value).lower()
+
                 props[prop_name] = {"value": str(value), "type": prop_type}
             # When a Gebruiksrechten object is deleted, the field in the Document needs to be None.
             elif key == "indicatie_gebruiksrecht":
@@ -553,6 +587,8 @@ class ObjectInformatieObject(CMISContentObject):
 
 class Folder(CMISBaseObject):
     table = "cmis:folder"
+    type_name = "folder"
+    type_class = _Folder
 
     def get_children_folders(self, child_type: dict = None) -> List:
         """Get all the folders in the current folder
