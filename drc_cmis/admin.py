@@ -8,7 +8,7 @@ from django.views import View
 
 from solo.admin import SingletonModelAdmin
 
-from drc_cmis.models import CMISConfig, UrlMapping
+from .models import CMISConfig, UrlMapping
 
 
 class CMISConnectionJSONView(View):
@@ -64,6 +64,10 @@ class CMISConfigAdminForm(forms.ModelForm):
 
 @admin.register(CMISConfig)
 class CMISConfigAdmin(SingletonModelAdmin):
+    inlines = [UrlMappingAdmin]
+    change_form_template = "configuration_form.html"
+    form = CMISConfigAdminForm
+
     readonly_fields = [
         "cmis_connection",
         "cmis_url_mapping_enabled",
@@ -72,6 +76,15 @@ class CMISConfigAdmin(SingletonModelAdmin):
         (
             _("General"),
             {"fields": ("cmis_connection",)},
+        ),
+        (
+            _("DMS Credentials"),
+            {
+                "fields": (
+                    "client_user",
+                    "client_password",
+                )
+            },
         ),
         (
             _("Configuration"),
@@ -83,15 +96,6 @@ class CMISConfigAdmin(SingletonModelAdmin):
                     "zaak_folder_path",
                     "other_folder_path",
                     "cmis_url_mapping_enabled",
-                )
-            },
-        ),
-        (
-            _("Credentials"),
-            {
-                "fields": (
-                    "client_user",
-                    "client_password",
                 )
             },
         ),
