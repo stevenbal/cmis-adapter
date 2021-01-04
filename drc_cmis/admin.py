@@ -1,3 +1,5 @@
+from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path
@@ -6,7 +8,7 @@ from django.views import View
 
 from solo.admin import SingletonModelAdmin
 
-from .models import CMISConfig
+from drc_cmis.models import CMISConfig, UrlMapping
 
 
 class CMISConnectionJSONView(View):
@@ -41,10 +43,30 @@ class CMISConnectionJSONView(View):
         return self.model_admin.has_view_permission(request, obj=obj)
 
 
+class UrlMappingAdmin(admin.TabularInline):
+    model = UrlMapping
+    can_delete = False
+    extra = 1
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class CMISConfigAdminForm(forms.ModelForm):
+    class Meta:
+        model = CMISConfig
+        fields = "__all__"
+
+    # This method is used from the custom template to decide whether to render the URL mapping formset
+    def cmis_url_mapping_enabled(self):
+        return settings.CMIS_URL_MAPPING_ENABLED
+
+
 @admin.register(CMISConfig)
 class CMISConfigAdmin(SingletonModelAdmin):
     readonly_fields = [
         "cmis_connection",
+        "cmis_url_mapping_enabled",
     ]
     fieldsets = [
         (
@@ -60,6 +82,7 @@ class CMISConfigAdmin(SingletonModelAdmin):
                     "time_zone",
                     "zaak_folder_path",
                     "other_folder_path",
+                    "cmis_url_mapping_enabled",
                 )
             },
         ),
@@ -94,4 +117,10 @@ class CMISConfigAdmin(SingletonModelAdmin):
     def cmis_connection(self, obj=None):
         return "..."
 
+    def cmis_url_mapping_enabled(self, obj=None):
+        return settings.CMIS_URL_MAPPING_ENABLED
+
     cmis_connection.short_description = _("CMIS connection")
+
+    cmis_url_mapping_enabled.short_description = _("URL Mapping enabled")
+    cmis_url_mapping_enabled.boolean = True
