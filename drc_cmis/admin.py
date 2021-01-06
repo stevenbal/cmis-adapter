@@ -1,4 +1,3 @@
-from django import forms
 from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
@@ -8,6 +7,7 @@ from django.views import View
 
 from solo.admin import SingletonModelAdmin
 
+from .forms import CMISConfigAdminForm, UrlMappingInlineFormSet
 from .models import CMISConfig, UrlMapping
 
 
@@ -45,21 +45,12 @@ class CMISConnectionJSONView(View):
 
 class UrlMappingAdmin(admin.TabularInline):
     model = UrlMapping
+    formset = UrlMappingInlineFormSet
     can_delete = False
     extra = 1
 
     def has_change_permission(self, request, obj=None):
         return False
-
-
-class CMISConfigAdminForm(forms.ModelForm):
-    class Meta:
-        model = CMISConfig
-        fields = "__all__"
-
-    # This method is used from the custom template to decide whether to render the URL mapping formset
-    def cmis_url_mapping_enabled(self):
-        return settings.CMIS_URL_MAPPING_ENABLED
 
 
 @admin.register(CMISConfig)
