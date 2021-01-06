@@ -25,7 +25,7 @@ from drc_cmis.webservice.data_models import (
     Folder as _Folder,
     Gebruiksrechten as GebruiksrechtenDoc,
     Oio as OioDoc,
-    Url,
+    QueriableUrl,
     ZaakFolderData,
     ZaakTypeFolderData,
     get_cmis_type,
@@ -80,7 +80,7 @@ class CMISBaseObject(SOAPCMISRequest):
         value = resolve_attribute(name)
 
         if (
-            get_type(self.type_class, name) == Url
+            get_type(self.type_class, name) == QueriableUrl
             and settings.CMIS_URL_MAPPING_ENABLED
             and value is not None
         ):
@@ -116,7 +116,7 @@ class CMISBaseObject(SOAPCMISRequest):
                 prop_type = get_cmis_type(cls.type_class, key)
 
                 if (
-                    get_type(cls.type_class, key) == Url
+                    get_type(cls.type_class, key) == QueriableUrl
                     and settings.CMIS_URL_MAPPING_ENABLED
                 ):
                     value = shrink_url(value)
@@ -252,7 +252,7 @@ class Document(CMISContentObject):
 
                 if (
                     settings.CMIS_URL_MAPPING_ENABLED
-                    and get_type(EnkelvoudigInformatieObject, key) == Url
+                    and get_type(EnkelvoudigInformatieObject, key) == QueriableUrl
                     and value != ""
                 ):
                     value = shrink_url(value)

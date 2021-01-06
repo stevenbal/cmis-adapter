@@ -11,6 +11,10 @@ class Url:
     pass
 
 
+class QueriableUrl:
+    pass
+
+
 @dataclass
 class EnkelvoudigInformatieObject:
     version_label: Decimal
@@ -29,7 +33,7 @@ class EnkelvoudigInformatieObject:
     verwijderd: bool
     status: str
     ontvangstdatum: date
-    informatieobjecttype: Url
+    informatieobjecttype: QueriableUrl
     auteur: str
     vertrouwelijkheidaanduiding: str
     begin_registratie: datetime
@@ -53,7 +57,7 @@ class Gebruiksrechten:
     name: str
     einddatum: datetime
     omschrijving_voorwaarden: str
-    informatieobject: Url
+    informatieobject: QueriableUrl
     startdatum: datetime
     kopie_van: str
 
@@ -65,9 +69,9 @@ class Oio:
     object_type_id: Id
     name: str
     object_type: str
-    besluit: Url
-    zaak: Url
-    informatieobject: Url
+    besluit: QueriableUrl
+    zaak: QueriableUrl
+    informatieobject: QueriableUrl
 
 
 @dataclass
@@ -78,16 +82,16 @@ class Folder:
 @dataclass
 class ZaakFolderData:
     object_type_id: Id
-    url: Url
+    url: QueriableUrl
     identificatie: str
-    zaaktype: Url
+    zaaktype: QueriableUrl
     bronorganisatie: str
 
 
 @dataclass
 class ZaakTypeFolderData:
     object_type_id: Id
-    url: Url
+    url: QueriableUrl
     identificatie: str
 
 
@@ -99,6 +103,7 @@ CONVERTER = {
     bool: "propertyBoolean",
     Id: "propertyId",
     Url: "propertyString",
+    QueriableUrl: "propertyString",
 }
 
 

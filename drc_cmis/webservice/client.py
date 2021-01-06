@@ -32,7 +32,7 @@ from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
     Gebruiksrechten as GebruiksRechtDoc,
     Oio,
-    Url,
+    QueriableUrl,
     get_cmis_type,
     get_type,
 )
@@ -126,7 +126,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 )
                 if (
                     property_name is not None
-                    and get_type(return_type.type_class, property_name) == Url
+                    and get_type(return_type.type_class, property_name) == QueriableUrl
                     and item_rhs != ""
                 ):
                     processed_rhs.append(shrink_url(item_rhs))
@@ -270,7 +270,10 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 drc_property_name = reverse_mapper(property_name, type="document")
 
                 # Urls are handled separately, because they are already in the 'short' form
-                if get_type(EnkelvoudigInformatieObject, drc_property_name) == Url:
+                if (
+                    get_type(EnkelvoudigInformatieObject, drc_property_name)
+                    == QueriableUrl
+                ):
                     drc_url_properties[property_name] = {
                         "value": property_details["value"],
                         "type": "propertyString",
@@ -363,7 +366,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 )
 
                 # Urls are handled separately, because they are already in the 'short' form
-                if get_type(GebruiksRechtDoc, drc_property_name) == Url:
+                if get_type(GebruiksRechtDoc, drc_property_name) == QueriableUrl:
                     drc_url_properties[property_name] = {
                         "value": property_details["value"],
                         "type": "propertyString",
