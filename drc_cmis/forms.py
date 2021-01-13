@@ -12,7 +12,11 @@ from .models import CMISConfig
 class UrlMappingInlineFormSet(BaseInlineFormSet):
     def clean(self):
         for form in self.forms:
-            if form.is_valid():
+            if (
+                form.is_valid()
+                and form.cleaned_data.get("long_pattern")
+                and form.cleaned_data.get("short_pattern")
+            ):
                 parsed_long_url = urlparse(form.cleaned_data["long_pattern"])
                 parsed_short_url = urlparse(form.cleaned_data["short_pattern"])
 
