@@ -1,4 +1,5 @@
 import logging
+import mimetypes
 import re
 import uuid
 from datetime import timedelta
@@ -9,6 +10,8 @@ from xml.dom import minidom
 from django.utils import timezone
 
 from cmislib.util import parsePropValue
+
+from drc_cmis.utils.utils import get_random_string
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +163,7 @@ def make_soap_envelope(
     object_id: Optional[str] = None,
     folder_id: Optional[str] = None,
     content_id: Optional[str] = None,
+    content_filename: Optional[str] = None,
     major: Optional[str] = None,
     checkin_comment: Optional[str] = None,
     source_folder_id: Optional[str] = None,
@@ -177,6 +181,7 @@ def make_soap_envelope(
         workspace://SpacesStore/2bdd4f3d-851f-499b-99ec-142b82ce3c0d)
     :param folder_id: str, ID of a folder (e.g. needed when creating documents)
     :param content_id: str, ID of the content of a document (as the content will be a MTOM attachment)
+    :param content_filename: str, name of the file that will be a MTOM attachment. Includes files extension.
     :param major: str, true or false whether the document being checked in is a major version
     :param checkin_comment: str, comment when checking in a document
     :param source_folder_id: str, folder objectId from which to copy a document
@@ -312,9 +317,12 @@ def make_soap_envelope(
 
     # File content
     if content_id is not None:
+        filename = content_filename or get_random_string()
+        mimetype, _encoding = mimetypes.guess_type(filename)
+
         content_element = xml_doc.createElement("ns:contentStream")
         mimetype_element = xml_doc.createElement("ns:mimeType")
-        mimetype_txt = xml_doc.createTextNode("application/octet-stream")
+        mimetype_txt = xml_doc.createTextNode(mimetype or "application/octet-stream")
         mimetype_element.appendChild(mimetype_txt)
         content_element.appendChild(mimetype_element)
 
@@ -328,7 +336,7 @@ def make_soap_envelope(
         content_element.appendChild(stream_element)
 
         filename_element = xml_doc.createElement("ns:filename")
-        filename_text = xml_doc.createTextNode("filename")
+        filename_text = xml_doc.createTextNode(filename)
         filename_element.appendChild(filename_text)
         content_element.appendChild(filename_element)
 

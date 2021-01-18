@@ -176,11 +176,10 @@ class Document(CMISContentObject):
         logger.debug("CMIS_ADAPTER: checkout: response data: %s", json_response)
         return Document(json_response)
 
-    def update_properties(self, properties: dict, content: Optional[BytesIO] = None):
+    def update_content(self, content: BytesIO, filename: Optional[str] = None):
+        self.set_content_stream(content, filename)
 
-        if content is not None:
-            self.set_content_stream(content)
-
+    def update_properties(self, properties: dict):
         data = {"objectId": self.objectId, "cmisaction": "update"}
         prop_count = 0
         for prop_key, prop_value in properties.items():
@@ -266,13 +265,15 @@ class Document(CMISContentObject):
         logger.debug("CMIS_ADAPTER: checkin: response data: %s", json_response)
         return Document(json_response)
 
-    def set_content_stream(self, content_file):
+    def set_content_stream(self, content_file: BytesIO, filename: Optional[str] = None):
         data = {"objectId": self.objectId, "cmisaction": "setContent"}
 
         mimetype = None
         # need to determine the mime type
-        if not mimetype and hasattr(content_file, "name"):
-            mimetype, _encoding = mimetypes.guess_type(content_file.name)
+        if filename:
+            mimetype, _encoding = mimetypes.guess_type(
+                filename
+            )  # If the extension is not recognised, mimetype is None
 
         if not mimetype:
             mimetype = "application/binary"
