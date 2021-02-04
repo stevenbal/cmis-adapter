@@ -48,6 +48,7 @@ from drc_cmis.webservice.utils import (
     extract_repo_info_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
+    pretty_xml,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,20 +71,14 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="getRepositoryInfo",
         )
 
-        logger.debug(
-            "get_repository_info: SOAP getRepositoryInfo request: %s",
-            soap_envelope.toxml(),
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "RepositoryService", soap_envelope=soap_envelope.toxml()
         )
 
-        logger.debug(
-            "get_repository_info: SOAP getRepositoryInfo response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
 
         return extract_repo_info_from_xml(xml_response)
 
@@ -115,9 +110,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        logger.debug(
-            "CMIS_ADAPTER: query: SOAP query request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         try:
             soap_response = self.request(
@@ -130,9 +123,10 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             else:
                 raise exc
 
-        logger.debug("CMIS_ADAPTER: query: SOAP query response: %s", soap_response)
-
         xml_response = extract_xml_from_soap(soap_response)
+
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
         return [return_type(cmis_object) for cmis_object in extracted_data]
@@ -165,18 +159,14 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="createFolder",
         )
 
-        logger.debug(
-            "create_folder: SOAP createFolder request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
         )
-        logger.debug(
-            "CMIS_ADAPTER: create_folder: SOAP createFolder response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(
             xml_response, "createFolder"
         )[0]
@@ -196,10 +186,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="getObject",
         )
 
-        logger.debug(
-            "CMIS_ADAPTER: get_folder: SOAP getObject request: %s",
-            soap_envelope.toxml(),
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         try:
             soap_response = self.request(
@@ -212,11 +199,9 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             else:
                 raise exc
 
-        logger.debug(
-            "CMIS_ADAPTER: get_folder: SOAP getObject response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
             0
         ]
@@ -278,9 +263,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             content_id=content_id,
         )
 
-        logger.debug(
-            "copy_document: SOAP createDocument request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService",
@@ -288,13 +271,10 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             attachments=[(content_id, document.get_content_stream())],
         )
 
-        logger.debug(
-            "CMIS_ADAPTER: copy_document: SOAP createDocument response: %s",
-            soap_response,
-        )
-
         # Creating the document only returns its ID
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(
             xml_response, "createDocument"
         )[0]
@@ -350,22 +330,18 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             properties=cmis_properties,
             cmis_action="createDocument",
         )
-        logger.debug(
-            "copy_gebruiksrechten: SOAP createDocument request: %s",
-            soap_envelope.toxml(),
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService",
             soap_envelope=soap_envelope.toxml(),
         )
 
-        logger.debug(
-            "copy_gebruiksrechten: SOAP createDocument response: %s", soap_response
-        )
-
         # Creating the document only returns its ID
         xml_response = extract_xml_from_soap(soap_response)
+
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(
             xml_response, "createDocument"
         )[0]
@@ -379,20 +355,15 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="getObject",
         )
 
-        logger.debug(
-            "copy_gebruiksrechten: SOAP getObject request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
         )
 
-        logger.debug(
-            "CMIS_ADAPTER: copy_gebruiksrechten: SOAP getObject response: %s",
-            soap_response,
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
             0
         ]
@@ -450,21 +421,16 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="createDocument",
         )
 
-        logger.debug(
-            "create_content_object: SOAP createDocument request: %s",
-            soap_envelope.toxml(),
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService",
             soap_envelope=soap_envelope.toxml(),
         )
 
-        logger.debug(
-            "create_content_object: SOAP createDocument response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(
             xml_response, "createDocument"
         )[0]
@@ -478,19 +444,15 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="getObject",
         )
 
-        logger.debug(
-            "create_content_object: SOAP getObject request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
         )
 
-        logger.debug(
-            "create_content_object: SOAP getObject response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
             0
         ]
@@ -521,9 +483,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             cmis_action="query",
         )
 
-        logger.debug(
-            "get_content_object: SOAP getObject request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         error_string = (
             f"{object_type.capitalize()} {object_type} met identificatie drc:{object_type}__uuid {drc_uuid} "
@@ -541,12 +501,9 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 raise does_not_exist
             else:
                 raise exc
-        logger.debug(
-            "CMIS_ADAPTER: get_content_object: SOAP getObject response: %s",
-            soap_response,
-        )
 
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
 
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         if len(extracted_data) == 0:
@@ -602,21 +559,17 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             content_id=content_id,
         )
 
-        logger.debug(
-            "create_document: SOAP createDocument request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService",
             soap_envelope=soap_envelope.toxml(),
             attachments=[(content_id, content)],
         )
-        logger.debug(
-            "CMIS_ADAPTER: create_document: SOAP createDocument response: %s",
-            soap_response,
-        )
 
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         # Creating the document only returns its ID
         extracted_data = extract_object_properties_from_xml(
             xml_response, "createDocument"
@@ -630,18 +583,14 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             object_id=new_document_id,
             cmis_action="getObject",
         )
-        logger.debug(
-            "create_document: SOAP getObject request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         soap_response = self.request(
             "ObjectService", soap_envelope=soap_envelope.toxml()
         )
-        logger.debug(
-            "CMIS_ADAPTER: create_document: SOAP getObject response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
             0
         ]
@@ -737,9 +686,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             statement=query(drc_uuid, filter_string),
             cmis_action="query",
         )
-        logger.debug(
-            "CMIS_ADAPTER: get_document: SOAP query request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         try:
             soap_response = self.request(
@@ -751,11 +698,9 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 raise does_not_exist
             else:
                 raise exc
-        logger.debug(
-            "CMIS_ADAPTER: get_document: SOAP query response: %s", soap_response
-        )
-
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         return extract_latest_version(self.document_type, extracted_data)
 
@@ -780,9 +725,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             statement=query(str(identification), bronorganisatie),
             cmis_action="query",
         )
-        logger.debug(
-            "check_document_exists: SOAP query request: %s", soap_envelope.toxml()
-        )
+        logger.debug(soap_envelope.toprettyxml())
 
         try:
             soap_response = self.request(
@@ -794,12 +737,10 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
                 return
             else:
                 raise exc
-        logger.debug(
-            "CMIS_ADAPTER: check_document_exists: SOAP query response: %s",
-            soap_response,
-        )
 
         xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
         if len(extracted_data) > 0:

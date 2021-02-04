@@ -1,3 +1,4 @@
+import logging
 from typing import BinaryIO, List, Optional, Tuple, Union
 
 import requests
@@ -17,7 +18,10 @@ from drc_cmis.webservice.utils import (
     extract_root_folder_id_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
+    pretty_xml,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SOAPCMISRequest:
@@ -75,11 +79,16 @@ class SOAPCMISRequest:
             soap_envelope = make_soap_envelope(
                 auth=(self.user, self.password), cmis_action="getRepositories"
             )
+
+            logger.debug(soap_envelope.toprettyxml())
+
             soap_response = self.request(
                 "RepositoryService", soap_envelope=soap_envelope.toxml()
             )
 
             xml_response = extract_xml_from_soap(soap_response)
+            logger.debug(pretty_xml(xml_response))
+
             all_repositories_ids = extract_repository_ids_from_xml(xml_response)
 
             # If no main repository ID is configured, take the ID of the first repository returned.
@@ -105,11 +114,13 @@ class SOAPCMISRequest:
                 cmis_action="getRepositoryInfo",
                 repository_id=self.main_repo_id,
             )
+            logger.debug(soap_envelope.toprettyxml())
             soap_response = self.request(
                 "RepositoryService", soap_envelope=soap_envelope.toxml()
             )
 
             xml_response = extract_xml_from_soap(soap_response)
+            logger.debug(pretty_xml(xml_response))
             self._root_folder_id = extract_root_folder_id_from_xml(xml_response)
 
         return self._root_folder_id
