@@ -87,11 +87,11 @@ def extract_object_properties_from_xml(xml_data: str, cmis_action: str) -> List[
     return all_objects
 
 
-def extract_repository_id_from_xml(xml_data: str) -> str:
+def extract_repository_ids_from_xml(xml_data: str) -> List:
     parsed_xml = minidom.parseString(xml_data)
 
-    repository_id_node = parsed_xml.getElementsByTagName("repositoryId")[0]
-    return repository_id_node.firstChild.nodeValue
+    repository_id_nodes = parsed_xml.getElementsByTagName("repositoryId")
+    return [node.firstChild.nodeValue for node in repository_id_nodes]
 
 
 def extract_root_folder_id_from_xml(xml_data: str) -> str:

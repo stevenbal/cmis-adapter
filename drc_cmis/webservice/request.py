@@ -8,11 +8,12 @@ from drc_cmis.utils.exceptions import (
     CmisNotSupportedException,
     CmisObjectNotFoundException,
     CmisPermissionDeniedException,
+    CmisRepositoryDoesNotExist,
     CmisRuntimeException,
     CmisUpdateConflictException,
 )
 from drc_cmis.webservice.utils import (
-    extract_repository_id_from_xml,
+    extract_repository_ids_from_xml,
     extract_root_folder_id_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
@@ -68,6 +69,9 @@ class SOAPCMISRequest:
         """Get ID of the CMS main repository"""
 
         if self._main_repo_id is None:
+            configured_main_repo_id = self.config.main_repo_id
+
+            # Retrieving the IDs of all repositories in the CMS
             soap_envelope = make_soap_envelope(
                 auth=(self.user, self.password), cmis_action="getRepositories"
             )
@@ -76,7 +80,18 @@ class SOAPCMISRequest:
             )
 
             xml_response = extract_xml_from_soap(soap_response)
-            self._main_repo_id = extract_repository_id_from_xml(xml_response)
+            all_repositories_ids = extract_repository_ids_from_xml(xml_response)
+
+            # If no main repository ID is configured, take the ID of the first repository returned.
+            if configured_main_repo_id == "":
+                self._main_repo_id = all_repositories_ids[0]
+            else:
+                if configured_main_repo_id not in all_repositories_ids:
+                    raise CmisRepositoryDoesNotExist(
+                        "The configured repository ID does not exist."
+                    )
+
+                self._main_repo_id = configured_main_repo_id
 
         return self._main_repo_id
 

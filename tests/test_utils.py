@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from drc_cmis.webservice.utils import extract_content
+from drc_cmis.webservice.utils import extract_content, extract_repository_ids_from_xml
 
 
 class WebserviceUtilsTests(TestCase):
@@ -17,3 +17,12 @@ class WebserviceUtilsTests(TestCase):
         content = content_stream.read()
 
         self.assertEqual(content, b"some file content")
+
+    def test_extract_repositories_ids_alfresco(self):
+        alfreso_soap_envelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><getRepositoriesResponse xmlns="http://docs.oasis-open.org/ns/cmis/messaging/200908/" xmlns:ns2="http://docs.oasis-open.org/ns/cmis/core/200908/"><repositories><repositoryId>5341cc88-b2f6-4476-aff3-4add269dcb09</repositoryId><repositoryName>Main Repository</repositoryName></repositories></getRepositoriesResponse></soap:Body></soap:Envelope>'
+
+        all_repositories_ids = extract_repository_ids_from_xml(alfreso_soap_envelope)
+        self.assertEqual(len(all_repositories_ids), 1)
+        self.assertEqual(
+            all_repositories_ids[0], "5341cc88-b2f6-4476-aff3-4add269dcb09"
+        )

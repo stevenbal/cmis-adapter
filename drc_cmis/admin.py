@@ -58,6 +58,7 @@ class CMISConfigAdmin(SingletonModelAdmin):
                     "client_url",
                     "binding",
                     "time_zone",
+                    "main_repo_id",
                     "zaak_folder_path",
                     "other_folder_path",
                 )
