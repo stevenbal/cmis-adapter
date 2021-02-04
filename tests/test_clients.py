@@ -1675,6 +1675,106 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         self.assertEqual(len(gebruiksrechten_copies), 2)
 
+    def test_full_update_gebruiksrechten(self, m):
+        # Creating the document in the temporary folder
+        identification = str(uuid.uuid4())
+        properties = {
+            "bronorganisatie": "159351741",
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "http://een.link",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=properties,
+            content=content,
+            bronorganisatie="159351741",
+        )
+
+        # Create gebruiksrechten
+        gebruiksrechten_data = {
+            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "startdatum": "2018-12-24T00:00:00Z",
+            "omschrijving_voorwaarden": "Test voorwaarden",
+        }
+
+        gebruiksrechten = self.cmis_client.create_gebruiksrechten(
+            data=gebruiksrechten_data
+        )
+
+        self.assertEqual("Test voorwaarden", gebruiksrechten.omschrijving_voorwaarden)
+
+        updated_data = {
+            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "startdatum": "2018-12-24T00:00:00Z",
+            "omschrijving_voorwaarden": "Aangepaste voorwaarden",
+        }
+
+        updated_gebruiksrechten = self.cmis_client.update_gebruiksrechten(
+            drc_uuid=gebruiksrechten.uuid, data=updated_data
+        )
+
+        self.assertEqual(
+            "Aangepaste voorwaarden", updated_gebruiksrechten.omschrijving_voorwaarden
+        )
+
+    def test_partial_update_gebruiksrechten(self, m):
+        # Creating the document in the temporary folder
+        identification = str(uuid.uuid4())
+        properties = {
+            "bronorganisatie": "159351741",
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "http://een.link",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=properties,
+            content=content,
+            bronorganisatie="159351741",
+        )
+
+        # Create gebruiksrechten
+        gebruiksrechten_data = {
+            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "startdatum": "2018-12-24T00:00:00Z",
+            "omschrijving_voorwaarden": "Test voorwaarden",
+        }
+
+        gebruiksrechten = self.cmis_client.create_gebruiksrechten(
+            data=gebruiksrechten_data
+        )
+
+        self.assertEqual("Test voorwaarden", gebruiksrechten.omschrijving_voorwaarden)
+
+        updated_data = {
+            "omschrijving_voorwaarden": "Aangepaste voorwaarden",
+        }
+
+        updated_gebruiksrechten = self.cmis_client.update_gebruiksrechten(
+            drc_uuid=gebruiksrechten.uuid, data=updated_data
+        )
+
+        self.assertEqual(
+            "Aangepaste voorwaarden", updated_gebruiksrechten.omschrijving_voorwaarden
+        )
+
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISClientDocumentTests(DMSMixin, TestCase):

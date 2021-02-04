@@ -201,6 +201,62 @@ class CMISContentObject(CMISBaseObject):
 
         return type(self)(extracted_data)
 
+    def _update_properties(self, properties: dict) -> dict:
+        """
+        Update properties and return the properties of the updated object.
+
+        :param properties: dict, new properties to update
+        :return: dict, properties of the updated object
+        """
+        soap_envelope = make_soap_envelope(
+            auth=(self.user, self.password),
+            repository_id=self.main_repo_id,
+            properties=properties,
+            cmis_action="updateProperties",
+            object_id=self.objectId,
+        )
+        logger.debug(soap_envelope.toprettyxml())
+
+        soap_response = self.request(
+            "ObjectService",
+            soap_envelope=soap_envelope.toxml(),
+        )
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+        extracted_data = extract_object_properties_from_xml(
+            xml_response, "updateProperties"
+        )[0]
+
+        return extracted_data
+
+    def get_content_object(
+        self, object_id: str, object_type: type
+    ) -> "CMISContentObject":
+        """Get a content object with specified objectId
+
+        :param object_id: string, objectId of the content object
+        :param object_type: type, type of the object to return
+        :return: CMISContentObject
+        """
+        soap_envelope = make_soap_envelope(
+            auth=(self.user, self.password),
+            repository_id=self.main_repo_id,
+            object_id=object_id,
+            cmis_action="getObject",
+        )
+        logger.debug(soap_envelope.toprettyxml())
+
+        soap_response = self.request(
+            "ObjectService", soap_envelope=soap_envelope.toxml()
+        )
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+        extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
+            0
+        ]
+
+        return object_type(extracted_data)
+
 
 class Document(CMISContentObject):
     table = "drc:document"
@@ -295,24 +351,7 @@ class Document(CMISContentObject):
         :param object_id: string, objectId of the document
         :return: Document
         """
-        soap_envelope = make_soap_envelope(
-            auth=(self.user, self.password),
-            repository_id=self.main_repo_id,
-            object_id=object_id,
-            cmis_action="getObject",
-        )
-        logger.debug(soap_envelope.toprettyxml())
-
-        soap_response = self.request(
-            "ObjectService", soap_envelope=soap_envelope.toxml()
-        )
-        xml_response = extract_xml_from_soap(soap_response)
-        logger.debug(pretty_xml(xml_response))
-        extracted_data = extract_object_properties_from_xml(xml_response, "getObject")[
-            0
-        ]
-
-        return type(self)(extracted_data)
+        return self.get_content_object(object_id=object_id, object_type=type(self))
 
     def checkout(self) -> "Document":
         """Checkout a private working copy of the document"""
@@ -398,25 +437,8 @@ class Document(CMISContentObject):
         if content is not None:
             self.set_content_stream(content)
 
-        soap_envelope = make_soap_envelope(
-            auth=(self.user, self.password),
-            repository_id=self.main_repo_id,
-            properties=properties,
-            cmis_action="updateProperties",
-            object_id=self.objectId,
-        )
-        logger.debug(soap_envelope.toprettyxml())
-
-        soap_response = self.request(
-            "ObjectService",
-            soap_envelope=soap_envelope.toxml(),
-        )
-        xml_response = extract_xml_from_soap(soap_response)
-        logger.debug(pretty_xml(xml_response))
-        extracted_data = extract_object_properties_from_xml(
-            xml_response, "updateProperties"
-        )[0]
-        return self.get_document(extracted_data["properties"]["objectId"]["value"])
+        updated_properties = self._update_properties(properties)
+        return self.get_document(updated_properties["properties"]["objectId"]["value"])
 
     def get_content_stream(self) -> BytesIO:
         soap_envelope = make_soap_envelope(
@@ -526,6 +548,20 @@ class Gebruiksrechten(CMISContentObject):
     name_map = GEBRUIKSRECHTEN_MAP
     type_name = "gebruiksrechten"
     type_class = GebruiksrechtenDoc
+
+    def update_properties(self, properties: dict) -> "Gebruiksrechten":
+        """
+        Update the properties of an existing gebruiksrechten.
+
+        :param properties: dict, the new properties
+        :return: Updated gebruiksrechten
+        """
+        updated_properties = self._update_properties(properties)
+
+        return self.get_content_object(
+            object_id=updated_properties["properties"]["objectId"]["value"],
+            object_type=type(self),
+        )
 
 
 class ObjectInformatieObject(CMISContentObject):

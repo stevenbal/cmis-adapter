@@ -185,6 +185,29 @@ class CMISClient:
 
         return cmis_doc
 
+    def update_gebruiksrechten(self, drc_uuid: str, data: dict) -> Gebruiksrechten:
+        """Update a gebruiksrechten
+
+        :param drc_uuid: uuid of the gebruiksrechten to update
+        :param data: dict of properties to update
+        :return: Updated gebruiksrechten
+        """
+
+        gebruiksrechten = self.get_content_object(
+            drc_uuid=drc_uuid, object_type="gebruiksrechten"
+        )
+
+        current_properties = gebruiksrechten.properties
+        new_properties = self.gebruiksrechten_type.build_properties(data)
+
+        diff_properties = {
+            key: value
+            for key, value in new_properties.items()
+            if current_properties.get(key) != value
+        }
+
+        return gebruiksrechten.update_properties(diff_properties)
+
     def create_oio(self, data: dict) -> ObjectInformatieObject:
         """Create ObjectInformatieObject which relates a document with a zaak or besluit
 

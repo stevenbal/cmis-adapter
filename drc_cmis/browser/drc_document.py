@@ -131,6 +131,32 @@ class CMISContentObject(CMISBaseObject):
         self.properties = json_response.get("properties")
         return self
 
+    def _update_properties(self, properties: dict) -> "CMISContentObject":
+        data = {"objectId": self.objectId, "cmisaction": "update"}
+        prop_count = 0
+        for prop_key, prop_value in properties.items():
+            # Skip property because update is not allowed
+            if prop_key == "cmis:objectTypeId":
+                continue
+
+            if isinstance(prop_value, date):
+                prop_value = prop_value.strftime("%Y-%m-%dT%H:%I:%S.000Z")
+
+            data["propertyId[%s]" % prop_count] = prop_key
+            data["propertyValue[%s]" % prop_count] = prop_value
+            prop_count += 1
+        logger.debug("CMIS_ADAPTER: update_properties: request data: %s", data)
+
+        # invoke the URL
+        json_response = self.post_request(self.root_folder_url, data=data)
+        logger.debug(
+            "CMIS_ADAPTER: update_properties: response data: %s", json_response
+        )
+        self.data = json_response
+        self.properties = json_response.get("properties")
+
+        return self
+
 
 class Document(CMISContentObject):
     table = "drc:document"
@@ -177,34 +203,10 @@ class Document(CMISContentObject):
         return Document(json_response)
 
     def update_properties(self, properties: dict, content: Optional[BytesIO] = None):
-
         if content is not None:
             self.set_content_stream(content)
 
-        data = {"objectId": self.objectId, "cmisaction": "update"}
-        prop_count = 0
-        for prop_key, prop_value in properties.items():
-            # Skip property because update is not allowed
-            if prop_key == "cmis:objectTypeId":
-                continue
-
-            if isinstance(prop_value, date):
-                prop_value = prop_value.strftime("%Y-%m-%dT%H:%I:%S.000Z")
-
-            data["propertyId[%s]" % prop_count] = prop_key
-            data["propertyValue[%s]" % prop_count] = prop_value
-            prop_count += 1
-        logger.debug("CMIS_ADAPTER: update_properties: request data: %s", data)
-
-        # invoke the URL
-        json_response = self.post_request(self.root_folder_url, data=data)
-        logger.debug(
-            "CMIS_ADAPTER: update_properties: response data: %s", json_response
-        )
-        self.data = json_response
-        self.properties = json_response.get("properties")
-
-        return self
+        return self._update_properties(properties)
 
     def get_private_working_copy(self) -> Union["Document", None]:
         """
@@ -345,6 +347,15 @@ class Gebruiksrechten(CMISContentObject):
     table = "drc:gebruiksrechten"
     name_map = GEBRUIKSRECHTEN_MAP
     type_name = "gebruiksrechten"
+
+    def update_properties(self, properties: dict) -> "Gebruiksrechten":
+        """
+        Update the properties of an existing gebruiksrechten.
+
+        :param properties: dict, the new properties
+        :return: Updated gebruiksrechten
+        """
+        return self._update_properties(properties)
 
 
 class ObjectInformatieObject(CMISContentObject):
