@@ -217,6 +217,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "bestandsnaam": "filename.pdf",
         }
         # Contains non-UTF-8 characters
         content = io.BytesIO(
@@ -232,6 +233,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
         posted_content = document.get_content_stream()
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
+
+        self.assertEqual("application/pdf", document.contentStreamMimeType)
 
     @tag("alfresco")
     def test_checkin_document(self):
@@ -316,6 +319,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
             "beschrijving": "beschrijving 1",
+            "link": "http://a.link",
+            "bestandsnaam": "filename.txt",
         }
         content = io.BytesIO(b"Content before update")
         document = self.cmis_client.create_document(
@@ -329,6 +334,9 @@ class CMISDocumentTests(DMSMixin, TestCase):
             datetime.date(2020, 7, 27).strftime("%Y-%m-%d"),
         )
         self.assertEqual(document.titel, "detailed summary")
+        self.assertEqual(document.link, "http://a.link")
+        self.assertEqual("text/plain", document.contentStreamMimeType)
+
         posted_content = document.get_content_stream()
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
@@ -336,17 +344,24 @@ class CMISDocumentTests(DMSMixin, TestCase):
         # Updating the document
         new_properties = {
             "beschrijving": "beschrijving 2",
+            "link": "http://an.updated.link",
         }
         new_content = io.BytesIO(b"Content after update")
         data = document.build_properties(new_properties, new=False)
         pwc = document.checkout()
-        updated_pwc = pwc.update_properties(properties=data, content=new_content)
+
+        pwc.update_content(new_content, "filename.txt")
+        updated_pwc = pwc.update_properties(properties=data)
+
         updated_document = updated_pwc.checkin("Testing properties update")
         self.assertEqual(updated_document.beschrijving, "beschrijving 2")
+
+        self.assertEqual(updated_document.link, "http://an.updated.link")
         self.assertNotEqual(updated_document.versionLabel, document.versionLabel)
         updated_content = updated_document.get_content_stream()
         content.seek(0)
         self.assertEqual(updated_content.read(), b"Content after update")
+        self.assertEqual("text/plain", updated_document.contentStreamMimeType)
 
     def test_update_remove_url(self):
         identification = str(uuid.uuid4())
@@ -400,6 +415,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "bestandsnaam": "filename.txt",
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
@@ -411,6 +427,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         content_stream = document.get_content_stream()
         self.assertEqual(content_stream.read(), b"Some very important content")
+        self.assertEqual("text/plain", document.contentStreamMimeType)
 
     @skipIf(
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
@@ -421,6 +438,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "bestandsnaam": "filename.txt",
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
@@ -432,9 +450,14 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         all_versions = document.get_all_versions()
         self.assertEqual(len(all_versions), 1)
+        self.assertEqual("text/plain", document.contentStreamMimeType)
 
         content = io.BytesIO(b"Different content")
-        document.set_content_stream(content)
+        document.set_content_stream(content, "filename.txt")
+
+        # Refresh document
+        updated_document = self.cmis_client.get_document(document.uuid)
+        self.assertEqual("text/plain", updated_document.contentStreamMimeType)
 
         all_versions = document.get_all_versions()
         self.assertEqual(len(all_versions), 2)
@@ -454,6 +477,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "bestandsnaam": "filename.txt",
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
@@ -468,7 +492,11 @@ class CMISDocumentTests(DMSMixin, TestCase):
         self.assertEqual(len(all_versions), 2)
 
         content = io.BytesIO(b"Different content")
-        document.set_content_stream(content)
+        document.set_content_stream(content, "filename.txt")
+
+        # Refresh document
+        updated_document = self.cmis_client.get_document(document.uuid)
+        self.assertEqual("text/plain", updated_document.contentStreamMimeType)
 
         all_versions = document.get_all_versions()
         self.assertEqual(len(all_versions), 3)
@@ -551,7 +579,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         # Updating the content raises the version by 0.1
         content = io.BytesIO(b"Different content")
-        document.set_content_stream(content)
+        document.set_content_stream(content, "filename.txt")
 
         all_versions = document.get_all_versions()
         self.assertEqual(len(all_versions), 3)
@@ -681,6 +709,23 @@ class CMISDocumentTests(DMSMixin, TestCase):
         self.assertEqual(len(parent_folders), 1)
         # The object is created automatically in a temporary folder name after the current date
         self.assertEqual(parent_folders[0].name, "27")
+
+    def create_document_without_extension(self):
+        properties = {
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+            "bestandsnaam": "filename-without-extension",
+        }
+        content = io.BytesIO(b"some file content")
+
+        document = self.cmis_client.create_document(
+            identification="d1bf9324-46c8-43ae-8bdb-d1a70d682f68",
+            data=properties,
+            content=content,
+            bronorganisatie="159351741",
+        )
+
+        self.assertEqual("application/octet-stream", document.contentStreamMimeType)
 
 
 @freeze_time("2020-07-27 12:00:00")

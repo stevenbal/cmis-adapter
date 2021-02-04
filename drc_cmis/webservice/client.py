@@ -303,6 +303,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             properties=cmis_properties,
             cmis_action="createDocument",
             content_id=content_id,
+            content_filename=drc_properties.get("bestandsnaam"),
         )
 
         logger.debug(soap_envelope.toprettyxml())
@@ -610,6 +611,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             properties=properties,
             cmis_action="createDocument",
             content_id=content_id,
+            content_filename=data.get("bestandsnaam"),
         )
 
         logger.debug(soap_envelope.toprettyxml())

@@ -156,20 +156,20 @@ class SOAPCMISRequest:
         # Adding the attachments
         if attachments is not None:
             for attachment in attachments:
+                content_id, content_stream = attachment
                 file_attachment_headers = {
                     "Content-Type": "application/octet-stream",
                     "Content-Transfer-Encoding": "binary",
-                    "Content-ID": f"<{attachment[0]}>",
+                    "Content-ID": f"<{content_id}>",
                 }
 
                 xml_attachment_header = ""
                 for key, value in file_attachment_headers.items():
                     xml_attachment_header += f"{key}: {value}\n"
 
-                attachment_stream = attachment[1]
-                attachment_stream.seek(0)
+                content_stream.seek(0)
                 body += f"{self._boundary}\n{xml_attachment_header}\n".encode("utf-8")
-                body += attachment_stream.read()  # Reads binary
+                body += content_stream.read()  # Reads binary
 
         body += f"{self._boundary}--\n".encode("utf-8")
         soap_response = requests.post(url, data=body, headers=self._headers, files=[])

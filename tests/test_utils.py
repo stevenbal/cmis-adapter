@@ -1,16 +1,22 @@
 import os
+import re
+import uuid
 from unittest import skipIf
 
 from django.test import TestCase
 
 from drc_cmis.models import CMISConfig, UrlMapping
+from drc_cmis.webservice.drc_document import Document
 from drc_cmis.webservice.utils import (
     NoURLMappingException,
     expand_url,
     extract_content,
     extract_repository_ids_from_xml,
+    make_soap_envelope,
     shrink_url,
 )
+
+from .mixins import DMSMixin
 
 
 @skipIf(
@@ -122,4 +128,71 @@ class UrlMappingTests(TestCase):
         self.assertEqual(
             long_url,
             "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaakinformatieobjecten/fc345347-3115-4f0a-8808-e392d66e1886",
+        )
+
+
+@skipIf(
+    os.getenv("CMIS_BINDING") != "WEBSERVICE",
+    "The properties are built differently with different bindings",
+)
+class WebserviceContentTests(DMSMixin, TestCase):
+    def test_create_document_with_filename(self):
+        properties = {
+            "bronorganisatie": "159351741",
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": "2020-07-28",
+            "versie": "1.0",
+            "creatiedatum": "2018-06-27",
+            "titel": "detailed summary",
+            "bestandsnaam": "filename.txt",
+        }
+
+        cmis_properties = Document.build_properties(data=properties)
+        other_folder = self.cmis_client.get_or_create_other_folder()
+
+        soap_envelope = make_soap_envelope(
+            auth=(self.cmis_client.user, self.cmis_client.password),
+            repository_id=self.cmis_client.main_repo_id,
+            folder_id=other_folder.objectId,
+            properties=cmis_properties,
+            cmis_action="createDocument",
+            content_id=str(uuid.uuid4()),
+            content_filename="filename.txt",
+        )
+
+        self.assertIn("<ns:filename>filename.txt</ns:filename>", soap_envelope.toxml())
+        self.assertIn("<ns:mimeType>text/plain</ns:mimeType>", soap_envelope.toxml())
+
+    def test_create_document_without_filename(self):
+        # No bestandsnaam
+        properties = {
+            "bronorganisatie": "159351741",
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": "2020-07-28",
+            "versie": "1.0",
+            "creatiedatum": "2018-06-27",
+            "titel": "detailed summary",
+        }
+
+        cmis_properties = Document.build_properties(data=properties)
+        other_folder = self.cmis_client.get_or_create_other_folder()
+
+        soap_envelope = make_soap_envelope(
+            auth=(self.cmis_client.user, self.cmis_client.password),
+            repository_id=self.cmis_client.main_repo_id,
+            folder_id=other_folder.objectId,
+            properties=cmis_properties,
+            cmis_action="createDocument",
+            content_id=str(uuid.uuid4()),  # No content_filename
+        )
+
+        # If the pattern is not found, raises an exception.
+        # The default filename is a random string of len 6 with characters A-Z and 0-9
+        re.search(
+            r"<ns:filename>[0-9A-Z]{6}<\/ns:filename>", soap_envelope.toxml()
+        ).group(0)
+        self.assertIn(
+            "<ns:mimeType>application/octet-stream</ns:mimeType>", soap_envelope.toxml()
         )

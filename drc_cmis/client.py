@@ -177,8 +177,12 @@ class CMISClient:
             if current_properties.get(key) != value
         }
 
+        content_filename = data.get("bestandsnaam") or cmis_doc.bestandsnaam
+
         try:
-            cmis_doc.update_properties(diff_properties, content)
+            if content is not None:
+                cmis_doc.update_content(content, content_filename)
+            cmis_doc.update_properties(diff_properties)
         except UpdateConflictException as exc:
             # Node locked!
             raise DocumentConflictException from exc

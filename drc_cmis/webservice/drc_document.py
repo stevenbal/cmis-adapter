@@ -430,12 +430,10 @@ class Document(CMISContentObject):
             if document.versionLabel == "pwc":
                 return document
 
-    def update_properties(
-        self, properties: dict, content: Optional[BytesIO] = None
-    ) -> "Document":
-        # Check if the content of the document needs updating
-        if content is not None:
-            self.set_content_stream(content)
+    def update_content(self, content: BytesIO, filename: Optional[str] = None):
+        self.set_content_stream(content, filename)
+
+    def update_properties(self, properties: dict) -> "Document":
 
         updated_properties = self._update_properties(properties)
         return self.get_document(updated_properties["properties"]["objectId"]["value"])
@@ -459,7 +457,7 @@ class Document(CMISContentObject):
         # FIXME find a better way to do this
         return extract_content(soap_response)
 
-    def set_content_stream(self, content: BytesIO):
+    def set_content_stream(self, content: BytesIO, filename: Optional[str] = None):
         content_id = str(uuid.uuid4())
         attachments = [(content_id, content)]
 
@@ -469,6 +467,7 @@ class Document(CMISContentObject):
             object_id=self.objectId,
             cmis_action="setContentStream",
             content_id=content_id,
+            content_filename=filename,
         )
         logger.debug(soap_envelope.toprettyxml())
 

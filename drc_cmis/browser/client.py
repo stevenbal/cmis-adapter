@@ -208,7 +208,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
         cmis_doc = Document(json_response)
         content.seek(0)
 
-        return cmis_doc.set_content_stream(content)
+        return cmis_doc.set_content_stream(content, filename=document.bestandsnaam)
 
     def create_content_object(
         self, data: dict, object_type: str, destination_folder: Folder = None
@@ -344,14 +344,14 @@ class CMISDRCClient(CMISClient, CMISRequest):
             data, new=True, identification=identification
         )
 
-        data = create_json_request_body(other_folder, properties)
-        logger.debug("CMIS_ADAPTER: create_document: request data: %s", data)
+        json_data = create_json_request_body(other_folder, properties)
+        logger.debug("CMIS_ADAPTER: create_document: request data: %s", json_data)
 
-        json_response = self.post_request(self.root_folder_url, data=data)
+        json_response = self.post_request(self.root_folder_url, data=json_data)
         logger.debug("CMIS_ADAPTER: create_document: response data: %s", json_response)
         cmis_doc = Document(json_response)
         content.seek(0)
-        return cmis_doc.set_content_stream(content)
+        return cmis_doc.set_content_stream(content, filename=data.get("bestandsnaam"))
 
     def lock_document(self, drc_uuid: str, lock: str):
         """
