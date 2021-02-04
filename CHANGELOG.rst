@@ -2,6 +2,17 @@
 Changelog
 =========
 
+1.2.0 (2021-02-04)
+------------------
+
+This release fixes a number of bugs and adds some new functionality.
+
+* Added setting to configure main repository ID
+* Improved readability of logging statements for webservice calls
+* Added a URL mapper to deal with URL-length limitations (#37)
+* Fixed being able to update ``Gebruiksrechten`` resource
+* Fixed missing filename extensions in CMIS requests (#40)
+
 1.1.2 (2020-12-10)
 ------------------
 
