@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from cmislib.util import parsePropValue
 
+from drc_cmis.models import UrlMapping
+
 logger = logging.getLogger(__name__)
 
 
@@ -385,3 +387,56 @@ def extract_xml_from_soap(soap_response, binary=False):
 def pretty_xml(xml_envelope: str) -> str:
     dom = minidom.parseString(xml_envelope)
     return dom.toprettyxml()
+
+
+class NoURLMappingException(Exception):
+    pass
+
+
+class URLTooLongException(Exception):
+    pass
+
+
+def shrink_url(long_url: str) -> str:
+    """Replace patterns in the long URL with the shorter one in the mapping"""
+    matching_pattern = find_matching_pattern(long_url, "long_pattern")
+    mapping = UrlMapping.objects.get(long_pattern=matching_pattern)
+
+    short_url = long_url.replace(mapping.long_pattern, mapping.short_pattern)
+
+    if len(short_url) > 100:
+        raise URLTooLongException
+
+    return long_url.replace(mapping.long_pattern, mapping.short_pattern)
+
+
+def expand_url(short_url: str) -> str:
+    """Replace patterns in the short URL with the longer one in the mapping"""
+
+    matching_pattern = find_matching_pattern(short_url, "short_pattern")
+    mapping = UrlMapping.objects.get(short_pattern=matching_pattern)
+
+    return short_url.replace(mapping.short_pattern, mapping.long_pattern)
+
+
+def find_matching_pattern(url: str, field: str = None) -> str:
+    from drc_cmis.models import CMISConfig
+
+    if field is None:
+        field = "long_pattern"
+
+    config = CMISConfig.get_solo()
+
+    patterns = config.urlmapping_set.values_list(field, flat=True)
+
+    matching_patterns = []
+    for pattern in patterns:
+        if pattern in url:
+            matching_patterns.append(pattern)
+
+    if len(matching_patterns) == 0:
+        raise NoURLMappingException
+    elif len(matching_patterns) > 1:
+        return sorted(matching_patterns, key=len, reverse=True)[0]
+    else:
+        return matching_patterns[0]

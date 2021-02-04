@@ -4,22 +4,37 @@ import os
 import uuid
 from unittest import skipIf
 
-from django.test import TestCase, tag
+from django.test import TestCase, override_settings, tag
 from django.utils import timezone
 
 from freezegun import freeze_time
 
+from drc_cmis.models import CMISConfig, UrlMapping
 from drc_cmis.utils.exceptions import DocumentDoesNotExistError, FolderDoesNotExistError
+from drc_cmis.webservice.utils import URLTooLongException
 
 from .mixins import DMSMixin
 
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISDocumentTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="https://drc.utrechtproeftuin.nl",
+            short_pattern="https://drc.nl",
+            config=config,
+        )
+
     @skipIf(
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "The properties are built differently with different bindings",
     )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
     def test_build_properties_webservice(self):
         properties = {
             "bronorganisatie": "159351741",
@@ -61,6 +76,90 @@ class CMISDocumentTests(DMSMixin, TestCase):
                 converted_prop_name = prop_name.split("__")[-1]
                 self.assertEqual(types[converted_prop_name], prop_dict["type"])
                 self.assertEqual(properties[converted_prop_name], prop_dict["value"])
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "The properties are built differently with different bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_build_properties_webservice_with_mapping(self):
+        properties = {
+            "bronorganisatie": "159351741",
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": "2020-07-28",
+            "versie": "1.0",
+            "creatiedatum": "2018-06-27",
+            "titel": "detailed summary",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/catalogi/api/v1/informatieobjecttypen/6dd973a8-57da-4200-9d77-8045e5678abe",
+            "link": "http://een.link",
+        }
+
+        types = {
+            "bronorganisatie": "propertyString",
+            "integriteitwaarde": "propertyString",
+            "verwijderd": "propertyBoolean",
+            "ontvangstdatum": "propertyDateTime",
+            "versie": "propertyDecimal",
+            "creatiedatum": "propertyDateTime",
+            "titel": "propertyString",
+            "informatieobjecttype": "propertyString",
+            "link": "propertyString",
+        }
+        identification = str(uuid.uuid4())
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=properties,
+            bronorganisatie="159351741",
+        )
+
+        built_properties = document.build_properties(data=properties)
+
+        self.assertIn("cmis:objectTypeId", built_properties)
+        self.assertIn("drc:document__uuid", built_properties)
+        self.assertIsNotNone(built_properties["drc:document__uuid"])
+
+        for prop_name, prop_dict in built_properties.items():
+            self.assertIn("type", prop_dict)
+            self.assertIn("value", prop_dict)
+
+            if prop_name.split("__")[-1] in properties:
+                converted_prop_name = prop_name.split("__")[-1]
+                if converted_prop_name == "informatieobjecttype":
+                    self.assertEqual(
+                        "https://drc.nl/catalogi/api/v1/informatieobjecttypen/6dd973a8-57da-4200-9d77-8045e5678abe",
+                        prop_dict["value"],
+                    )
+                else:
+                    self.assertEqual(
+                        properties[converted_prop_name], prop_dict["value"]
+                    )
+                self.assertEqual(types[converted_prop_name], prop_dict["type"])
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "The properties are built differently with different bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_build_properties_webservice_with_mapping_url_too_long(self):
+        properties = {
+            "bronorganisatie": "159351741",
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": "2020-07-28",
+            "versie": "1.0",
+            "creatiedatum": "2018-06-27",
+            "titel": "detailed summary",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/catalogi/api/v1/informatieobjecttypen/6dd973a8-57da-4200-9d77-8045e5678abe/this-url-will-be-too-long-when-shrunk",
+            "link": "http://een.link",
+        }
+
+        with self.assertRaises(URLTooLongException):
+            self.cmis_client.create_document(
+                identification="2edb313f-5607-4c78-bd4f-50981711828d",
+                data=properties,
+                bronorganisatie="159351741",
+            )
 
     @skipIf(
         os.getenv("CMIS_BINDING") != "BROWSER",
@@ -216,7 +315,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
-            "link": "http://a.link",
+            "beschrijving": "beschrijving 1",
         }
         content = io.BytesIO(b"Content before update")
         document = self.cmis_client.create_document(
@@ -230,25 +329,71 @@ class CMISDocumentTests(DMSMixin, TestCase):
             datetime.date(2020, 7, 27).strftime("%Y-%m-%d"),
         )
         self.assertEqual(document.titel, "detailed summary")
-        self.assertEqual(document.link, "http://a.link")
         posted_content = document.get_content_stream()
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
 
         # Updating the document
         new_properties = {
-            "link": "http://an.updated.link",
+            "beschrijving": "beschrijving 2",
         }
         new_content = io.BytesIO(b"Content after update")
         data = document.build_properties(new_properties, new=False)
         pwc = document.checkout()
         updated_pwc = pwc.update_properties(properties=data, content=new_content)
         updated_document = updated_pwc.checkin("Testing properties update")
-        self.assertEqual(updated_document.link, "http://an.updated.link")
+        self.assertEqual(updated_document.beschrijving, "beschrijving 2")
         self.assertNotEqual(updated_document.versionLabel, document.versionLabel)
         updated_content = updated_document.get_content_stream()
         content.seek(0)
         self.assertEqual(updated_content.read(), b"Content after update")
+
+    def test_update_remove_url(self):
+        identification = str(uuid.uuid4())
+        data = {
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+            "beschrijving": "beschrijving 1",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "taal": "eng",
+        }
+        content = io.BytesIO(b"Content before update")
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=data,
+            bronorganisatie="159351741",
+            content=content,
+        )
+        self.assertEqual(
+            document.link,
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+        )
+        self.assertEqual(document.taal, "eng")
+        posted_content = document.get_content_stream()
+        content.seek(0)
+        self.assertEqual(posted_content.read(), content.read())
+
+        # Updating the document
+        new_properties = {
+            "beschrijving": "beschrijving 2",
+            "link": "",
+            "taal": "",
+        }
+        data = document.build_properties(new_properties, new=False)
+        pwc = document.checkout()
+        updated_pwc = pwc.update_properties(properties=data)
+
+        updated_document = updated_pwc.checkin("Testing properties update")
+
+        self.assertEqual(updated_document.beschrijving, "beschrijving 2")
+        self.assertNotEqual(updated_document.versionLabel, document.versionLabel)
+
+        if os.getenv("CMIS_BINDING") == "WEBSERVICE":
+            self.assertIsNone(updated_document.taal)
+            self.assertIsNone(updated_document.link)
+        elif os.getenv("CMIS_BINDING") == "BROWSER":
+            self.assertEqual(updated_document.taal, "")
+            self.assertEqual(updated_document.link, "")
 
     def test_get_content_stream(self):
         identification = str(uuid.uuid4())
@@ -343,6 +488,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         data = {
             "creatiedatum": datetime.date(2020, 7, 27),
             "titel": "detailed summary",
+            "beschrijving": "beschrijving 1",
         }
         content = io.BytesIO(b"Some very important content")
         document = self.cmis_client.create_document(
@@ -367,7 +513,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
         # Updating the properties raises the version by 1.0
         new_properties = {
-            "link": "http://an.updated.link",
+            "beschrijving": "beschrijving 2",
         }
         data = all_versions[0].build_properties(new_properties, new=False)
         pwc = all_versions[0].checkout()
@@ -486,7 +632,6 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -519,7 +664,6 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -541,6 +685,33 @@ class CMISDocumentTests(DMSMixin, TestCase):
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISContentObjectsTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="https://drc.utrechtproeftuin.nl",
+            short_pattern="https://drc.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="https://openzaak.utrechtproeftuin.nl/besluiten",
+            short_pattern="https://bes.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="https://openzaak.utrechtproeftuin.nl/zaken",
+            short_pattern="https://zak.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="https://openzaak.utrechtproeftuin.nl/catalogi",
+            short_pattern="https://cat.nl",
+            config=config,
+        )
+
     # TODO the same for zaak folder
     def test_get_or_create_cmis_folder(self):
         other_folder = self.cmis_client.get_or_create_other_folder()
@@ -558,15 +729,15 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
 
     def test_get_or_create_zaak_folder(self):
         zaaktype = {
-            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "url": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "identificatie": 1,
             "omschrijving": "Melding Openbare Ruimte",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
         }
         zaak = {
-            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "url": "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaken/random-zaak-uuid",
             "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
-            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "zaaktype": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "bronorganisatie": "509381406",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
         }
@@ -630,13 +801,14 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "Properties are built differently between bindings",
     )
-    def test_create_properties_gebruiksrechten_webservice(self):
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_create_properties_gebruiksrechten_webservice_mapping(self):
         from drc_cmis.webservice.drc_document import Gebruiksrechten
 
         current_datetime = timezone.now()
 
         data = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "startdatum": current_datetime,
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -644,7 +816,7 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
         properties = Gebruiksrechten.build_properties(data)
         self.assertEqual(
             properties["drc:gebruiksrechten__informatieobject"]["value"],
-            "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "https://drc.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
         )
         self.assertEqual(
             properties["drc:gebruiksrechten__startdatum"]["value"],
@@ -663,19 +835,54 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "Properties are built differently between bindings",
     )
-    def test_create_properties_oio_webservice(self):
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_create_properties_gebruiksrechten_webservice(self):
+        from drc_cmis.webservice.drc_document import Gebruiksrechten
+
+        current_datetime = timezone.now()
+
+        data = {
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "startdatum": current_datetime,
+            "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
+        }
+
+        properties = Gebruiksrechten.build_properties(data)
+        self.assertEqual(
+            properties["drc:gebruiksrechten__informatieobject"]["value"],
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+        )
+        self.assertEqual(
+            properties["drc:gebruiksrechten__startdatum"]["value"],
+            current_datetime.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        )
+        self.assertEqual(
+            properties["drc:gebruiksrechten__omschrijving_voorwaarden"]["value"],
+            "Een hele set onredelijke voorwaarden",
+        )
+        self.assertNotIn(
+            "drc:gebruiksrechten__uuid",
+            properties,
+        )
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "Properties are built differently between bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_create_properties_oio_webservice_mapping(self):
         from drc_cmis.webservice.drc_document import ObjectInformatieObject
 
         data = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "object_type": "besluit",
-            "besluit": "http://another.test.url/",
+            "besluit": "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         }
 
         properties = ObjectInformatieObject.build_properties(data)
         self.assertEqual(
             properties["drc:oio__informatieobject"]["value"],
-            "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "https://drc.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
         )
         self.assertEqual(
             properties["drc:oio__object_type"]["value"],
@@ -683,7 +890,39 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
         )
         self.assertEqual(
             properties["drc:oio__besluit"]["value"],
-            "http://another.test.url/",
+            "https://bes.nl/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
+        )
+        self.assertNotIn(
+            "drc:oio__uuid",
+            properties,
+        )
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "Properties are built differently between bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_create_properties_oio_webservice(self):
+        from drc_cmis.webservice.drc_document import ObjectInformatieObject
+
+        data = {
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "object_type": "besluit",
+            "besluit": "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
+        }
+
+        properties = ObjectInformatieObject.build_properties(data)
+        self.assertEqual(
+            properties["drc:oio__informatieobject"]["value"],
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+        )
+        self.assertEqual(
+            properties["drc:oio__object_type"]["value"],
+            "besluit",
+        )
+        self.assertEqual(
+            properties["drc:oio__besluit"]["value"],
+            "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         )
         self.assertNotIn(
             "drc:oio__uuid",
@@ -756,6 +995,23 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
 
 
 class CMISFolderTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="https://openzaak.utrechtproeftuin.nl/zaken",
+            short_pattern="https://zak.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="https://openzaak.utrechtproeftuin.nl/catalogi",
+            short_pattern="https://cat.nl",
+            config=config,
+        )
+
     def test_get_children_folders(self):
         other_folder = self.cmis_client.get_or_create_other_folder()
         self.cmis_client.create_folder("TestFolder1", other_folder.objectId)
@@ -806,15 +1062,16 @@ class CMISFolderTests(DMSMixin, TestCase):
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "The properties are built differently with different bindings",
     )
-    def test_build_zaakfolder_properties_webservice(self):
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_build_zaakfolder_properties_webservice_mapping(self):
 
         from drc_cmis.webservice.drc_document import ZaakFolder
 
         properties = {
             "object_type_id": "F:drc:zaakfolder",
-            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "url": "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaken/random-zaak-uuid",
             "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
-            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/catalogussen/f7afd156-c8f5-4666-b8b5-28a4a9b5dfc7/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "zaaktype": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "bronorganisatie": "509381406",
         }
 
@@ -826,8 +1083,55 @@ class CMISFolderTests(DMSMixin, TestCase):
             self.assertIn("type", prop_dict)
             self.assertIn("value", prop_dict)
 
-            if prop_name.split("__")[-1] in properties:
-                converted_prop_name = prop_name.split("__")[-1]
+            converted_prop_name = prop_name.split("__")[-1]
+            if converted_prop_name in properties:
+                if converted_prop_name == "url":
+                    self.assertEqual(
+                        "https://zak.nl/api/v1/zaken/random-zaak-uuid",
+                        prop_dict["value"],
+                    )
+                elif converted_prop_name == "zaaktype":
+                    self.assertEqual(
+                        "https://cat.nl/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+                        prop_dict["value"],
+                    )
+                else:
+                    self.assertEqual(
+                        properties[converted_prop_name], prop_dict["value"]
+                    )
+
+        self.assertEqual(
+            built_properties["cmis:objectTypeId"]["value"], "F:drc:zaakfolder"
+        )
+        self.assertEqual(built_properties["cmis:objectTypeId"]["type"], "propertyId")
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "The properties are built differently with different bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_build_zaakfolder_properties_webservice(self):
+
+        from drc_cmis.webservice.drc_document import ZaakFolder
+
+        properties = {
+            "object_type_id": "F:drc:zaakfolder",
+            "url": "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaken/random-zaak-uuid",
+            "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
+            "zaaktype": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "bronorganisatie": "509381406",
+        }
+
+        built_properties = ZaakFolder.build_properties(data=properties)
+
+        self.assertIn("cmis:objectTypeId", built_properties)
+
+        for prop_name, prop_dict in built_properties.items():
+            self.assertIn("type", prop_dict)
+            self.assertIn("value", prop_dict)
+
+            converted_prop_name = prop_name.split("__")[-1]
+            if converted_prop_name in properties:
                 self.assertEqual(properties[converted_prop_name], prop_dict["value"])
 
         self.assertEqual(
@@ -839,13 +1143,14 @@ class CMISFolderTests(DMSMixin, TestCase):
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "The properties are built differently with different bindings",
     )
-    def test_build_zaaktypefolder_properties_webservice(self):
+    @override_settings(CMIS_URL_MAPPING_ENABLED=True)
+    def test_build_zaaktypefolder_properties_webservice_mapping(self):
 
         from drc_cmis.webservice.drc_document import ZaakTypeFolder
 
         properties = {
             "object_type_id": "F:drc:zaaktypefolder",
-            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "url": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/random-zaak-uuid",
             "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
             "omschrijving": "Melding Openbare Ruimte",
         }
@@ -858,8 +1163,49 @@ class CMISFolderTests(DMSMixin, TestCase):
             self.assertIn("type", prop_dict)
             self.assertIn("value", prop_dict)
 
-            if prop_name.split("__")[-1] in properties:
-                converted_prop_name = prop_name.split("__")[-1]
+            converted_prop_name = prop_name.split("__")[-1]
+            if converted_prop_name in properties:
+                if converted_prop_name == "url":
+                    self.assertEqual(
+                        "https://cat.nl/api/v1/zaaktypen/random-zaak-uuid",
+                        prop_dict["value"],
+                    )
+                else:
+                    self.assertEqual(
+                        properties[converted_prop_name], prop_dict["value"]
+                    )
+
+        self.assertEqual(
+            built_properties["cmis:objectTypeId"]["value"], "F:drc:zaaktypefolder"
+        )
+        self.assertEqual(built_properties["cmis:objectTypeId"]["type"], "propertyId")
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "The properties are built differently with different bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_build_zaaktypefolder_properties_webservice(self):
+
+        from drc_cmis.webservice.drc_document import ZaakTypeFolder
+
+        properties = {
+            "object_type_id": "F:drc:zaaktypefolder",
+            "url": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/random-zaak-uuid",
+            "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
+            "omschrijving": "Melding Openbare Ruimte",
+        }
+
+        built_properties = ZaakTypeFolder.build_properties(data=properties)
+
+        self.assertIn("cmis:objectTypeId", built_properties)
+
+        for prop_name, prop_dict in built_properties.items():
+            self.assertIn("type", prop_dict)
+            self.assertIn("value", prop_dict)
+
+            converted_prop_name = prop_name.split("__")[-1]
+            if converted_prop_name in properties:
                 self.assertEqual(properties[converted_prop_name], prop_dict["value"])
 
         self.assertEqual(

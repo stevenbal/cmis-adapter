@@ -11,7 +11,7 @@ import pytz
 import requests_mock
 from freezegun import freeze_time
 
-from drc_cmis.models import CMISConfig
+from drc_cmis.models import CMISConfig, UrlMapping
 from drc_cmis.utils.exceptions import (
     CmisRepositoryDoesNotExist,
     DocumentDoesNotExistError,
@@ -80,6 +80,23 @@ class CMISClientTests(DMSMixin, TestCase):
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISClientFolderTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/zaken",
+            short_pattern="oz.nl/zaken",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/catalogi",
+            short_pattern="oz.nl/catalogi",
+            config=config,
+        )
+
     def test_create_other_folder_path(self):
         # Test that no 'other' folder is present
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
@@ -123,7 +140,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
 
         # Create the zaaktype folder in the base folder
         zaaktype = {
-            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "url": "http://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "identificatie": 1,
             "omschrijving": "Melding Openbare Ruimte",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
@@ -146,7 +163,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
 
         # Create the zaaktype folder in the base folder
         zaaktype = {
-            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "url": "http://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "identificatie": 1,
             "omschrijving": "Melding Openbare Ruimte",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
@@ -159,9 +176,9 @@ class CMISClientFolderTests(DMSMixin, TestCase):
 
         # Create the zaak folder in the zaaktype folder
         zaak = {
-            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "url": "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaken/random-zaak-uuid",
             "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
-            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "zaaktype": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "bronorganisatie": "509381406",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
         }
@@ -241,15 +258,15 @@ class CMISClientFolderTests(DMSMixin, TestCase):
 
     def test_get_or_create_zaak_folder_when_folder_exist(self):
         zaaktype = {
-            "url": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "url": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "identificatie": 1,
             "omschrijving": "Melding Openbare Ruimte",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaaktypefolder')}drc:zaaktypefolder",
         }
         zaak = {
-            "url": "https://ref.tst.vng.cloud/zrc/api/v1/zaken/random-zaak-uuid",
+            "url": "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/zaken/random-zaak-uuid",
             "identificatie": "1bcfd0d6-c817-428c-a3f4-4047038c184d",
-            "zaaktype": "https://ref.tst.vng.cloud/ztc/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
+            "zaaktype": "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/zaaktypen/0119dd4e-7be9-477e-bccf-75023b1453c1",
             "bronorganisatie": "509381406",
             "object_type_id": f"{self.cmis_client.get_object_type_id_prefix('zaakfolder')}drc:zaakfolder",
         }
@@ -300,6 +317,23 @@ class CMISClientFolderTests(DMSMixin, TestCase):
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISClientContentObjectsTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="drc.utrechtproeftuin.nl",
+            short_pattern="drc.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/besluiten",
+            short_pattern="oz.nl",
+            config=config,
+        )
+
     def test_create_wrong_content_object(self):
         with self.assertRaises(AssertionError):
             self.cmis_client.create_content_object(data={}, object_type="wrongtype")
@@ -351,7 +385,7 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 
     def test_create_gebruiksrechten(self):
         properties = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "startdatum": timezone.now(),
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -376,9 +410,9 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 
     def test_create_content_object_oio(self):
         properties = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "object_type": "besluit",
-            "besluit": "http://another.test.url/",
+            "besluit": "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         }
 
         oio = self.cmis_client.create_content_object(data=properties, object_type="oio")
@@ -391,9 +425,9 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 
     def test_get_existing_oio(self):
         properties = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "object_type": "besluit",
-            "besluit": "http://another.test.url/",
+            "besluit": "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/besluiten/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         }
 
         oio = self.cmis_client.create_content_object(data=properties, object_type="oio")
@@ -410,7 +444,7 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 
     def test_get_existing_gebruiksrechten(self):
         properties = {
-            "informatieobject": "http://some.test.url/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "informatieobject": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
             "startdatum": timezone.now(),
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -476,9 +510,9 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 @freeze_time("2020-07-27 12:00:00")
 @requests_mock.Mocker(real_http=True)  # real HTTP for the Alfresco requests
 class CMISClientOIOTests(DMSMixin, TestCase):
-    base_besluit_url = "https://yetanothertestserver/api/v1/"
-    base_zaak_url = "https://testserver/api/v1/"
-    base_zaaktype_url = "https://anotherserver/ztc/api/v1/"
+    base_besluit_url = "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/"
+    base_zaak_url = "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/"
+    base_zaaktype_url = "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/"
 
     zaak_url = f"{base_zaak_url}zaken/1c8e36be-338c-4c07-ac5e-1adf55bec04a"
     zaak = {
@@ -495,7 +529,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
     besluit = {
         "verantwoordelijke_organisatie": "517439943",
         "identificatie": "123123",
-        "besluittype": f"http://testserver/besluittype/some-random-id",
+        "besluittype": f"https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/besluittype/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         "zaak": zaak_url,
         "datum": "2018-09-06",
         "toelichting": "Vergunning verleend.",
@@ -508,7 +542,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
     besluit_without_zaak = {
         "verantwoordelijke_organisatie": "517439943",
         "identificatie": "123123",
-        "besluittype": f"http://testserver/besluittype/some-random-id",
+        "besluittype": f"https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/besluittype/ba0a30d4-5b4d-464c-b5d3-855ad796492f",
         "datum": "2018-09-06",
         "toelichting": "Vergunning verleend.",
         "ingangsdatum": "2018-10-01",
@@ -542,6 +576,33 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         "omschrijving": "Melding Openbare Ruimte",
     }
 
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="drc.utrechtproeftuin.nl",
+            short_pattern="drc.nl",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/besluiten",
+            short_pattern="oz.nl/besluit",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/zaken",
+            short_pattern="oz.nl/zaken",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/catalogi",
+            short_pattern="oz.nl/catalogi",
+            config=config,
+        )
+
     def get_temporary_folder(self, base_folder):
         children = base_folder.get_children_folders()
         for child in children:
@@ -572,7 +633,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -595,7 +656,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio must move the document to a new folder
         oio = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(oio)
@@ -650,7 +711,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -666,7 +727,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Create an oio linked to this document
         oio1 = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(data=oio1)
@@ -674,7 +735,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Create a second oio to link the same document to a different zaak
         oio2 = {
             "object": self.another_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(data=oio2)
@@ -757,7 +818,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -780,7 +841,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio must move the document to a new folder
         oio = {
             "object": self.besluit_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         self.cmis_client.create_oio(oio)
@@ -839,7 +900,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -855,7 +916,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Create an oio linked to this document
         oio1 = {
             "object": self.another_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(data=oio1)
@@ -863,7 +924,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Create a besluit oio to link the same document to a different zaak
         oio2 = {
             "object": self.besluit_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         self.cmis_client.create_oio(data=oio2)
@@ -942,7 +1003,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -958,7 +1019,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio, passing the zaak url with 'zaak' key instead of 'object'
         oio = {
             "zaak": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         oio = self.cmis_client.create_oio(oio)
@@ -967,7 +1028,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.assertEqual(oio.object_type, "zaak")
         self.assertEqual(
             oio.informatieobject,
-            f"https://testserver/api/v1/documenten/{document.uuid}",
+            f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
     def test_create_oio_with_besluit_key(self, m):
@@ -992,7 +1053,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1008,7 +1069,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio, passing the besluit url with 'besluit' key instead of 'object'
         oio = {
             "besluit": self.besluit_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         oio = self.cmis_client.create_oio(oio)
@@ -1017,7 +1078,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.assertEqual(oio.object_type, "besluit")
         self.assertEqual(
             oio.informatieobject,
-            f"https://testserver/api/v1/documenten/{document.uuid}",
+            f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
     def test_create_oio_with_object_key(self, m):
@@ -1038,7 +1099,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1054,7 +1115,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio, passing the zaak url with 'zaak' key instead of 'object'
         oio = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         oio = self.cmis_client.create_oio(oio)
@@ -1063,7 +1124,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.assertEqual(oio.object_type, "zaak")
         self.assertEqual(
             oio.informatieobject,
-            f"https://testserver/api/v1/documenten/{document.uuid}",
+            f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
     def test_create_besluit_without_zaak(self, m):
@@ -1099,7 +1160,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio must leave the document in the temporary folder
         oio = {
             "object": self.besluit_without_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         self.cmis_client.create_oio(oio)
@@ -1146,7 +1207,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Creating the oio leaves the document in the temporary folder
         oio_besluit_data = {
             "object": self.besluit_without_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         oio_besluit = self.cmis_client.create_oio(oio_besluit_data)
@@ -1155,7 +1216,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # and the document to the new zaaktype/zaak folder
         oio_zaak_data = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         oio_zaak = self.cmis_client.create_oio(oio_zaak_data)
@@ -1231,7 +1292,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Link document to zaak
         oio_zaak_data = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(oio_zaak_data)
@@ -1243,7 +1304,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         # Link document to besluit, but the besluit is not linked to a zaak
         oio_besluit_data = {
             "object": self.besluit_without_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
         oio_besluit = self.cmis_client.create_oio(oio_besluit_data)
@@ -1275,8 +1336,8 @@ class CMISClientOIOTests(DMSMixin, TestCase):
 @freeze_time("2020-07-27 12:00:00")
 @requests_mock.Mocker(real_http=True)  # real HTTP for the Alfresco requests
 class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
-    base_zaak_url = "https://testserver/api/v1/"
-    base_zaaktype_url = "https://anotherserver/ztc/api/v1/"
+    base_zaak_url = "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/"
+    base_zaaktype_url = "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/"
 
     zaak_url = f"{base_zaak_url}zaken/1c8e36be-338c-4c07-ac5e-1adf55bec04a"
     zaak = {
@@ -1316,6 +1377,34 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         "omschrijving": "Melding Openbare Ruimte",
     }
 
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="drc.utrechtproeftuin.nl",
+            short_pattern="drc.nl",
+            config=config,
+        )
+
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/besluiten",
+            short_pattern="oz.nl/besluit",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/zaken",
+            short_pattern="oz.nl/zaken",
+            config=config,
+        )
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/catalogi",
+            short_pattern="oz.nl/catalogi",
+            config=config,
+        )
+
     def test_create_gebruiksrechten_with_unlinked_document(self, m):
         # Mocking the retrieval of the Zaak
         m.get(self.zaak_url, json=self.zaak)
@@ -1335,7 +1424,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1350,7 +1439,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         # Create gebruiksrechten
         gebruiksrechten_data = {
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -1372,7 +1461,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         # Test that the properties are correctly set
         self.assertEqual(
             gebruiksrechten.informatieobject,
-            f"https://testserver/api/v1/documenten/{document.uuid}",
+            f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
         self.assertEqual(
             gebruiksrechten.startdatum,
@@ -1402,7 +1491,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1417,7 +1506,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         # Create gebruiksrechten (also in temporary folder)
         gebruiksrechten_data = {
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -1429,7 +1518,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         # Creating the oio moves the document and the gebruiksrechten to the zaak folder
         oio_data = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(oio_data)
@@ -1474,7 +1563,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1490,14 +1579,14 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         # Creating the oio moves the document to the zaak folder
         oio = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(oio)
 
         # Create the gebruiksrechten directly in the zaak folder
         gebruiksrechten_data = {
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -1537,7 +1626,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1552,7 +1641,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         # Create the gebruiksrechten
         gebruiksrechten_data = {
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
             "omschrijving_voorwaarden": "Een hele set onredelijke voorwaarden",
         }
@@ -1564,7 +1653,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         # Create an oio linked to this document
         oio1 = {
             "object": self.zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(data=oio1)
@@ -1572,7 +1661,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
         # Create a second oio to link the same document to a different zaak
         oio2 = {
             "object": self.another_zaak_url,
-            "informatieobject": f"https://testserver/api/v1/documenten/{document.uuid}",
+            "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
         self.cmis_client.create_oio(data=oio2)
@@ -1589,6 +1678,24 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
 @freeze_time("2020-07-27 12:00:00")
 class CMISClientDocumentTests(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="drc.utrechtproeftuin.nl",
+            short_pattern="drc.nl",
+            config=config,
+        )
+
+        UrlMapping.objects.create(
+            long_pattern="openzaak.utrechtproeftuin.nl/besluiten",
+            short_pattern="oz.nl",
+            config=config,
+        )
+
     def test_create_document_with_content(self):
 
         identification = str(uuid.uuid4())
@@ -1600,7 +1707,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1626,7 +1733,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.assertEqual(document.taal, "eng")
         self.assertEqual(document.versie, 1)
         self.assertEqual(document.bestandsnaam, "dummy.txt")
-        self.assertEqual(document.link, "http://een.link")
+        self.assertEqual(
+            document.link,
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+        )
         self.assertEqual(document.beschrijving, "test_beschrijving")
         self.assertEqual(document.vertrouwelijkheidaanduiding, "openbaar")
 
@@ -1881,7 +1991,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
             "uuid": str(uuid.uuid4()),
@@ -1897,7 +2007,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
         new_properties = {
             "auteur": "updated auteur",
-            "link": "http://an.updated.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/01f15107-e7af-42ad-9ec9-b5103383c05b/download",
             "beschrijving": "updated beschrijving",
         }
         new_content = io.BytesIO(b"Content after update")
@@ -1923,7 +2033,10 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.assertEqual(updated_doc.taal, "eng")
         self.assertEqual(updated_doc.versie, 1)
         self.assertEqual(updated_doc.bestandsnaam, "dummy.txt")
-        self.assertEqual(updated_doc.link, "http://an.updated.link")
+        self.assertEqual(
+            updated_doc.link,
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/01f15107-e7af-42ad-9ec9-b5103383c05b/download",
+        )
         self.assertEqual(updated_doc.beschrijving, "updated beschrijving")
         self.assertEqual(updated_doc.vertrouwelijkheidaanduiding, "openbaar")
         self.assertEqual(updated_doc.uuid, document.uuid)
@@ -1969,7 +2082,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
             "uuid": str(uuid.uuid4()),
@@ -2047,7 +2160,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -2080,7 +2193,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "formaat": "txt",
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
-            "link": "http://een.link",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -2103,3 +2216,179 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.assertEqual(doc_1.bronorganisatie, doc_2.bronorganisatie)
         self.assertEqual(doc_1.identificatie, "IDENTIFICATIE-1")
         self.assertEqual(doc_2.identificatie, "IDENTIFICATIE-2")
+
+
+class CMISQueryTest(DMSMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        config = CMISConfig.get_solo()
+
+        UrlMapping.objects.create(
+            long_pattern="drc.utrechtproeftuin.nl",
+            short_pattern="drc.nl",
+            config=config,
+        )
+
+    def test_retrieve_documents(self):
+
+        # Create first document with one informatieobjecttype
+        properties_1 = {
+            "uuid": "d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 1",
+            "auteur": "Meneer Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/1318113e-641f-499f-9db2-48e440c045bc",
+            "beschrijving": "Beschrijving 1",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_1["uuid"],
+            bronorganisatie="159351741",
+            data=properties_1,
+            content=content,
+        )
+
+        # Create second document with another informatieobjecttype
+        properties_2 = {
+            "uuid": "15f43f45-e049-419a-b1a2-89d639a6b95d",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 2",
+            "auteur": "Mevrouw Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/15f43f45-e049-419a-b1a2-89d639a6b95d/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/21114792-98d9-4abb-835f-b20116d29c61",
+            "beschrijving": "Beschrijving 2",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_2["uuid"],
+            bronorganisatie="159351741",
+            data=properties_2,
+            content=content,
+        )
+
+        # Query documents without filtering
+        results = self.cmis_client.query(return_type_name="Document", lhs=[], rhs=[])
+
+        self.assertEqual(len(results), 2)
+
+    def test_filter_by_informatieobjecttype(self):
+        # Create first document with one informatieobjecttype
+        properties_1 = {
+            "uuid": "d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 1",
+            "auteur": "Meneer Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/1318113e-641f-499f-9db2-48e440c045bc",
+            "beschrijving": "Beschrijving 1",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_1["uuid"],
+            bronorganisatie="159351741",
+            data=properties_1,
+            content=content,
+        )
+
+        # Create second document with another informatieobjecttype
+        properties_2 = {
+            "uuid": "15f43f45-e049-419a-b1a2-89d639a6b95d",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 2",
+            "auteur": "Mevrouw Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/15f43f45-e049-419a-b1a2-89d639a6b95d/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/21114792-98d9-4abb-835f-b20116d29c61",
+            "beschrijving": "Beschrijving 2",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_2["uuid"],
+            bronorganisatie="159351741",
+            data=properties_2,
+            content=content,
+        )
+
+        # Query document filtering by informatieobjecttype
+        lhs = ["( drc:document__informatieobjecttype = '%s' )"]
+        rhs = [
+            "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/21114792-98d9-4abb-835f-b20116d29c61"
+        ]
+        results = self.cmis_client.query(return_type_name="Document", lhs=lhs, rhs=rhs)
+
+        self.assertEqual(len(results), 1)
+
+    def test_filter_by_multiple_informatieobjecttypen(self):
+        # Create first document with one informatieobjecttype
+        properties_1 = {
+            "uuid": "d06f86e0-1c3a-49cf-b5cd-01c079cf8147",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 1",
+            "auteur": "Meneer Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/1318113e-641f-499f-9db2-48e440c045bc",
+            "beschrijving": "Beschrijving 1",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_1["uuid"],
+            bronorganisatie="159351741",
+            data=properties_1,
+            content=content,
+        )
+
+        # Create second document with another informatieobjecttype
+        properties_2 = {
+            "uuid": "15f43f45-e049-419a-b1a2-89d639a6b95d",
+            "creatiedatum": timezone.now(),
+            "titel": "Document 2",
+            "auteur": "Mevrouw Auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/15f43f45-e049-419a-b1a2-89d639a6b95d/download",
+            "informatieobjecttype": "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/21114792-98d9-4abb-835f-b20116d29c61",
+            "beschrijving": "Beschrijving 2",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"Some file content")
+
+        self.cmis_client.create_document(
+            identification=properties_2["uuid"],
+            bronorganisatie="159351741",
+            data=properties_2,
+            content=content,
+        )
+
+        # Query document filtering by both informatieobjecttype
+        lhs = [
+            "( drc:document__informatieobjecttype = '%s' OR drc:document__informatieobjecttype = '%s' )"
+        ]
+        rhs = [
+            "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/21114792-98d9-4abb-835f-b20116d29c61",
+            "https://drc.utrechtproeftuin.nl/api/v1/informatieobjecttypen/1318113e-641f-499f-9db2-48e440c045bc",
+        ]
+        results = self.cmis_client.query(return_type_name="Document", lhs=lhs, rhs=rhs)
+
+        self.assertEqual(len(results), 2)

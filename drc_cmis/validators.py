@@ -1,4 +1,7 @@
+from urllib.parse import urlparse
+
 from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
 
 from drc_cmis.utils import folder
 from drc_cmis.utils.folder import get_folder_structure
@@ -52,3 +55,15 @@ def other_folder_path_validator(path: str):
         folder.DAY_PATH_ELEMENT_TEMPLATE,
     ]
     folder_path_validator(path, path_element_templates)
+
+
+def url_mapping_validator(pattern: str):
+    parsed_url = urlparse(pattern)
+
+    if parsed_url.scheme == "":
+        raise ValidationError(
+            _("The pattern should start with the protocol (e.g. http:// or https://).")
+        )
+
+    if parsed_url.netloc == "":
+        raise ValidationError(_("The pattern include a domain name."))

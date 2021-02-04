@@ -18,8 +18,12 @@ jobs:
         python: ['3.7', '3.8']
         django: ['2.2']
         binding: ['BROWSER', 'WEBSERVICE']
+        cmisurlmapping: [ 'False', 'True' ]
+        exclude:
+          - binding: 'BROWSER'
+            cmisurlmapping: 'True'
 
-    name: Run the test suite (Python ${{ matrix.python }}, Django ${{ matrix.django }}, ${{ matrix.binding }} binding)
+    name: Tests (Py${{ matrix.python }}, Django ${{ matrix.django }}, ${{ matrix.binding }}, URL mapping = ${{ matrix.cmisurlmapping }})
 
     steps:
       - uses: actions/checkout@v2
@@ -42,6 +46,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python }}
           DJANGO: ${{ matrix.django }}
           CMIS_BINDING: ${{ matrix.binding }}
+          CMIS_URL_MAPPING_ENABLED: ${{ matrix.cmisurlmapping }}
 
   publish:
     name: Publish package to PyPI

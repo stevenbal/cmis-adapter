@@ -7,6 +7,14 @@ class Id:
     pass
 
 
+class Url:
+    pass
+
+
+class QueriableUrl:
+    pass
+
+
 @dataclass
 class EnkelvoudigInformatieObject:
     version_label: Decimal
@@ -25,14 +33,14 @@ class EnkelvoudigInformatieObject:
     verwijderd: bool
     status: str
     ontvangstdatum: date
-    informatieobjecttype: str
+    informatieobjecttype: QueriableUrl
     auteur: str
     vertrouwelijkheidaanduiding: str
     begin_registratie: datetime
     ondertekening_datum: date
     bronorganisatie: str
     integriteit_datum: date
-    link: str
+    link: Url
     creatiedatum: date
     versie: Decimal
     lock: str
@@ -49,7 +57,7 @@ class Gebruiksrechten:
     name: str
     einddatum: datetime
     omschrijving_voorwaarden: str
-    informatieobject: str
+    informatieobject: QueriableUrl
     startdatum: datetime
     kopie_van: str
 
@@ -61,24 +69,29 @@ class Oio:
     object_type_id: Id
     name: str
     object_type: str
-    besluit: str
-    zaak: str
-    informatieobject: str
+    besluit: QueriableUrl
+    zaak: QueriableUrl
+    informatieobject: QueriableUrl
+
+
+@dataclass
+class Folder:
+    object_type_id: Id
 
 
 @dataclass
 class ZaakFolderData:
     object_type_id: Id
-    url: str
+    url: QueriableUrl
     identificatie: str
-    zaaktype: str
+    zaaktype: QueriableUrl
     bronorganisatie: str
 
 
 @dataclass
 class ZaakTypeFolderData:
     object_type_id: Id
-    url: str
+    url: QueriableUrl
     identificatie: str
 
 
@@ -89,7 +102,16 @@ CONVERTER = {
     Decimal: "propertyDecimal",
     bool: "propertyBoolean",
     Id: "propertyId",
+    Url: "propertyString",
+    QueriableUrl: "propertyString",
 }
+
+
+def get_type(model: type, name: str) -> type:
+    """Return the type of a field"""
+    type_annotations = getattr(model, "__annotations__")
+    if type_annotations.get(name):
+        return type_annotations.get(name)
 
 
 def get_cmis_type(model: type, name: str) -> str:

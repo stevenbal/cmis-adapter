@@ -10,7 +10,11 @@ from solo.models import SingletonModel
 
 from .utils.exceptions import NoOtherBaseFolderException, NoZaakBaseFolderException
 from .utils.folder import get_folder_structure
-from .validators import other_folder_path_validator, zaak_folder_path_validator
+from .validators import (
+    other_folder_path_validator,
+    url_mapping_validator,
+    zaak_folder_path_validator,
+)
 
 
 class CMISConfig(SingletonModel):
@@ -91,3 +95,36 @@ class CMISConfig(SingletonModel):
 class Vendor(DjangoChoices):
     alfresco = ChoiceItem()
     bct = ChoiceItem()
+
+
+class UrlMapping(models.Model):
+    # Cant use a URL field, because the pattern could be http://testserver, which is an invalid URL
+    long_pattern = models.CharField(
+        max_length=1000,
+        verbose_name=_("Long pattern"),
+        help_text=_(
+            "Part of the URL to replace. Example: https://somedomain.nl/somesubpath"
+        ),
+        unique=True,
+        validators=[url_mapping_validator],
+    )
+    short_pattern = models.CharField(
+        max_length=15,
+        verbose_name=_("Short pattern"),
+        help_text=_(
+            "Replacement string to make the URL shorter. Example: https://sd.nl"
+        ),
+        unique=True,
+        validators=[url_mapping_validator],
+    )
+    config = models.ForeignKey(
+        to=CMISConfig,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = _("URL mapping")
+        verbose_name_plural = _("URL mappings")
+
+    def __string__(self):
+        return f"{self.long_pattern}: {self.short_pattern}"

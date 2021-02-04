@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path
@@ -6,7 +7,8 @@ from django.views import View
 
 from solo.admin import SingletonModelAdmin
 
-from .models import CMISConfig
+from .forms import CMISConfigAdminForm, UrlMappingInlineFormSet
+from .models import CMISConfig, UrlMapping
 
 
 class CMISConnectionJSONView(View):
@@ -41,15 +43,39 @@ class CMISConnectionJSONView(View):
         return self.model_admin.has_view_permission(request, obj=obj)
 
 
+class UrlMappingAdmin(admin.TabularInline):
+    model = UrlMapping
+    formset = UrlMappingInlineFormSet
+    can_delete = False
+    extra = 1
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(CMISConfig)
 class CMISConfigAdmin(SingletonModelAdmin):
+    inlines = [UrlMappingAdmin]
+    change_form_template = "configuration_form.html"
+    form = CMISConfigAdminForm
+
     readonly_fields = [
         "cmis_connection",
+        "cmis_url_mapping_enabled",
     ]
     fieldsets = [
         (
             _("General"),
             {"fields": ("cmis_connection",)},
+        ),
+        (
+            _("DMS Credentials"),
+            {
+                "fields": (
+                    "client_user",
+                    "client_password",
+                )
+            },
         ),
         (
             _("Configuration"),
@@ -61,15 +87,7 @@ class CMISConfigAdmin(SingletonModelAdmin):
                     "main_repo_id",
                     "zaak_folder_path",
                     "other_folder_path",
-                )
-            },
-        ),
-        (
-            _("Credentials"),
-            {
-                "fields": (
-                    "client_user",
-                    "client_password",
+                    "cmis_url_mapping_enabled",
                 )
             },
         ),
@@ -95,4 +113,10 @@ class CMISConfigAdmin(SingletonModelAdmin):
     def cmis_connection(self, obj=None):
         return "..."
 
+    def cmis_url_mapping_enabled(self, obj=None):
+        return settings.CMIS_URL_MAPPING_ENABLED
+
     cmis_connection.short_description = _("CMIS connection")
+
+    cmis_url_mapping_enabled.short_description = _("URL Mapping enabled")
+    cmis_url_mapping_enabled.boolean = True

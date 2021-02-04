@@ -1,5 +1,7 @@
 import os
 
+from .environ import config
+
 PROJECT_DIR = os.path.dirname(__file__)
 BASE_DIR = PROJECT_DIR  # setting present in new startproject
 
@@ -72,3 +74,4 @@ TEMPLATES = [
 ]
 
 CMIS_MAPPER_FILE = os.path.join(PROJECT_DIR, "cmis_mapper.json")
+CMIS_URL_MAPPING_ENABLED = config("CMIS_URL_MAPPING_ENABLED", default=False)
