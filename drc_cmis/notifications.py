@@ -1,8 +1,7 @@
 """
 Listen to the notifications that are send by the NRC
 """
-
-from vng_api_common.notifications.handlers import default
+from vng_api_common.notifications.handlers import RoutingHandler, default
 
 from drc_cmis.client_builder import get_cmis_client, get_zds_client
 
@@ -26,19 +25,6 @@ class ZakenHandler:
         client = get_zds_client(zaak_url)
         zaak_data = client.retrieve("zaak", url=zaak_url)
         self.cmis_client.get_or_create_zaak_folder(zaaktype_data, zaak_data)
-
-
-class RoutingHandler:
-    def __init__(self, config: dict, default):
-        self.config = config
-        self.default = default
-
-    def handle(self, message: dict):
-        handler = self.config.get(message["kanaal"])
-        if handler is not None:
-            handler.handle(message)
-        else:
-            self.default.handle(message)
 
 
 default = RoutingHandler({"zaken": ZakenHandler()}, default=default)
