@@ -71,10 +71,14 @@ class SOAPCMISRequest:
     @property
     def main_repo_id(self) -> str:
         """Get ID of the CMS main repository"""
+        return self.get_main_repo_id()
+
+    def get_main_repo_id(self, cache: bool = True) -> str:
+        configured_main_repo_id = self.config.main_repo_id
+        if configured_main_repo_id and cache:
+            return configured_main_repo_id
 
         if self._main_repo_id is None:
-            configured_main_repo_id = self.config.main_repo_id
-
             # Retrieving the IDs of all repositories in the CMS
             soap_envelope = make_soap_envelope(
                 auth=(self.user, self.password), cmis_action="getRepositories"
