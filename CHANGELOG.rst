@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.2.1 (2021-02-05)
+------------------
+
+Fixed broken CMIS Configuration admin when URL mapping feature is disabled.
+
 1.2.0 (2021-02-04)
 ------------------
 
