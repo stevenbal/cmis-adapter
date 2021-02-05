@@ -55,7 +55,6 @@ class UrlMappingAdmin(admin.TabularInline):
 
 @admin.register(CMISConfig)
 class CMISConfigAdmin(SingletonModelAdmin):
-    inlines = [UrlMappingAdmin]
     change_form_template = "configuration_form.html"
     form = CMISConfigAdminForm
 
@@ -106,6 +105,12 @@ class CMISConfigAdmin(SingletonModelAdmin):
             )
         ]
         return extra_urls + urls
+
+    @property
+    def inlines(self):
+        if settings.CMIS_URL_MAPPING_ENABLED:
+            return [UrlMappingAdmin]
+        return []
 
     def cmis_connection_view(self, request):
         return CMISConnectionJSONView.as_view(model_admin=self)(request)
