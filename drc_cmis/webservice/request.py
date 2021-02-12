@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import BinaryIO, List, Optional, Tuple, Union
 
 import requests
@@ -232,6 +233,15 @@ class SOAPCMISRequest:
                     code=soap_response.status_code,
                 )
 
+        print(
+            "+-- CMIS-client ({}): {}".format(
+                soap_response.request.url, str(soap_response.elapsed.total_seconds())
+            )
+        )
+
+        match = re.search(b"<ns:(.+?)>", soap_response.request.body)
+        if match:
+            print("    +--- Operation: {}".format(match.group(1)))
         if keep_binary:
             return soap_response.content
         return soap_response.content.decode("utf-8")
