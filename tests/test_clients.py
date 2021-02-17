@@ -46,22 +46,6 @@ class CMISClientTests(DMSMixin, TestCase):
         # In alfresco the repo ID is a UUID
         uuid.UUID(main_repo_id)
 
-    def test_that_main_repo_id_is_checked(self):
-        config = CMISConfig.objects.get()
-        config.main_repo_id = "some-rubbish-id"
-        config.save()
-
-        self.cmis_client._main_repo_id = None
-
-        with self.assertRaises(CmisRepositoryDoesNotExist):
-            try:
-                self.cmis_client.main_repo_id
-            except Exception as e:
-                # Needed or the test clean-up fails!
-                config.main_repo_id = ""
-                config.save()
-                raise e
-
     def test_setting_correct_repo_id(self):
         # Finding what the main repo id is
         self.cmis_client._main_repo_id = None
