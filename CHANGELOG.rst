@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.2.2 (2021-03-08)
+------------------
+
+Performance improvement in checking the main repo ID.
+
 1.2.1 (2021-02-05)
 ------------------
 
