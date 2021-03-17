@@ -177,7 +177,7 @@ class CMISClientFolderTests(DMSMixin, TestCase):
         self.assertEqual(zaak_folder.objectTypeId, "F:drc:zaakfolder")
 
     def test_get_repository_info(self):
-        properties = self.cmis_client.get_repository_info()
+        properties = self.cmis_client.repository_info
 
         some_expected_properties = [
             "repositoryId",
