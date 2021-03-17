@@ -14,8 +14,8 @@ from drc_cmis.utils.exceptions import (
     CmisUpdateConflictException,
 )
 from drc_cmis.webservice.utils import (
+    extract_repo_info_from_xml,
     extract_repository_ids_from_xml,
-    extract_root_folder_id_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
     pretty_xml,
@@ -41,6 +41,7 @@ class SOAPCMISRequest:
     }
 
     _main_repo_id = None
+    _repository_info = None
 
     @property
     def config(self):
@@ -109,25 +110,30 @@ class SOAPCMISRequest:
         return self._main_repo_id
 
     @property
-    def root_folder_id(self) -> str:
-        """Get the ID of the folder where all folders/documents will be created"""
-
-        if self._root_folder_id is None:
+    def repository_info(self) -> dict:
+        if not self._repository_info:
             soap_envelope = make_soap_envelope(
                 auth=(self.user, self.password),
-                cmis_action="getRepositoryInfo",
                 repository_id=self.main_repo_id,
+                cmis_action="getRepositoryInfo",
             )
+
             logger.debug(soap_envelope.toprettyxml())
+
             soap_response = self.request(
                 "RepositoryService", soap_envelope=soap_envelope.toxml()
             )
 
             xml_response = extract_xml_from_soap(soap_response)
             logger.debug(pretty_xml(xml_response))
-            self._root_folder_id = extract_root_folder_id_from_xml(xml_response)
+            self._repository_info = extract_repo_info_from_xml(xml_response)
 
-        return self._root_folder_id
+        return self._repository_info
+
+    @property
+    def root_folder_id(self) -> str:
+        """Get the ID of the folder where all folders/documents will be created"""
+        return self.repository_info["root_folder_id"]
 
     def request(
         self,

@@ -49,7 +49,6 @@ from drc_cmis.webservice.drc_document import (
 from drc_cmis.webservice.request import SOAPCMISRequest
 from drc_cmis.webservice.utils import (
     extract_object_properties_from_xml,
-    extract_repo_info_from_xml,
     extract_xml_from_soap,
     make_soap_envelope,
     pretty_xml,
@@ -69,28 +68,9 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
     zaakfolder_type = ZaakFolder
     zaaktypefolder_type = ZaakTypeFolder
 
-    def get_repository_info(self) -> dict:
-        soap_envelope = make_soap_envelope(
-            auth=(self.user, self.password),
-            repository_id=self.main_repo_id,
-            cmis_action="getRepositoryInfo",
-        )
-
-        logger.debug(soap_envelope.toprettyxml())
-
-        soap_response = self.request(
-            "RepositoryService", soap_envelope=soap_envelope.toxml()
-        )
-
-        xml_response = extract_xml_from_soap(soap_response)
-        logger.debug(pretty_xml(xml_response))
-
-        return extract_repo_info_from_xml(xml_response)
-
     @property
     def vendor(self) -> str:
-        repo_info = self.get_repository_info()
-        return repo_info["vendorName"]
+        return self.repository_info["vendorName"]
 
     def query(
         self, return_type_name: str, lhs: List[str] = None, rhs: List[str] = None
