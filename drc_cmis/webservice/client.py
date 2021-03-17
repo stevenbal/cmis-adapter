@@ -584,7 +584,8 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         :return: Document, the document created
         """
 
-        self.check_document_exists(identification, bronorganisatie)
+        if identification and bronorganisatie:
+            self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", "1")
         data.setdefault(

@@ -325,7 +325,8 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param content: BytesIO, The content of the document.
         :return: document
         """
-        self.check_document_exists(identification, bronorganisatie)
+        if identification and bronorganisatie:
+            self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", 1)
         data.setdefault(
