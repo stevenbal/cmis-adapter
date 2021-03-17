@@ -8,12 +8,10 @@ from django.test import TestCase, tag
 from django.utils import timezone
 
 import pytz
-import requests_mock
 from freezegun import freeze_time
 
 from drc_cmis.models import CMISConfig, UrlMapping
 from drc_cmis.utils.exceptions import (
-    CmisRepositoryDoesNotExist,
     DocumentDoesNotExistError,
     DocumentExistsError,
     DocumentLockedException,
@@ -23,7 +21,6 @@ from drc_cmis.utils.exceptions import (
 )
 
 from .mixins import DMSMixin
-from .utils import mock_service_oas_get
 
 
 @skipIf(
@@ -492,7 +489,6 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
 
 
 @freeze_time("2020-07-27 12:00:00")
-@requests_mock.Mocker(real_http=True)  # real HTTP for the Alfresco requests
 class CMISClientOIOTests(DMSMixin, TestCase):
     base_besluit_url = "https://openzaak.utrechtproeftuin.nl/besluiten/api/v1/"
     base_zaak_url = "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/"
@@ -599,15 +595,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         day_folder = children[0]
         return day_folder
 
-    def test_create_zaak_oio_with_unlinked_document(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_zaak_oio_with_unlinked_document(self):
         # Creating the document in the temporary folder
         properties = {
             "bronorganisatie": "159351741",
@@ -643,7 +631,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(oio)
+        self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Test the new folder structure
         zaaktype_folders = self.cmis_client.query(
@@ -675,17 +665,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
         )
 
-    def test_create_zaak_oio_with_linked_document(self, m):
-        # Mocking the retrieval of the Zaken
-        m.get(self.zaak_url, json=self.zaak)
-        m.get(self.another_zaak_url, json=self.another_zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktypes
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        m.get(self.another_zaaktype_url, json=self.another_zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_zaak_oio_with_linked_document(self):
         # Create document
         properties = {
             "bronorganisatie": "159351741",
@@ -714,7 +694,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(data=oio1)
+        self.cmis_client.create_oio(
+            oio_data=oio1, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Create a second oio to link the same document to a different zaak
         oio2 = {
@@ -722,7 +704,11 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(data=oio2)
+        self.cmis_client.create_oio(
+            oio_data=oio2,
+            zaak_data=self.another_zaak,
+            zaaktype_data=self.another_zaaktype,
+        )
 
         # Test that the second folder structure
         zaaktype_folders = self.cmis_client.query(
@@ -780,19 +766,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.assertTrue(copied_document_was_retrieved)
         self.assertEqual(copied_document.kopie_van, document.uuid)
 
-    def test_create_besluit_oio_with_unlinked_document(self, m):
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_besluit_oio_with_unlinked_document(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -828,7 +802,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        self.cmis_client.create_oio(oio)
+        self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Test the new folder structure
         zaaktype_folders = self.cmis_client.query(
@@ -860,21 +836,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
         )
 
-    def test_create_besluit_oio_with_linked_document(self, m):
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-
-        # Mocking the retrieval of the Zaaks
-        m.get(self.zaak_url, json=self.zaak)
-        m.get(self.another_zaak_url, json=self.another_zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktypes
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        m.get(self.another_zaaktype_url, json=self.another_zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_besluit_oio_with_linked_document(self):
         # Create document
         properties = {
             "bronorganisatie": "159351741",
@@ -903,7 +865,11 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(data=oio1)
+        self.cmis_client.create_oio(
+            oio_data=oio1,
+            zaak_data=self.another_zaak,
+            zaaktype_data=self.another_zaaktype,
+        )
 
         # Create a besluit oio to link the same document to a different zaak
         oio2 = {
@@ -911,7 +877,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        self.cmis_client.create_oio(data=oio2)
+        self.cmis_client.create_oio(
+            oio_data=oio2, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Test the second folder structure
         zaaktype_folders = self.cmis_client.query(
@@ -969,15 +937,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         self.assertTrue(copied_document_was_retrieved)
         self.assertEqual(copied_document.kopie_van, document.uuid)
 
-    def test_create_oio_with_zaak_key(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_oio_with_zaak_key(self):
         # Creating the document in the temporary folder
         properties = {
             "bronorganisatie": "159351741",
@@ -1006,7 +966,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        oio = self.cmis_client.create_oio(oio)
+        oio = self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         self.assertEqual(oio.zaak, self.zaak_url)
         self.assertEqual(oio.object_type, "zaak")
@@ -1015,19 +977,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
-    def test_create_oio_with_besluit_key(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_oio_with_besluit_key(self):
         # Creating the document in the temporary folder
         properties = {
             "bronorganisatie": "159351741",
@@ -1056,7 +1006,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        oio = self.cmis_client.create_oio(oio)
+        oio = self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         self.assertEqual(oio.besluit, self.besluit_url)
         self.assertEqual(oio.object_type, "besluit")
@@ -1065,15 +1017,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
-    def test_create_oio_with_object_key(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_oio_with_object_key(self):
         # Creating the document in the temporary folder
         properties = {
             "bronorganisatie": "159351741",
@@ -1102,7 +1046,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        oio = self.cmis_client.create_oio(oio)
+        oio = self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         self.assertEqual(oio.zaak, self.zaak_url)
         self.assertEqual(oio.object_type, "zaak")
@@ -1111,15 +1057,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
         )
 
-    def test_create_besluit_without_zaak(self, m):
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-        m.get(self.besluit_without_zaak_url, json=self.besluit_without_zaak)
-        mock_service_oas_get(
-            m=m, service="zrc-openapi", url=self.besluit_without_zaak_url
-        )
-
+    def test_create_besluit_without_zaak(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1147,29 +1085,13 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        self.cmis_client.create_oio(oio)
+        self.cmis_client.create_oio(oio_data=oio)
 
         self.assertEqual(
             other_folder.objectId, document.get_parent_folders()[0].objectId
         )
 
-    def test_link_zaak_to_document_with_existing_besluit(self, m):
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-        m.get(self.besluit_without_zaak_url, json=self.besluit_without_zaak)
-        mock_service_oas_get(
-            m=m, service="zrc-openapi", url=self.besluit_without_zaak_url
-        )
-
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_link_zaak_to_document_with_existing_besluit(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1194,7 +1116,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        oio_besluit = self.cmis_client.create_oio(oio_besluit_data)
+        oio_besluit = self.cmis_client.create_oio(oio_data=oio_besluit_data)
 
         # Creating another oio linking to a zaak should move the besluit oio
         # and the document to the new zaaktype/zaak folder
@@ -1203,7 +1125,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        oio_zaak = self.cmis_client.create_oio(oio_zaak_data)
+        oio_zaak = self.cmis_client.create_oio(
+            oio_data=oio_zaak_data, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Get new folder structure
         zaaktype_folders = self.cmis_client.query(
@@ -1238,23 +1162,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             other_folder.objectId, document.get_parent_folders()[0].objectId
         )
 
-    def test_link_besluit_without_zaak_to_document_linked_to_zaak(self, m):
-        # Mocking the retrieval of the Besluit
-        m.get(self.besluit_url, json=self.besluit)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_besluit_url)
-        m.get(self.besluit_without_zaak_url, json=self.besluit_without_zaak)
-        mock_service_oas_get(
-            m=m, service="zrc-openapi", url=self.besluit_without_zaak_url
-        )
-
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_link_besluit_without_zaak_to_document_linked_to_zaak(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1279,7 +1187,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(oio_zaak_data)
+        self.cmis_client.create_oio(
+            oio_data=oio_zaak_data, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Check that only one document exists
         documents = self.cmis_client.query(return_type_name="Document")
@@ -1291,7 +1201,7 @@ class CMISClientOIOTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "besluit",
         }
-        oio_besluit = self.cmis_client.create_oio(oio_besluit_data)
+        oio_besluit = self.cmis_client.create_oio(oio_data=oio_besluit_data)
 
         other_folder = self.cmis_client.get_or_create_other_folder()
         related_data_folder = other_folder.get_children_folders()[0]
@@ -1318,7 +1228,6 @@ class CMISClientOIOTests(DMSMixin, TestCase):
 
 
 @freeze_time("2020-07-27 12:00:00")
-@requests_mock.Mocker(real_http=True)  # real HTTP for the Alfresco requests
 class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
     base_zaak_url = "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/"
     base_zaaktype_url = "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/"
@@ -1389,15 +1298,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             config=config,
         )
 
-    def test_create_gebruiksrechten_with_unlinked_document(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_gebruiksrechten_with_unlinked_document(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1456,15 +1357,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "Een hele set onredelijke voorwaarden",
         )
 
-    def test_link_document_with_existing_gebruiksrechten(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_link_document_with_existing_gebruiksrechten(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1505,7 +1398,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(oio_data)
+        self.cmis_client.create_oio(
+            oio_data=oio_data, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Test that the gebruiksrechten is not in the temporary folder
         other_folder = self.cmis_client.get_or_create_other_folder()
@@ -1528,15 +1423,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
                 break
         self.assertTrue(is_gebruiksrechten_there)
 
-    def test_create_gebruiksrechten_with_linked_document(self, m):
-        # Mocking the retrieval of the Zaak
-        m.get(self.zaak_url, json=self.zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktype
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_create_gebruiksrechten_with_linked_document(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1566,7 +1453,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(oio)
+        self.cmis_client.create_oio(
+            oio_data=oio, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Create the gebruiksrechten directly in the zaak folder
         gebruiksrechten_data = {
@@ -1590,17 +1479,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
                 break
         self.assertTrue(is_gebruiksrechten_there)
 
-    def test_make_second_link_to_doc_with_existing_gebruiksrechten(self, m):
-        # Mocking the retrieval of the Zaken
-        m.get(self.zaak_url, json=self.zaak)
-        m.get(self.another_zaak_url, json=self.another_zaak)
-        mock_service_oas_get(m=m, service="zrc-openapi", url=self.base_zaak_url)
-
-        # Mocking the retrieval of the zaaktypes
-        m.get(self.zaaktype_url, json=self.zaaktype)
-        m.get(self.another_zaaktype_url, json=self.another_zaaktype)
-        mock_service_oas_get(m=m, service="ztc-openapi", url=self.base_zaaktype_url)
-
+    def test_make_second_link_to_doc_with_existing_gebruiksrechten(self):
         # Create document
         properties = {
             "bronorganisatie": "159351741",
@@ -1640,7 +1519,9 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(data=oio1)
+        self.cmis_client.create_oio(
+            oio_data=oio1, zaak_data=self.zaak, zaaktype_data=self.zaaktype
+        )
 
         # Create a second oio to link the same document to a different zaak
         oio2 = {
@@ -1648,7 +1529,11 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "object_type": "zaak",
         }
-        self.cmis_client.create_oio(data=oio2)
+        self.cmis_client.create_oio(
+            oio_data=oio2,
+            zaak_data=self.another_zaak,
+            zaaktype_data=self.another_zaaktype,
+        )
 
         # Check that there are now 2 gebruiksrechten
         gebruiksrechten_copies = self.cmis_client.query(
@@ -1659,7 +1544,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
 
         self.assertEqual(len(gebruiksrechten_copies), 2)
 
-    def test_full_update_gebruiksrechten(self, m):
+    def test_full_update_gebruiksrechten(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
@@ -1710,7 +1595,7 @@ class CMISClientGebruiksrechtenTests(DMSMixin, TestCase):
             "Aangepaste voorwaarden", updated_gebruiksrechten.omschrijving_voorwaarden
         )
 
-    def test_partial_update_gebruiksrechten(self, m):
+    def test_partial_update_gebruiksrechten(self):
         # Creating the document in the temporary folder
         identification = str(uuid.uuid4())
         properties = {
