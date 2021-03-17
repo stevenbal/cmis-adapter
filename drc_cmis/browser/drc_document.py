@@ -163,9 +163,7 @@ class Document(CMISContentObject):
     name_map = DOCUMENT_MAP
 
     @classmethod
-    def build_properties(
-        cls, data: dict, new: bool = True, identification: str = ""
-    ) -> dict:
+    def build_properties(cls, data: dict, new: bool = True) -> dict:
 
         props = {}
         for key, value in data.items():
@@ -184,14 +182,15 @@ class Document(CMISContentObject):
             if title is not None:
                 props["cmis:name"] = f"{title}-{suffix}"
 
-            # make sure the identification is set, but _only_ for newly created documents.
-            # identificatie is immutable once the document is created
-            if identification:
-                prop_name = mapper("identificatie")
-                props[prop_name] = identification
-
             # For new documents, the uuid needs to be set
-            props[mapper("uuid", type="document")] = str(uuid.uuid4())
+            new_uuid = str(uuid.uuid4())
+            props[mapper("uuid", type="document")] = new_uuid
+
+            # The identification needs to be set ONLY for newly created documents.
+            # identificatie is immutable once the document is created
+            if not props.get(mapper("identificatie")):
+                prop_name = mapper("identificatie")
+                props[prop_name] = new_uuid
 
         return props
 
