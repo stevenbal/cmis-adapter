@@ -333,6 +333,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
             f"{self.get_object_type_id_prefix('document')}drc:document",
         )
         data["bronorganisatie"] = bronorganisatie
+        data["identificatie"] = identification
 
         if content is None:
             content = BytesIO()
@@ -340,9 +341,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
         # Create Document in default folder
         other_folder = self.get_or_create_other_folder()
 
-        properties = Document.build_properties(
-            data, new=True, identification=identification
-        )
+        properties = Document.build_properties(data, new=True)
 
         json_data = create_json_request_body(other_folder, properties)
         logger.debug("CMIS_ADAPTER: create_document: request data: %s", json_data)

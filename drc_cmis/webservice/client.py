@@ -592,6 +592,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
             f"{self.get_object_type_id_prefix('document')}drc:document",
         )
         data["bronorganisatie"] = bronorganisatie
+        data["identificatie"] = identification
 
         content_id = str(uuid.uuid4())
         if content is None:
@@ -600,9 +601,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         # Create Document in default folder
         other_folder = self.get_or_create_other_folder()
 
-        properties = Document.build_properties(
-            data, new=True, identification=identification
-        )
+        properties = Document.build_properties(data, new=True)
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),

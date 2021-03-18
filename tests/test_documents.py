@@ -37,6 +37,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
     @override_settings(CMIS_URL_MAPPING_ENABLED=False)
     def test_build_properties_webservice(self):
         properties = {
+            "identificatie": str(uuid.uuid4()),
             "bronorganisatie": "159351741",
             "integriteitwaarde": "Something",
             "verwijderd": "false",
@@ -47,6 +48,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
 
         types = {
+            "identificatie": "propertyString",
             "bronorganisatie": "propertyString",
             "integriteitwaarde": "propertyString",
             "verwijderd": "propertyBoolean",
@@ -55,9 +57,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "creatiedatum": "propertyDateTime",
             "titel": "propertyString",
         }
-        identification = str(uuid.uuid4())
         document = self.cmis_client.create_document(
-            identification=identification,
+            identification=properties["identificatie"],
             data=properties,
             bronorganisatie="159351741",
         )
@@ -81,9 +82,39 @@ class CMISDocumentTests(DMSMixin, TestCase):
         os.getenv("CMIS_BINDING") != "WEBSERVICE",
         "The properties are built differently with different bindings",
     )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_build_properties_without_identificatie_webservice(self):
+        properties = {
+            "bronorganisatie": "159351741",
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": "2020-07-28",
+            "versie": "1.0",
+            "creatiedatum": "2018-06-27",
+            "titel": "detailed summary",
+        }
+
+        document = self.cmis_client.create_document(
+            data=properties, bronorganisatie="159351741", identification=None
+        )
+
+        built_properties = document.build_properties(data=properties)
+
+        self.assertIn("drc:document__uuid", built_properties)
+        self.assertIn("drc:document__identificatie", built_properties)
+        self.assertEqual(
+            built_properties["drc:document__uuid"],
+            built_properties["drc:document__identificatie"],
+        )
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "WEBSERVICE",
+        "The properties are built differently with different bindings",
+    )
     @override_settings(CMIS_URL_MAPPING_ENABLED=True)
     def test_build_properties_webservice_with_mapping(self):
         properties = {
+            "identificatie": str(uuid.uuid4()),
             "bronorganisatie": "159351741",
             "integriteitwaarde": "Something",
             "verwijderd": "false",
@@ -96,6 +127,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
         }
 
         types = {
+            "identificatie": "propertyString",
             "bronorganisatie": "propertyString",
             "integriteitwaarde": "propertyString",
             "verwijderd": "propertyBoolean",
@@ -106,9 +138,8 @@ class CMISDocumentTests(DMSMixin, TestCase):
             "informatieobjecttype": "propertyString",
             "link": "propertyString",
         }
-        identification = str(uuid.uuid4())
         document = self.cmis_client.create_document(
-            identification=identification,
+            identification=properties["identificatie"],
             data=properties,
             bronorganisatie="159351741",
         )
@@ -191,6 +222,34 @@ class CMISDocumentTests(DMSMixin, TestCase):
             if prop_name.split("__")[-1] in properties:
                 converted_prop_name = prop_name.split("__")[-1]
                 self.assertEqual(properties[converted_prop_name], prop_value)
+
+    @skipIf(
+        os.getenv("CMIS_BINDING") != "BROWSER",
+        "The properties are built differently with different bindings",
+    )
+    @override_settings(CMIS_URL_MAPPING_ENABLED=False)
+    def test_build_properties_without_identificatie_browser(self):
+        properties = {
+            "integriteitwaarde": "Something",
+            "verwijderd": "false",
+            "ontvangstdatum": datetime.date(2020, 7, 27),
+            "versie": 1,
+            "creatiedatum": datetime.date(2020, 7, 27),
+            "titel": "detailed summary",
+        }
+
+        document = self.cmis_client.create_document(
+            data=properties, bronorganisatie="159351741", identification=None
+        )
+
+        built_properties = document.build_properties(data=properties)
+
+        self.assertIn("drc:document__uuid", built_properties)
+        self.assertIn("drc:document__identificatie", built_properties)
+        self.assertEqual(
+            built_properties["drc:document__uuid"],
+            built_properties["drc:document__identificatie"],
+        )
 
     @tag("alfresco")
     def test_checkout_document(self):

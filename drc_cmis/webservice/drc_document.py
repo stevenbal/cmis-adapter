@@ -265,9 +265,7 @@ class Document(CMISContentObject):
     type_class = EnkelvoudigInformatieObject
 
     @classmethod
-    def build_properties(
-        cls, data: dict, new: bool = True, identification: str = ""
-    ) -> dict:
+    def build_properties(cls, data: dict, new: bool = True) -> dict:
         """Construct property dictionary.
 
         The structure of the dictionary is (where ``property_name``, ``property_value``
@@ -329,17 +327,18 @@ class Document(CMISContentObject):
                     "type": get_cmis_type(EnkelvoudigInformatieObject, "name"),
                 }
 
-            # make sure the identification is set, but _only_ for newly created documents.
-            # identificatie is immutable once the document is created
-            if identification:
-                prop_name = mapper("identificatie")
-                prop_type = get_cmis_type(EnkelvoudigInformatieObject, "identificatie")
-                props[prop_name] = {"value": str(identification), "type": prop_type}
-
             # For new documents, the uuid needs to be set
             prop_name = mapper("uuid")
             prop_type = get_cmis_type(EnkelvoudigInformatieObject, "uuid")
-            props[prop_name] = {"value": str(uuid.uuid4()), "type": prop_type}
+            new_uuid = str(uuid.uuid4())
+            props[prop_name] = {"value": new_uuid, "type": prop_type}
+
+            # The identification needs to be set ONLY for newly created documents.
+            # identificatie is immutable once the document is created
+            if not props.get(mapper("identificatie")):
+                prop_name = mapper("identificatie")
+                prop_type = get_cmis_type(EnkelvoudigInformatieObject, "identificatie")
+                props[prop_name] = {"value": new_uuid, "type": prop_type}
 
         return props
 
