@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class CMISRequest:
+    _repository_info = None
+
     @property
     def config(self):
         """
@@ -47,6 +49,25 @@ class CMISRequest:
     @property
     def password(self):
         return self.config.client_password
+
+    @property
+    def repository_info(self) -> dict:
+        if not self._repository_info:
+            logger.debug(
+                "CMIS_ADAPTER: get_repository_info: GET request url: %s", self.base_url
+            )
+
+            response = self.get_request(self.base_url)
+
+            logger.debug("CMIS_ADAPTER: get_repository_info: response: %s", response)
+            self._repository_info = response["-default-"]
+
+        return self._repository_info
+
+    @property
+    def root_folder_id(self) -> str:
+        """Returns the objectId of the root folder"""
+        return self.repository_info["rootFolderId"]
 
     def get_request(self, url, params=None):
         logger.debug(f"GET: {url} | {params}")

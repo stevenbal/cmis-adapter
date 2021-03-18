@@ -51,26 +51,8 @@ class CMISDRCClient(CMISClient, CMISRequest):
     zaaktypefolder_type = ZaakTypeFolder
 
     @property
-    def root_folder_id(self) -> str:
-        """Returns the objectId of the root folder"""
-        if self._root_folder_id is None:
-            repository_info = self.get_request(self.base_url)
-            self._root_folder_id = repository_info["-default-"]["rootFolderId"]
-
-        return self._root_folder_id
-
-    @property
     def vendor(self) -> str:
-        repo_info = self.get_repository_info()
-        return repo_info["vendorName"]
-
-    def get_repository_info(self) -> dict:
-        logger.debug(
-            "CMIS_ADAPTER: get_repository_info: GET request url: %s", self.base_url
-        )
-        response = self.get_request(self.base_url)["-default-"]
-        logger.debug("CMIS_ADAPTER: get_repository_info: response: %s", response)
-        return response
+        return self.repository_info["vendorName"]
 
     # generic querying
     def query(
@@ -325,7 +307,8 @@ class CMISDRCClient(CMISClient, CMISRequest):
         :param content: BytesIO, The content of the document.
         :return: document
         """
-        self.check_document_exists(identification, bronorganisatie)
+        if identification and bronorganisatie:
+            self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", 1)
         data.setdefault(

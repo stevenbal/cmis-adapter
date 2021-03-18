@@ -98,13 +98,6 @@ def extract_repository_ids_from_xml(xml_data: str) -> List:
     return [node.firstChild.nodeValue for node in repository_id_nodes]
 
 
-def extract_root_folder_id_from_xml(xml_data: str) -> str:
-    parsed_xml = minidom.parseString(xml_data)
-
-    folder_id_node = parsed_xml.getElementsByTagName("ns2:rootFolderId")[0]
-    return folder_id_node.firstChild.nodeValue
-
-
 def extract_repo_info_from_xml(xml_data: str) -> dict:
     parsed_xml = minidom.parseString(xml_data)
 
@@ -116,6 +109,9 @@ def extract_repo_info_from_xml(xml_data: str) -> dict:
             property_value = property_node.firstChild.nodeValue
             if property_value is not None:
                 properties[property_name] = property_value
+
+    folder_id_node = parsed_xml.getElementsByTagName("ns2:rootFolderId")[0]
+    properties["root_folder_id"] = folder_id_node.firstChild.nodeValue
 
     return properties
 
