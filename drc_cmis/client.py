@@ -242,6 +242,11 @@ class CMISClient:
         :return: Oio created
         """
 
+        if oio_data["object_type"] == "zaak" and (not zaak_data or not zaaktype_data):
+            raise ValueError(
+                "You must provide 'zaak_data' and 'zaaktype_data' when relating documents to zaken"
+            )
+
         # Get the document
         document_uuid = oio_data.get("informatieobject").split("/")[-1]
         document = self.get_document(drc_uuid=document_uuid)
