@@ -2,6 +2,15 @@
 Changelog
 =========
 
+1.2.3 (2021-03-22)
+------------------
+
+More performance improvements
+
+* Avoid having to fetch some data by requiring it upfront
+* Fixed creating documents without providing the identification upfront
+* Various performance fixes by caching internal data structures
+
 1.2.2 (2021-03-08)
 ------------------
 
