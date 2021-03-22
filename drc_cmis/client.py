@@ -212,7 +212,9 @@ class CMISClient:
 
         return gebruiksrechten.update_properties(diff_properties)
 
-    def create_oio(self, data: dict) -> ObjectInformatieObject:
+    def create_oio(
+        self, oio_data: dict, zaak_data: dict = None, zaaktype_data: dict = None
+    ) -> ObjectInformatieObject:
         """Create ObjectInformatieObject which relates a document with a zaak or besluit
 
         There are a few possible cases.
@@ -234,39 +236,29 @@ class CMISClient:
 
         If the document is linked already to a gebruiksrechten, then the gebruiksrechten object is also moved/copied.
 
-        :param data: dict, the oio details.
+        :param oio_data: dict, the oio details.
+        :param zaak_data: dict, the zaak details.
+        :param zaaktype_data: dict, the zaaktype details.
         :return: Oio created
         """
-        from drc_cmis.client_builder import get_zds_client
 
-        # Get the document
-        document_uuid = data.get("informatieobject").split("/")[-1]
-        document = self.get_document(drc_uuid=document_uuid)
-
-        if "object" in data:
-            data[data["object_type"]] = data.pop("object")
-
-        # Retrieve the zaak and the zaaktype
-        if data["object_type"] == "besluit":
-            client_besluit = get_zds_client(data["besluit"])
-            besluit_data = client_besluit.retrieve("besluit", url=data["besluit"])
-            zaak_url = besluit_data.get("zaak")
-        else:
-            zaak_url = data["zaak"]
-
-        # The oio for the besluit is created in the "Related data" of the temporary folder,
-        # since it is not related to a zaak
-        if zaak_url is None:
-            destination_folder = self.get_or_create_other_folder()
-        # The oio is created in the "Related data" folder of the zaak folder
-        else:
-            client_zaak = get_zds_client(zaak_url)
-            zaak_data = client_zaak.retrieve("zaak", url=zaak_url)
-            client_zaaktype = get_zds_client(zaak_data["zaaktype"])
-            zaaktype_data = client_zaaktype.retrieve(
-                "zaaktype", url=zaak_data["zaaktype"]
+        if oio_data["object_type"] == "zaak" and (not zaak_data or not zaaktype_data):
+            raise ValueError(
+                "You must provide 'zaak_data' and 'zaaktype_data' when relating documents to zaken"
             )
 
+        # Get the document
+        document_uuid = oio_data.get("informatieobject").split("/")[-1]
+        document = self.get_document(drc_uuid=document_uuid)
+
+        if "object" in oio_data:
+            oio_data[oio_data["object_type"]] = oio_data.pop("object")
+
+        # If the related object is a besluit not related to a zaak,
+        # the oio for the besluit is created in the "Related data" of the temporary folder
+        if zaak_data is None and oio_data["object_type"] == "besluit":
+            destination_folder = self.get_or_create_other_folder()
+        else:
             # Get or create the destination folder
             destination_folder = self.get_or_create_zaak_folder(
                 zaaktype_data, zaak_data
@@ -280,14 +272,14 @@ class CMISClient:
         retrieved_oios = self.query(
             return_type_name="oio",
             lhs=["drc:oio__informatieobject = '%s'"],
-            rhs=[data.get("informatieobject")],
+            rhs=[oio_data.get("informatieobject")],
         )
 
         # Check if there are gebruiksrechten related to the document
         related_gebruiksrechten = self.query(
             return_type_name="gebruiksrechten",
             lhs=["drc:gebruiksrechten__informatieobject = '%s'"],
-            rhs=[data.get("informatieobject")],
+            rhs=[oio_data.get("informatieobject")],
         )
 
         # Case 1: Already related to a zaak. Copy the document to the destination folder.
@@ -305,7 +297,7 @@ class CMISClient:
 
         # Create the Oio in the "Related data" folder
         return self.create_content_object(
-            data=data, object_type="oio", destination_folder=related_data_folder
+            data=oio_data, object_type="oio", destination_folder=related_data_folder
         )
 
     def create_gebruiksrechten(self, data: dict) -> Gebruiksrechten:
