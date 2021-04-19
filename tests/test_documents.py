@@ -84,6 +84,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
     )
     @override_settings(CMIS_URL_MAPPING_ENABLED=False)
     def test_build_properties_without_identificatie_webservice(self):
+        # No identificatie
         properties = {
             "bronorganisatie": "159351741",
             "integriteitwaarde": "Something",
@@ -97,6 +98,18 @@ class CMISDocumentTests(DMSMixin, TestCase):
         document = self.cmis_client.create_document(
             data=properties, bronorganisatie="159351741", identification=None
         )
+
+        built_properties = document.build_properties(data=properties)
+
+        self.assertIn("drc:document__uuid", built_properties)
+        self.assertIn("drc:document__identificatie", built_properties)
+        self.assertEqual(
+            built_properties["drc:document__uuid"],
+            built_properties["drc:document__identificatie"],
+        )
+
+        # Empty identificatie
+        properties["identificatie"] = ""
 
         built_properties = document.build_properties(data=properties)
 
@@ -229,6 +242,7 @@ class CMISDocumentTests(DMSMixin, TestCase):
     )
     @override_settings(CMIS_URL_MAPPING_ENABLED=False)
     def test_build_properties_without_identificatie_browser(self):
+        # No identificatie
         properties = {
             "integriteitwaarde": "Something",
             "verwijderd": "false",
@@ -241,6 +255,18 @@ class CMISDocumentTests(DMSMixin, TestCase):
         document = self.cmis_client.create_document(
             data=properties, bronorganisatie="159351741", identification=None
         )
+
+        built_properties = document.build_properties(data=properties)
+
+        self.assertIn("drc:document__uuid", built_properties)
+        self.assertIn("drc:document__identificatie", built_properties)
+        self.assertEqual(
+            built_properties["drc:document__uuid"],
+            built_properties["drc:document__identificatie"],
+        )
+
+        # Empty identificatie
+        properties["identificatie"] = ""
 
         built_properties = document.build_properties(data=properties)
 
