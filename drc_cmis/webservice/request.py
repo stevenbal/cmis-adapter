@@ -43,6 +43,9 @@ class SOAPCMISRequest:
     _main_repo_id = None
     _repository_info = None
 
+    def __init__(self, *args, **kwargs):
+        self.session = requests.Session()
+
     @property
     def config(self):
         """
@@ -182,7 +185,9 @@ class SOAPCMISRequest:
                 body += content_stream.read()  # Reads binary
 
         body += f"{self._boundary}--\n".encode("utf-8")
-        soap_response = requests.post(url, data=body, headers=self._headers, files=[])
+        soap_response = self.session.post(
+            url, data=body, headers=self._headers, files=[]
+        )
         if not soap_response.ok:
             error = soap_response.text
             if soap_response.status_code == 401:
