@@ -335,8 +335,8 @@ class Document(CMISContentObject):
 
             # The identification needs to be set ONLY for newly created documents.
             # identificatie is immutable once the document is created
-            if not props.get(mapper("identificatie"), {}).get("value"):
-                prop_name = mapper("identificatie")
+            prop_name = mapper("identificatie")
+            if not props.get(prop_name, {}).get("value"):
                 prop_type = get_cmis_type(EnkelvoudigInformatieObject, "identificatie")
                 props[prop_name] = {"value": new_uuid, "type": prop_type}
 
