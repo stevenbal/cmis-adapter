@@ -2,6 +2,15 @@
 Changelog
 =========
 
+1.2.4 (2021-04-29)
+------------------
+
+Bugfix and performance tuning release
+
+* Fixed handling empty identificatie fields (#52)
+* Use connection pooling in both CMIS bindings to speed up
+  performance (#54)
+
 1.2.3 (2021-03-22)
 ------------------
 
