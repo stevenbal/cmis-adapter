@@ -1,8 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
 
-import requests
-
 from drc_cmis.utils.exceptions import (
     CmisBaseException,
     CmisInvalidArgumentException,
@@ -15,14 +13,18 @@ from drc_cmis.utils.exceptions import (
     GetFirstException,
 )
 
+from ..connections import get_session
+
 logger = logging.getLogger(__name__)
 
 
 class CMISRequest:
     _repository_info = None
 
-    def __init__(self, *args, **kwargs):
-        self.session = requests.Session()
+    @property
+    def session(self):
+        # Uses a thread-local session object to enable connection pooling
+        return get_session()
 
     @property
     def config(self):

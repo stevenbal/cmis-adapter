@@ -1,8 +1,6 @@
 import logging
 from typing import BinaryIO, List, Optional, Tuple, Union
 
-import requests
-
 from drc_cmis.utils.exceptions import (
     CmisBaseException,
     CmisInvalidArgumentException,
@@ -20,6 +18,8 @@ from drc_cmis.webservice.utils import (
     make_soap_envelope,
     pretty_xml,
 )
+
+from ..connections import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,10 @@ class SOAPCMISRequest:
     _main_repo_id = None
     _repository_info = None
 
-    def __init__(self, *args, **kwargs):
-        self.session = requests.Session()
+    @property
+    def session(self):
+        # Uses a thread-local session object to enable connection pooling
+        return get_session()
 
     @property
     def config(self):
