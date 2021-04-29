@@ -15,9 +15,11 @@ __all__ = ["get_session", "use_cmis_connection_pool"]
 class SessionHandler:
     def __init__(self):
         self._session = local()
-        self._session.num_blocks = 0
 
     def get(self):
+        if not hasattr(self._session, "num_blocks"):
+            self._session.num_blocks = 0
+
         if hasattr(self._session, "session"):
             return self._session.session
 
