@@ -40,7 +40,7 @@ class GetFirstException(Exception):
 
 
 class CmisBaseException(Exception):
-    """ Common base class for all exceptions. """
+    """Common base class for all exceptions."""
 
     def __init__(self, status, url, message, code):
         self.display_message = f"Error {status}: {code} at {url} detail: {message}"
@@ -56,79 +56,79 @@ class CmisNoValidResponse(CmisBaseException):
 
 
 class CmisInvalidArgumentException(CmisBaseException):
-    """ InvalidArgumentException """
+    """InvalidArgumentException"""
 
     pass
 
 
 class CmisObjectNotFoundException(CmisBaseException):
-    """ ObjectNotFoundException """
+    """ObjectNotFoundException"""
 
     pass
 
 
 class CmisNotSupportedException(CmisBaseException):
-    """ NotSupportedException """
+    """NotSupportedException"""
 
     pass
 
 
 class CmisPermissionDeniedException(CmisBaseException):
-    """ PermissionDeniedException """
+    """PermissionDeniedException"""
 
     pass
 
 
 class CmisRuntimeException(CmisBaseException):
-    """ RuntimeException """
+    """RuntimeException"""
 
     pass
 
 
 class CmisConstraintException(CmisBaseException):
-    """ ConstraintException """
+    """ConstraintException"""
 
     pass
 
 
 class CmisContentAlreadyExistsException(CmisBaseException):
-    """ContentAlreadyExistsException """
+    """ContentAlreadyExistsException"""
 
     pass
 
 
 class CmisFilterNotValidException(CmisBaseException):
-    """FilterNotValidException """
+    """FilterNotValidException"""
 
     pass
 
 
 class CmisNameConstraintViolationException(CmisBaseException):
-    """NameConstraintViolationException """
+    """NameConstraintViolationException"""
 
     pass
 
 
 class CmisStorageException(CmisBaseException):
-    """StorageException """
+    """StorageException"""
 
     pass
 
 
 class CmisStreamNotSupportedException(CmisBaseException):
-    """ StreamNotSupportedException """
+    """StreamNotSupportedException"""
 
     pass
 
 
 class CmisUpdateConflictException(CmisBaseException):
-    """ UpdateConflictException """
+    """UpdateConflictException"""
 
     pass
 
 
 class CmisVersioningException(CmisBaseException):
-    """ VersioningException """
+    """VersioningException"""
 
     pass
 
