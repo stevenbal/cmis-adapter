@@ -298,6 +298,7 @@ class CMISDRCClient(CMISClient, CMISRequest):
         bronorganisatie: str,
         data: dict,
         content: BytesIO = None,
+        check_if_already_exists: bool = True,
     ) -> Document:
         """Create a cmis document.
 

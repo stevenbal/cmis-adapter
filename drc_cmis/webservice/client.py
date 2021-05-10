@@ -554,6 +554,7 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         bronorganisatie: str,
         data: dict,
         content: BytesIO = None,
+        check_if_already_exists: bool = True,
     ) -> Document:
         """Create a custom Document (with the EnkelvoudigInformatieObject properties)
 
@@ -561,10 +562,12 @@ class SOAPCMISClient(CMISClient, SOAPCMISRequest):
         :param bronorganisatie: string, The identifier of the organisation.
         :param data: dict, the properties of the document
         :param content: BytesIO, the content of the document
+        :param check_if_already_exists: Bool, whether to check if the document with given identificatie/bronorganisatie
+        already exists in the DMS.
         :return: Document, the document created
         """
 
-        if identification and bronorganisatie:
+        if check_if_already_exists and identification and bronorganisatie:
             self.check_document_exists(identification, bronorganisatie)
 
         data.setdefault("versie", "1")
