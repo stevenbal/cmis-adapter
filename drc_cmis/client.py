@@ -105,24 +105,22 @@ class CMISClient:
         else:
             child_type = properties.get("cmis:objectTypeId")
 
-        children_folders = parent.get_children_folders(child_type=child_type)
-        for folder in children_folders:
-            if folder.name == name:
-                return folder
+        child_folder = parent.get_child_folder(name=name, child_type=child_type)
+        if child_folder:
+            return child_folder
 
         # Create new folder, as it doesn't exist yet
         return self.create_folder(name, parent.objectId, properties)
 
     def get_folder_by_name(self, name: str, parent: Folder) -> Folder:
-        children_folders = parent.get_children_folders(
-            child_type=parent.properties.get("cmis:objectTypeId")
+        child_folder = parent.get_child_folder(
+            name, child_type=parent.properties.get("cmis:objectTypeId")
         )
-        for folder in children_folders:
-            if folder.name == name:
-                return folder
+        if child_folder:
+            return child_folder
         raise FolderDoesNotExistError(
             "Folder %(folder_name)s does not exist in %(parent_folder_name)s.",
-            params={"folder_name": folder.name, "parent_folder": parent.name},
+            params={"folder_name": name, "parent_folder": parent.name},
         )
 
     def delete_cmis_folders_in_base(self):

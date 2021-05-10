@@ -399,6 +399,45 @@ class Folder(CMISBaseObject):
         )
         return self.get_all_results(json_response, Folder)
 
+    def get_child_folder(
+        self, name: str, child_type: Union[str, dict] = None
+    ) -> Optional["Folder"]:
+        """Get a folder in the current folder that has a specific name
+
+        :param name: str, the cmis:name of the folder to retrieve
+        :param child_type: str or dict, Contains the object type ID of the children folders to retrieve.
+        If it is a dict, then the child type is the value of the key "value".
+        """
+
+        if child_type is not None:
+            if isinstance(child_type, dict):
+                object_type_id = child_type["value"]
+            else:
+                object_type_id = child_type
+
+            # Alfresco case: the object type ID has an extra prefix (F:drc:zaakfolder, instead of drc:zaakfolder)
+            # The prefix needs to be removed for the query
+            if len(object_type_id.split(":")) > 2:
+                object_type_id = ":".join(object_type_id.split(":")[1:])
+        else:
+            object_type_id = "cmis:folder"
+
+        query = CMISQuery(
+            f"SELECT * FROM {object_type_id} WHERE IN_FOLDER('%s') AND cmis:name = '%s'"
+        )
+
+        data = {
+            "cmisaction": "query",
+            "statement": query(str(self.objectId), name),
+        }
+        logger.debug("CMIS_ADAPTER: get_child_folder: request data: %s", data)
+        json_response = self.post_request(self.base_url, data=data)
+        logger.debug("CMIS_ADAPTER: get_child_folder: response data: %s", json_response)
+        if json_response["numItems"] == 0:
+            return None
+
+        return self.get_first_result(json_response, Folder)
+
     def delete_tree(self, **kwargs):
         data = {"objectId": self.objectId, "cmisaction": "deleteTree"}
         logger.debug("CMIS_ADAPTER: delete_tree: request data: %s", data)
