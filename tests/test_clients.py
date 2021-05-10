@@ -1649,6 +1649,32 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
 
+    def test_create_document_without_checking_for_existence(self):
+        identification = str(uuid.uuid4())
+        properties = {
+            "uuid": str(uuid.uuid4()),
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            bronorganisatie="159351741",
+            data=properties,
+            content=content,
+            check_if_already_exists=False,
+        )
+
+        self.assertIsNotNone(document.uuid)
+
     def test_create_document_with_dates_and_datetimes(self):
 
         identification = str(uuid.uuid4())
