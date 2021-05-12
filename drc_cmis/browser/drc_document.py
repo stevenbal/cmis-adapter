@@ -435,12 +435,12 @@ class Folder(CMISBaseObject):
             "statement": query(str(self.objectId), name),
         }
         logger.debug("CMIS_ADAPTER: get_child_folder: request data: %s", data)
-        json_response = self.post_request(self.base_url, data=data)
+        json_response = self.client.post_request(self.client.base_url, data=data)
         logger.debug("CMIS_ADAPTER: get_child_folder: response data: %s", json_response)
         if json_response["numItems"] == 0:
             return None
 
-        return self.get_first_result(json_response, Folder)
+        return self.client.get_first_result(json_response, Folder)
 
     def delete_tree(self, **kwargs):
         data = {"objectId": self.objectId, "cmisaction": "deleteTree"}

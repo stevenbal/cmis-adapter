@@ -637,15 +637,15 @@ class Folder(CMISBaseObject):
         )
 
         soap_envelope = make_soap_envelope(
-            auth=(self.user, self.password),
-            repository_id=self.main_repo_id,
+            auth=(self.client.user, self.client.password),
+            repository_id=self.client.main_repo_id,
             statement=query(str(self.objectId), name),
             cmis_action="query",
         )
         logger.debug(soap_envelope.toprettyxml())
 
         try:
-            soap_response = self.request(
+            soap_response = self.client.request(
                 "DiscoveryService", soap_envelope=soap_envelope.toxml()
             )
         # Corsa raises an error if the query retrieves 0 results
