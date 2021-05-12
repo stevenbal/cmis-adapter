@@ -81,38 +81,22 @@ class CMISClientFolderTests(DMSMixin, TestCase):
     def test_create_other_folder_path(self):
         # Test that no 'other' folder is present
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                drc_folder_exists = True
-                break
-        self.assertFalse(drc_folder_exists)
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNone(document_root)
 
         # Create the 'other' folder
         self.cmis_client.get_or_create_other_folder()
 
         # Test the path created
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                drc_folder_exists = True
-                break
-        self.assertTrue(drc_folder_exists)
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNotNone(document_root)
 
-        children = child_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
+        year_folder = document_root.get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
 
     @tag("alfresco")
     def test_create_zaaktype_folder(self):
@@ -322,40 +306,24 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
     def test_folder_structure_when_content_object_is_created(self):
 
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                drc_folder_exists = True
-                break
-        self.assertFalse(drc_folder_exists)
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNone(document_root)
 
         # Creates object in the default 'other' folder
         self.cmis_client.create_content_object(data={}, object_type="gebruiksrechten")
 
-        # Test that the folder structure is correct
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                drc_folder_exists = True
-                break
-        self.assertTrue(drc_folder_exists)
-        children = child_folder.get_children_folders()
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
-        children = day_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        related_data_folder = children[0]
-        self.assertEqual(related_data_folder.name, "Related data")
+        # Test the path created
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNotNone(document_root)
+
+        year_folder = document_root.get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
+        related_data_folder = day_folder.get_child_folder(name="Related data")
+        self.assertIsNotNone(related_data_folder)
 
         oio = self.cmis_client.create_content_object(data={}, object_type="oio")
 
@@ -584,15 +552,9 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
     def get_temporary_folder(self, base_folder):
-        children = base_folder.get_children_folders()
-        for child in children:
-            if child.name == "2020":
-                year_folder = child
-                break
-        children = year_folder.get_children_folders()
-        month_folder = children[0]
-        children = month_folder.get_children_folders()
-        day_folder = children[0]
+        year_folder = base_folder.get_child_folder(name="2020")
+        month_folder = year_folder.get_child_folder(name="7")
+        day_folder = month_folder.get_child_folder(name="27")
         return day_folder
 
     def test_create_zaak_oio_with_unlinked_document(self):
@@ -636,30 +598,25 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
         # Test the new folder structure
-        zaaktype_folders = self.cmis_client.query(
-            return_type_name="zaaktypefolder",
-        )
-        self.assertEqual(len(zaaktype_folders), 1)
-        self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
+        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
+        zaken_root = root_folder.get_child_folder(name="TestZaken")
+        self.assertIsNotNone(zaken_root)
 
-        children = self.cmis_client.query(
-            return_type_name="Folder",
-            lhs=["cmis:parentId = '%s'"],
-            rhs=[zaaktype_folders[0].objectId],
+        zaaktype_folder = zaken_root.get_child_folder(
+            name="zaaktype-Melding Openbare Ruimte-1",
+            child_type={"value": "F:drc:zaaktypefolder"},
         )
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
-        zaak_folder = day_folder.get_children_folders()[0]
-        self.assertEqual(zaak_folder.name, "zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d")
+        self.assertIsNotNone(zaaktype_folder)
+        year_folder = zaaktype_folder.get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
+        zaak_folder = day_folder.get_child_folder(
+            name="zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d"
+        )
+        self.assertIsNotNone(zaak_folder)
 
         self.assertEqual(
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
@@ -711,36 +668,29 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
         # Test that the second folder structure
-        zaaktype_folders = self.cmis_client.query(
-            return_type_name="zaaktypefolder",
-        )
-        self.assertEqual(len(zaaktype_folders), 2)
-        children_folders_names = [folder.name for folder in zaaktype_folders]
-        self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders_names)
-        self.assertIn("zaaktype-Melding Openbare Ruimte-2", children_folders_names)
-        for folder in zaaktype_folders:
-            if folder.name == "zaaktype-Melding Openbare Ruimte-2":
-                zaaktype_folder = folder
-                break
+        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
+        zaken_root = root_folder.get_child_folder(name="TestZaken")
 
-        children = self.cmis_client.query(
-            return_type_name="Folder",
-            lhs=["cmis:parentId = '%s'"],
-            rhs=[zaaktype_folder.objectId],
+        zaaktype_folders = zaken_root.get_children_folders(
+            child_type={"value": "F:drc:zaaktypefolder"}
         )
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
-        zaak_folder = day_folder.get_children_folders()[0]
-        self.assertEqual(zaak_folder.name, "zaak-1717b1f0-16e5-42d4-ba28-cbce211bb94b")
+        self.assertEqual(2, len(zaaktype_folders))
+        children_folders = {folder.name: folder for folder in zaaktype_folders}
+        self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders)
+        self.assertIn("zaaktype-Melding Openbare Ruimte-2", children_folders)
+
+        year_folder = children_folders[
+            "zaaktype-Melding Openbare Ruimte-2"
+        ].get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
+        zaak_folder = day_folder.get_child_folder(
+            name="zaak-1717b1f0-16e5-42d4-ba28-cbce211bb94b"
+        )
+        self.assertIsNotNone(zaak_folder)
 
         self.assertNotEqual(
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
@@ -807,30 +757,25 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
         # Test the new folder structure
-        zaaktype_folders = self.cmis_client.query(
-            return_type_name="zaaktypefolder",
-        )
-        self.assertEqual(len(zaaktype_folders), 1)
+        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
+        zaken_root = root_folder.get_child_folder(name="TestZaken")
+        self.assertIsNotNone(zaken_root)
 
-        self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
-        children = self.cmis_client.query(
-            return_type_name="Folder",
-            lhs=["cmis:parentId = '%s'"],
-            rhs=[zaaktype_folders[0].objectId],
+        zaaktype_folder = zaken_root.get_child_folder(
+            name="zaaktype-Melding Openbare Ruimte-1",
+            child_type={"value": "F:drc:zaaktypefolder"},
         )
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
-        zaak_folder = day_folder.get_children_folders()[0]
-        self.assertEqual(zaak_folder.name, "zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d")
+        self.assertIsNotNone(zaaktype_folder)
+        year_folder = zaaktype_folder.get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
+        zaak_folder = day_folder.get_child_folder(
+            name="zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d"
+        )
+        self.assertIsNotNone(zaak_folder)
 
         self.assertEqual(
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
@@ -882,36 +827,29 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
         # Test the second folder structure
-        zaaktype_folders = self.cmis_client.query(
-            return_type_name="zaaktypefolder",
-        )
-        self.assertEqual(len(zaaktype_folders), 2)
-        children_folders_names = [folder.name for folder in zaaktype_folders]
-        self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders_names)
-        self.assertIn("zaaktype-Melding Openbare Ruimte-2", children_folders_names)
-        for folder in zaaktype_folders:
-            if folder.name == "zaaktype-Melding Openbare Ruimte-1":
-                zaaktype_folder = folder
-                break
+        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
+        zaken_root = root_folder.get_child_folder(name="TestZaken")
 
-        children = self.cmis_client.query(
-            return_type_name="Folder",
-            lhs=["cmis:parentId = '%s'"],
-            rhs=[zaaktype_folder.objectId],
+        zaaktype_folders = zaken_root.get_children_folders(
+            child_type={"value": "F:drc:zaaktypefolder"}
         )
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
-        zaak_folder = day_folder.get_children_folders()[0]
-        self.assertEqual(zaak_folder.name, "zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d")
+        self.assertEqual(2, len(zaaktype_folders))
+        children_folders = {folder.name: folder for folder in zaaktype_folders}
+        self.assertIn("zaaktype-Melding Openbare Ruimte-1", children_folders)
+        self.assertIn("zaaktype-Melding Openbare Ruimte-2", children_folders)
+
+        year_folder = children_folders[
+            "zaaktype-Melding Openbare Ruimte-1"
+        ].get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
+        zaak_folder = day_folder.get_child_folder(
+            name="zaak-1bcfd0d6-c817-428c-a3f4-4047038c184d"
+        )
+        self.assertIsNotNone(zaak_folder)
 
         self.assertNotEqual(
             zaak_folder.objectId, document.get_parent_folders()[0].objectId
@@ -1130,21 +1068,15 @@ class CMISClientOIOTests(DMSMixin, TestCase):
         )
 
         # Get new folder structure
-        zaaktype_folders = self.cmis_client.query(
-            return_type_name="zaaktypefolder",
+        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
+        zaken_root = root_folder.get_child_folder(name="TestZaken")
+        zaaktype_folder = zaken_root.get_child_folder(
+            name="zaaktype-Melding Openbare Ruimte-1",
+            child_type={"value": "F:drc:zaaktypefolder"},
         )
-        self.assertEqual(len(zaaktype_folders), 1)
-
-        self.assertEqual(zaaktype_folders[0].name, "zaaktype-Melding Openbare Ruimte-1")
-        children = self.cmis_client.query(
-            return_type_name="Folder",
-            lhs=["cmis:parentId = '%s'"],
-            rhs=[zaaktype_folders[0].objectId],
-        )
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        month_folder = year_folder.get_children_folders()[0]
-        day_folder = month_folder.get_children_folders()[0]
+        year_folder = zaaktype_folder.get_child_folder(name="2020")
+        month_folder = year_folder.get_child_folder(name="7")
+        day_folder = month_folder.get_child_folder(name="27")
         zaak_folder = day_folder.get_children_folders()[0]
         related_data_folder = zaak_folder.get_children_folders()[0]
 
@@ -1717,6 +1649,32 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
 
+    def test_create_document_without_checking_for_existence(self):
+        identification = str(uuid.uuid4())
+        properties = {
+            "uuid": str(uuid.uuid4()),
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"some file content")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            bronorganisatie="159351741",
+            data=properties,
+            content=content,
+            check_if_already_exists=False,
+        )
+
+        self.assertIsNotNone(document.uuid)
+
     def test_create_document_with_dates_and_datetimes(self):
 
         identification = str(uuid.uuid4())
@@ -1784,13 +1742,8 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
 
     def test_create_document_creates_folder_structure(self):
         root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                drc_folder_exists = True
-                break
-        self.assertFalse(drc_folder_exists)
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNone(document_root)
 
         data = {
             "creatiedatum": timezone.now(),
@@ -1808,27 +1761,15 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         )
 
         # Test that the folder structure is correct
-        root_folder = self.cmis_client.get_folder(self.cmis_client.root_folder_id)
-        children = root_folder.get_children_folders()
-        drc_folder_exists = False
-        for child_folder in children:
-            if child_folder.name == "TestDRC":
-                other_base_folder = child_folder
-                drc_folder_exists = True
-                break
-        self.assertTrue(drc_folder_exists)
-        children = other_base_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        year_folder = children[0]
-        self.assertEqual(year_folder.name, "2020")
-        children = year_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        month_folder = children[0]
-        self.assertEqual(month_folder.name, "7")
-        children = month_folder.get_children_folders()
-        self.assertEqual(len(children), 1)
-        day_folder = children[0]
-        self.assertEqual(day_folder.name, "27")
+        document_root = root_folder.get_child_folder(name="TestDRC")
+        self.assertIsNotNone(document_root)
+
+        year_folder = document_root.get_child_folder(name="2020")
+        self.assertIsNotNone(year_folder)
+        month_folder = year_folder.get_child_folder(name="7")
+        self.assertIsNotNone(month_folder)
+        day_folder = month_folder.get_child_folder(name="27")
+        self.assertIsNotNone(day_folder)
 
     def test_lock_document(self):
         data = {

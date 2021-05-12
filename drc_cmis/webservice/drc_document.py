@@ -614,6 +614,54 @@ class Folder(CMISBaseObject):
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
         return [type(self)(folder) for folder in extracted_data]
 
+    def get_child_folder(
+        self, name: str, child_type: dict = None
+    ) -> Optional["Folder"]:
+        """Get a folder in the current folder that has a specific name
+
+        :param name: str, the cmis:name of the folder to retrieve
+        :param child_type: dict, With keys "value" and "type". The value contains the object type ID of
+        the children folders to retrieve.
+        """
+        if child_type is not None:
+            object_type_id = child_type["value"]
+            # Alfresco case: the object type ID has an extra prefix (F:drc:zaakfolder, instead of drc:zaakfolder)
+            # The prefix needs to be removed for the query
+            if len(object_type_id.split(":")) > 2:
+                object_type_id = ":".join(object_type_id.split(":")[1:])
+        else:
+            object_type_id = "cmis:folder"
+
+        query = CMISQuery(
+            f"SELECT * FROM {object_type_id} WHERE cmis:parentId = '%s' AND cmis:name = '%s'"
+        )
+
+        soap_envelope = make_soap_envelope(
+            auth=(self.user, self.password),
+            repository_id=self.main_repo_id,
+            statement=query(str(self.objectId), name),
+            cmis_action="query",
+        )
+        logger.debug(soap_envelope.toprettyxml())
+
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                return None
+            else:
+                raise exc
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
+        extracted_data = extract_object_properties_from_xml(xml_response, "query")
+        if len(extracted_data) == 0:
+            return None
+        return type(self)(extracted_data[0])
+
     def delete_tree(self):
         """Delete the folder and all its contents"""
 
