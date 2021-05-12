@@ -2,6 +2,22 @@
 Changelog
 =========
 
+1.2.6 (2021-05-12)
+------------------
+
+Performance tuning release
+
+* Cache CMISConfig to prevent repeated database lookups.
+* Cache retrieval of "getRepositoryInfo" to prevent excessive CMIS requests (#56)
+* Various performance improvements (#58)
+
+1.2.5 (2021-04-29)
+------------------
+
+Bugfix release
+
+* Fix thread-local bug
+
 1.2.4 (2021-04-29)
 ------------------
 
