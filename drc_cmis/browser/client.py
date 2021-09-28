@@ -143,6 +143,9 @@ class CMISDRCClient(CMISClient):
 
         return self.get_all_results(response, return_type)
 
+    def filter_oios(self, lhs: List[str] = None, rhs: List[str] = None) -> List:
+        return self.query(self.oio_type.type_name, lhs, rhs)
+
     def create_folder(self, name: str, parent_id: str, properties: dict = None):
         data = {
             "objectId": parent_id,
