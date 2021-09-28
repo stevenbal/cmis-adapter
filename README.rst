@@ -444,6 +444,38 @@ Default: ``/DRC/{{ year }}/{{ month }}/{{ day }}/``
                         +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
                         +-- [filename]-oio (drc:oio)
 
+Caching documents related to a case
+-----------------------------------
+
+When one needs to retrieve the details of documents (``EnkelvoudigInformatieObject``) related to a case,
+multiple CMIS calls are needed.
+The first one is to filter the ``ObjectInformatieObject`` related to the case in question.
+Then, since each ``ObjectInformatieObject`` only contains the URL of the related document, one CMIS request per related
+document has to be performed to retrieve the document details.
+
+If many documents are related to a case, then many CMIS requests have to be performed.
+
+This can be avoided by executing a single bulk request to retrieve the related documents when the
+``ObjectInformatieObject`` are being filtered (in the first request mentioned above). This is possible because all
+the UUIDs of the related documents are available within the ``ObjectInformatieObject`` retrieved.
+These documents are then cached for subsequent use, avoiding having to make one separate CMIS-request per document.
+
+In order to use caching within the CMIS client, the caching has to be configured. This can be done by adding the
+``cmis-client`` cache to the Django ``settings.CACHES``.
+
+.. code-block::
+
+    CACHES = {
+        ...
+        "cmis-client": {
+            "BACKEND": "BackendOfChoice",
+            "TIMEOUT": 120,
+        },
+    }
+
+.. note::
+    Currently, caching is only supported by the Webservice (SOAP) binding.
+
 
 References
 ==========
