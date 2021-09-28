@@ -6,9 +6,12 @@ from typing import BinaryIO, List, Optional, Tuple, Union
 from uuid import UUID
 
 from django.conf import settings
+from django.core.cache import caches
+from django.core.cache.backends.base import InvalidCacheBackendError
 from django.utils.crypto import constant_time_compare
 
 from cmislib.domain import CmisId
+from furl import furl
 
 from drc_cmis.client import CMISClient
 from drc_cmis.utils.exceptions import (
@@ -75,6 +78,17 @@ class SOAPCMISClient(CMISClient):
     _main_repo_id = None
     _repository_info = None
     _request = None
+    _cache = None
+
+    @property
+    def cache(self):
+        if not self._cache:
+            try:
+                self._cache = caches["cmis-client"]
+            except InvalidCacheBackendError:
+                return None
+
+        return self._cache
 
     def request(
         self,
@@ -191,6 +205,18 @@ class SOAPCMISClient(CMISClient):
 
         return_type = self.get_return_type(return_type_name)
 
+        # If we are retrieving a document via UUID, check if we have it in the cache
+        if (
+            self.cache
+            and return_type == self.document_type
+            and "drc:document__uuid = '%s'" in lhs
+        ):
+            uuid_index = lhs.index("drc:document__uuid = '%s'")
+            document_uuid = rhs[uuid_index]
+            document = self.cache.get(document_uuid)
+            if document:
+                return [self.document_type(document)]
+
         processed_rhs = rhs
         # Any query that filters based on URL fields needs to be converted to use the short URL version
         if settings.CMIS_URL_MAPPING_ENABLED and lhs is not None and rhs is not None:
@@ -246,6 +272,59 @@ class SOAPCMISClient(CMISClient):
         extracted_data = extract_object_properties_from_xml(xml_response, "query")
 
         return [return_type(cmis_object) for cmis_object in extracted_data]
+
+    def filter_oios(self, lhs: List[str] = None, rhs: List[str] = None) -> List[Oio]:
+        oios = self.query(self.oio_type.type_name, lhs, rhs)
+
+        if self.cache and "drc:oio__zaak = '%s'" in lhs:
+            self.cache_related_documents(oios)
+
+        return oios
+
+    def cache_related_documents(self, oios: List) -> None:
+        if not oios:
+            return
+
+        document_uuids = [furl(oio.informatieobject).path.segments[-1] for oio in oios]
+        table = self.document_type.table
+        arguments = ",".join(["'%s'"] * len(oios))
+        where = f" WHERE drc:document__uuid IN ({arguments})"
+        query = CMISQuery("SELECT * FROM %s%s" % (table, where))
+        statement = query(*document_uuids)
+
+        soap_envelope = make_soap_envelope(
+            auth=(self.user, self.password),
+            repository_id=self.main_repo_id,
+            statement=statement,
+            cmis_action="query",
+        )
+        logger.debug(soap_envelope.toprettyxml())
+
+        try:
+            soap_response = self.request(
+                "DiscoveryService", soap_envelope=soap_envelope.toxml()
+            )
+        # Corsa raises an error if the query retrieves 0 results
+        except CmisRuntimeException as exc:
+            if "objectNotFound" in exc.message:
+                return []
+            else:
+                raise exc
+
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
+        extracted_properties = extract_object_properties_from_xml(xml_response, "query")
+
+        def get_uuid(document_properties: dict) -> str:
+            return document_properties["properties"]["drc:document__uuid"]["value"]
+
+        data_to_cache = {
+            get_uuid(document_properties): document_properties
+            for document_properties in extracted_properties
+        }
+
+        self.cache.set_many(data_to_cache)
 
     def create_folder(self, name: str, parent_id: str, data: dict = None) -> Folder:
         """Create a new folder inside a parent
