@@ -132,7 +132,9 @@ class CMISClientCacheTests(DMSMixin, TestCase):
             m.assert_not_called()
 
     def test_no_documents_related_to_case(self):
-        with patch.object(SOAPCMISClient, "request") as m:
-            self.cmis_client.cache_related_documents(oios=[])
+        with patch.object(SOAPCMISClient, "query") as m_query:
+            m_query.return_value = []
+            with patch.object(SOAPCMISClient, "cache_related_documents") as m_cache:
+                self.cmis_client.filter_oios()
 
-            m.assert_not_called()
+                m_cache.assert_not_called()
