@@ -138,3 +138,19 @@ class CMISClientCacheTests(DMSMixin, TestCase):
                 self.cmis_client.filter_oios()
 
                 m_cache.assert_not_called()
+
+    def test_get_documents_uses_cache(self):
+        document = self.cmis_client.create_document(
+            identification="64d15843-1990-4af2-b6c8-d5a0be52402f",
+            data=DOCUMENT,
+            content=io.BytesIO(b"some file content"),
+            bronorganisatie="159351741",
+        )
+
+        cache = caches["cmis-client"]
+        cache.set(document.uuid, document.properties)
+
+        with patch.object(SOAPCMISClient, "request") as m:
+            self.cmis_client.get_document(drc_uuid=document.uuid)
+
+            m.assert_not_called()
