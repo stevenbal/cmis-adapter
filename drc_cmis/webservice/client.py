@@ -26,11 +26,7 @@ from drc_cmis.utils.exceptions import (
 )
 from drc_cmis.utils.mapper import mapper, reverse_mapper
 from drc_cmis.utils.query import CMISQuery
-from drc_cmis.utils.utils import (
-    build_query_filters,
-    extract_latest_version,
-    get_random_string,
-)
+from drc_cmis.utils.utils import extract_latest_version, get_random_string
 from drc_cmis.webservice.data_models import (
     EnkelvoudigInformatieObject,
     Gebruiksrechten as GebruiksRechtDoc,
@@ -860,14 +856,12 @@ class SOAPCMISClient(CMISClient):
 
         raise LockDidNotMatchException("Lock did not match", code="unlock-failed")
 
-    # FIXME filters are useless because uuid is unique
-    def get_document(self, drc_uuid: str, filters: Optional[dict] = None) -> Document:
+    def get_document(self, drc_uuid: str) -> Document:
         """Retrieve a document in the main repository with given uuid (drc:document__uuid)
 
         If the document series is checked out, it returns the private working copy
 
         :param drc_uuid: string, value of the cmis property drc:document__uuid
-        :param filters: dict, filters to find the document
         :return: Document, latest document version
         """
         error_string = f"Document met drc:document__uuid {drc_uuid} bestaat niet in het CMIS connection"
@@ -876,20 +870,19 @@ class SOAPCMISClient(CMISClient):
         if drc_uuid is None:
             raise does_not_exist
 
+        if self.cache:
+            document = self.cache.get(drc_uuid)
+            if document:
+                return self.document_type(document)
+
         # This always selects the latest version, and if there is a pwc,
         # Alfresco returns both the pwc and the latest major version, while Corsa only returns the pwc.
-        query = CMISQuery(
-            "SELECT * FROM drc:document WHERE drc:document__uuid = '%s' %s"
-        )
-
-        filter_string = build_query_filters(
-            filters, filter_string="AND ", strip_end=True
-        )
+        query = CMISQuery("SELECT * FROM drc:document WHERE drc:document__uuid = '%s'")
 
         soap_envelope = make_soap_envelope(
             auth=(self.user, self.password),
             repository_id=self.main_repo_id,
-            statement=query(drc_uuid, filter_string),
+            statement=query(drc_uuid),
             cmis_action="query",
         )
         logger.debug(soap_envelope.toprettyxml())
