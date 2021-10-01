@@ -11,7 +11,6 @@ from django.core.cache.backends.base import InvalidCacheBackendError
 from django.utils.crypto import constant_time_compare
 
 from cmislib.domain import CmisId
-from furl import furl
 
 from drc_cmis.client import CMISClient
 from drc_cmis.utils.exceptions import (
@@ -276,52 +275,36 @@ class SOAPCMISClient(CMISClient):
     def filter_oios(self, lhs: List[str] = None, rhs: List[str] = None) -> List[Oio]:
         oios = self.query(self.oio_type.type_name, lhs, rhs)
 
-        if self.cache and "drc:oio__zaak = '%s'" in lhs:
-            self.cache_related_documents(oios)
+        if self.cache and oios and "drc:oio__zaak = '%s'" in lhs:
+            zaak_url = rhs[lhs.index("drc:oio__zaak = '%s'")]
+            self.cache_related_documents(zaak_url)
 
         return oios
 
-    def cache_related_documents(self, oios: List) -> None:
-        if not oios:
+    def cache_related_documents(self, zaak_url: str) -> None:
+        results = self.query(
+            self.zaakfolder_type.type_name, lhs=["drc:zaak__url = '%s'"], rhs=[zaak_url]
+        )
+
+        if not len(results):
             return
 
-        document_uuids = [furl(oio.informatieobject).path.segments[-1] for oio in oios]
-        table = self.document_type.table
-        arguments = ",".join(["'%s'"] * len(oios))
-        where = f" WHERE drc:document__uuid IN ({arguments})"
-        query = CMISQuery("SELECT * FROM %s%s" % (table, where))
-        statement = query(*document_uuids)
-
-        soap_envelope = make_soap_envelope(
-            auth=(self.user, self.password),
-            repository_id=self.main_repo_id,
-            statement=statement,
-            cmis_action="query",
+        # Here we do first a query to retrieve the objectId of the zaak folder, and then we retrieve the children
+        # of the zaak folder. A query such as SELECT * FROM drc:document WHERE drc:document__uuid IN (...) would have
+        # been more efficient, but it is not supported by Corsa (nor is a query with OR).
+        # The query "SELECT * FROM drc:document WHERE cmis:parentId = <zaak_objectId>" on the other hand doesn't seem
+        # to work in Alfresco.
+        zaak_folder = results[0]
+        document_properties = zaak_folder.get_children_documents(
+            convert_to_document_type=False
         )
-        logger.debug(soap_envelope.toprettyxml())
-
-        try:
-            soap_response = self.request(
-                "DiscoveryService", soap_envelope=soap_envelope.toxml()
-            )
-        # Corsa raises an error if the query retrieves 0 results
-        except CmisRuntimeException as exc:
-            if "objectNotFound" in exc.message:
-                return []
-            else:
-                raise exc
-
-        xml_response = extract_xml_from_soap(soap_response)
-        logger.debug(pretty_xml(xml_response))
-
-        extracted_properties = extract_object_properties_from_xml(xml_response, "query")
 
         def get_uuid(document_properties: dict) -> str:
             return document_properties["properties"]["drc:document__uuid"]["value"]
 
         data_to_cache = {
             get_uuid(document_properties): document_properties
-            for document_properties in extracted_properties
+            for document_properties in document_properties
         }
 
         self.cache.set_many(data_to_cache)

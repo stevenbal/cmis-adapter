@@ -56,8 +56,8 @@ class CMISClient:
         error_message = f"No class {type_name} exists for this client."
         type_name = type_name.lower()
         assert type_name in [
-            "zaaktypefolder",
-            "zaakfolder",
+            "zaaktype",
+            "zaak",
             "folder",
             "document",
             "gebruiksrechten",
@@ -72,9 +72,9 @@ class CMISClient:
             return self.gebruiksrechten_type
         elif type_name == "oio":
             return self.oio_type
-        elif type_name == "zaaktypefolder":
+        elif type_name == "zaaktype":
             return self.zaaktypefolder_type
-        elif type_name == "zaakfolder":
+        elif type_name == "zaak":
             return self.zaakfolder_type
 
     def get_object_type_id_prefix(self, object_type: str) -> str:

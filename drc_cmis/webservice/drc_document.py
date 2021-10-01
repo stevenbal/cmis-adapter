@@ -694,3 +694,35 @@ class ZaakFolder(CMISBaseObject):
     name_map = ZAAK_MAP
     type_name = "zaak"
     type_class = ZaakFolderData
+
+    def get_children_documents(
+        self, convert_to_document_type: bool = True
+    ) -> List[Union[Document, dict]]:
+        soap_envelope = make_soap_envelope(
+            auth=(self.client.user, self.client.password),
+            repository_id=self.client.main_repo_id,
+            cmis_action="getChildren",
+            folder_id=self.objectId,
+        )
+        logger.debug(soap_envelope.toprettyxml())
+        soap_response = self.client.request(
+            "NavigationService", soap_envelope=soap_envelope.toxml()
+        )
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+        extracted_data = extract_object_properties_from_xml(xml_response, "getChildren")
+        documents = []
+        document_objecttype_id = (
+            f"{self.client.get_object_type_id_prefix(Document.type_name)}drc:document"
+        )
+        for object_data in extracted_data:
+            if (
+                object_data["properties"]["cmis:objectTypeId"]["value"]
+                == document_objecttype_id
+            ):
+                if convert_to_document_type:
+                    documents.append(Document(object_data))
+                else:
+                    documents.append(object_data)
+
+        return documents
