@@ -338,6 +338,14 @@ class Document(CMISContentObject):
                 prop_type = get_cmis_type(EnkelvoudigInformatieObject, "identificatie")
                 props[prop_name] = {"value": new_uuid, "type": prop_type}
 
+            # The indicatie_gebruiksrecht needs to be set ONLY for newly created documents.
+            prop_name = mapper("indicatie_gebruiksrecht")
+            if props.get(prop_name, {}).get("value") not in ["True", ""]:
+                prop_type = get_cmis_type(
+                    EnkelvoudigInformatieObject, "indicatie_gebruiksrecht"
+                )
+                props[prop_name] = {"value": "False", "type": prop_type}
+
         return props
 
     def get_document(self, object_id: str) -> "Document":

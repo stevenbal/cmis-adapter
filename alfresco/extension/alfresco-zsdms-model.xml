@@ -167,8 +167,9 @@
                 </property>
                 <property name="drc:document__indicatiegebruiksrecht">
                     <title>DRC - Document - Indicatie gebruiksrecht</title>
-                    <type>d:text</type>
+                    <type>d:boolean</type>
                     <mandatory>false</mandatory>
+                    <default>false</default>
                     <index enabled="false">
                         <tokenised>TRUE</tokenised>
                     </index>
