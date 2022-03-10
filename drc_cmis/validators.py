@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from drc_cmis.utils import folder
 from drc_cmis.utils.folder import get_folder_structure
