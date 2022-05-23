@@ -570,19 +570,19 @@ class ObjectInformatieObject(CMISContentObject):
     _zaakfolder = None
 
     @property
-    def zaakfolder(self):
-        if not self._zaakfolder:
-            # Here we do first a query to retrieve the zaak folder, and then we retrieve the documents children
-            # of the zaak folder. A query such as SELECT * FROM drc:document WHERE drc:document__uuid IN (...) would have
-            # been more efficient, but it is not supported by Corsa (nor is a query with OR).
-            # The query "SELECT * FROM drc:document WHERE cmis:parentId = <zaak_objectId>" on the other hand doesn't seem
-            # to work in Alfresco.
+    def zaakfolder(self) -> Optional["ZaakFolder"]:
+        if not self._zaakfolder and self.zaak:
             self._zaakfolder = self.client.query(
                 "zaak", lhs=["drc:zaak__url = '%s'"], rhs=[self.zaak]
             )[0]
         return self._zaakfolder
 
-    def _get_related_document(self):
+    def _get_related_document(self) -> Optional[Document]:
+        # We first do a query to retrieve the zaak folder, and then we retrieve the documents in the zaak folder.
+        # A query such as SELECT * FROM drc:document WHERE drc:document__uuid IN (...) would have
+        # been more efficient, but it is not supported by Corsa (nor is a query with OR).
+        # The query "SELECT * FROM drc:document WHERE cmis:parentId = <zaak_objectId>" on the other hand doesn't seem
+        # to work in Alfresco.
         related_documents = self.zaakfolder.get_children_documents(
             convert_to_document_type=False
         )
@@ -600,20 +600,20 @@ class ObjectInformatieObject(CMISContentObject):
         else:
             logger.error(
                 "Could not find the document %s in zaakfolder %s before deleting the OIO.",
-                informatieobject_url,
+                self.informatieobject,
                 self.zaakfolder.name,
             )
 
-    def _get_gebruiksrechten(self):
+    def _get_gebruiksrechten(self) -> Optional["Gebruiksrechten"]:
         gebruiksrechten_files = self.client.query(
             "gebruiksrechten",
             lhs=["drc:gebruiksrechten__informatieobject = '%s'"],
             rhs=[self.informatieobject],
         )
         if gebruiksrechten_files:
-            # Check if we need to move or delete the gebruiksrechten of the document being 'un-related'
             related_data_folder = self.get_parent_folders()[0]
 
+            # The gebruiksrechten file would be in the same folder as the OIO
             for file in gebruiksrechten_files:
                 parent_folder = file.get_parent_folders()[0]
                 if parent_folder.objectId == related_data_folder.objectId:
@@ -625,7 +625,7 @@ class ObjectInformatieObject(CMISContentObject):
                     self.informatieobject,
                 )
 
-    def _reorganise_files(self):
+    def _reorganise_files(self) -> None:
         """Reorganise files in the DMS when a relation between a zaak and a document is broken
 
         When a document is related to a zaak, it is located in the zaak folder and has an OIO in the 'Related Data'
@@ -654,7 +654,7 @@ class ObjectInformatieObject(CMISContentObject):
                 )
                 gebruiksrechten_file.move_object(default_related_data_folder)
 
-    def delete_object(self):
+    def delete_object(self) -> None:
         if self.object_type == "zaak":
             self._reorganise_files()
 

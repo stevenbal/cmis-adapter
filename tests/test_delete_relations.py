@@ -4,7 +4,6 @@ from unittest import skipIf
 from unittest.mock import patch
 
 from django.test import TestCase
-from django.utils import timezone
 
 from drc_cmis.models import CMISConfig, UrlMapping
 
@@ -55,16 +54,18 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         "ingangsdatum": "2018-10-01",
         "vervaldatum": "2018-11-01",
     }
-
-    def _get_gebruiksrechten_copy(self, informatieobject_url):
-        gebruiksrechten_files = self.cmis_client.query(
-            "gebruiksrechten",
-            lhs=["drc:gebruiksrechten__informatieobject = '%s'"],
-            rhs=[informatieobject_url],
-        )
-        for file in gebruiksrechten_files:
-            if file.kopie_van:
-                return file
+    document = {
+        "bronorganisatie": "159351741",
+        "creatiedatum": "2011-09-01T13:20:30+03:00",
+        "titel": "detailed summary",
+        "auteur": "test_auteur",
+        "formaat": "txt",
+        "taal": "eng",
+        "bestandsnaam": "dummy.txt",
+        "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+        "beschrijving": "test_beschrijving",
+        "vertrouwelijkheidaanduiding": "openbaar",
+    }
 
     @classmethod
     def setUpTestData(cls):
@@ -94,29 +95,15 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         )
 
     def test_delete_oio_removes_document_copy_and_gebruiksrechten(self):
-        # Creating the document in the temporary folder
-        properties = {
-            "bronorganisatie": "159351741",
-            "creatiedatum": timezone.now(),
-            "titel": "detailed summary",
-            "auteur": "test_auteur",
-            "formaat": "txt",
-            "taal": "eng",
-            "bestandsnaam": "dummy.txt",
-            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
-            "beschrijving": "test_beschrijving",
-            "vertrouwelijkheidaanduiding": "openbaar",
-        }
-        content = io.BytesIO(b"some file content")
-
+        # Creating the document in the default folder
         document = self.cmis_client.create_document(
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
-            data=properties,
-            content=content,
+            data=self.document,
+            content=io.BytesIO(b"some file content"),
             bronorganisatie="159351741",
         )
 
-        # Create gebruiksrechten
+        # Create gebruiksrechten in the default folder
         gebruiksrechten_data = {
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
@@ -145,7 +132,7 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         related_data2_folder = oio2.get_parent_folders()[0]
 
         # When OIO2 is created, the document and its gebruiksrechten are copied to the zaak2 folder
-        # so 2 documents exist (the original and 1 copy)
+        # so 2 documents and 2 gebruiksrechten files exist (the original and 1 copy)
         zaak2_folder = self.cmis_client.query(
             "zaak", lhs=["drc:zaak__url = '%s'"], rhs=[self.zaak2["url"]]
         )[0]
@@ -163,7 +150,7 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
 
         self.assertEqual(2, len(gebruiksrechten_files))
 
-        # Deleting oio2 should delete the document and gebruiksrechten (copies of the originals)
+        # Deleting oio2 should delete the document and gebruiksrechten in the zaak2 folder (copies of the originals)
         oio2.delete_object()
 
         documents_in_zaak2 = zaak2_folder.get_children_documents()
@@ -172,7 +159,7 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         self.assertEqual(0, len(documents_in_zaak2))
         self.assertEqual(0, len(files_in_related_data_folder))
 
-        # Check that now only 1 gebruiksrechten file exists (the original)
+        # Check that now only 1 gebruiksrechten file exists now (the original)
         gebruiksrechten_files = self.cmis_client.query(
             "gebruiksrechten",
             lhs=["drc:gebruiksrechten__informatieobject = '%s'"],
@@ -184,29 +171,15 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
     def test_delete_oio_moves_document_original_and_gebruiksrechten_to_default_folder(
         self,
     ):
-        # Creating the document in the temporary folder
-        properties = {
-            "bronorganisatie": "159351741",
-            "creatiedatum": timezone.now(),
-            "titel": "detailed summary",
-            "auteur": "test_auteur",
-            "formaat": "txt",
-            "taal": "eng",
-            "bestandsnaam": "dummy.txt",
-            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
-            "beschrijving": "test_beschrijving",
-            "vertrouwelijkheidaanduiding": "openbaar",
-        }
-        content = io.BytesIO(b"some file content")
-
+        # Creating the document in the default folder
         document = self.cmis_client.create_document(
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
-            data=properties,
-            content=content,
+            data=self.document,
+            content=io.BytesIO(b"some file content"),
             bronorganisatie="159351741",
         )
 
-        # Create gebruiksrechten
+        # Create gebruiksrechten in the default folder
         gebruiksrechten_data = {
             "informatieobject": f"https://drc.utrechtproeftuin.nl/api/v1/documenten/{document.uuid}",
             "startdatum": "2018-12-24T00:00:00Z",
@@ -225,7 +198,7 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         )
         related_data_folder = oio.get_parent_folders()[0]
 
-        # When OIO is created, the document is moved to the zaak1 folder
+        # When OIO is created, the document and the gebruiksrechten file are moved to the zaak1 folder
         zaak1_folder = self.cmis_client.query(
             "zaak", lhs=["drc:zaak__url = '%s'"], rhs=[self.zaak1["url"]]
         )[0]
@@ -242,7 +215,7 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
         )
         self.assertEqual(1, len(gebruiksrechten_files))
 
-        # Deleting oio should move the document back to the default folder (since it's the original)
+        # Deleting oio should move the document and the gebruiksrechten file back to the default folder
         oio.delete_object()
 
         documents_in_zaak1 = zaak1_folder.get_children_documents()
@@ -273,25 +246,11 @@ class DeleteOIORelationTests(DMSMixin, TestCase):
 
     @patch("drc_cmis.webservice.drc_document.ObjectInformatieObject._reorganise_files")
     def test_delete_bio_does_not_rearrange_files(self, m_reorganise_files):
-        # Creating the document in the temporary folder
-        properties = {
-            "bronorganisatie": "159351741",
-            "creatiedatum": timezone.now(),
-            "titel": "detailed summary",
-            "auteur": "test_auteur",
-            "formaat": "txt",
-            "taal": "eng",
-            "bestandsnaam": "dummy.txt",
-            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
-            "beschrijving": "test_beschrijving",
-            "vertrouwelijkheidaanduiding": "openbaar",
-        }
-        content = io.BytesIO(b"some file content")
-
+        # Creating the document in the default folder
         document = self.cmis_client.create_document(
             identification="9124c668-db3f-4198-8823-4c21fed430d0",
-            data=properties,
-            content=content,
+            data=self.document,
+            content=io.BytesIO(b"some file content"),
             bronorganisatie="159351741",
         )
 
