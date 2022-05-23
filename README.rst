@@ -394,6 +394,17 @@ document is stored.
 When a document is related to any other object, the document is not moved or
 copied and stays in its temporary folder.
 
+**Deleting a Zaak Informatie Object**
+
+When a document is related to a zaak, it is located in the zaak folder and has an OIO in the 'Related Data'
+folder. If the ZIO relating the zaak and the document is deleted, the OIO is deleted, and the document
+should not remain in the zaak folder. This is done as follows:
+
+1. If the document is NOT a copy (i.e. it's the original document), it should be moved to the default folder.
+   If there are related gebruiksrechten, then they should also be moved.
+2. If the document IS a copy, then it should be deleted. Related gebruiksrechten should also be deleted.
+
+
 DMS folder structure overview
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
