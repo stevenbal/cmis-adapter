@@ -10,10 +10,6 @@ from drc_cmis.models import CMISConfig, UrlMapping
 from .mixins import DMSMixin
 
 
-@skipIf(
-    os.getenv("CMIS_BINDING") != "WEBSERVICE",
-    "Browser binding doesn't need to set the main_repo_id property",
-)
 class DeleteOIORelationTests(DMSMixin, TestCase):
     base_zaak_url = "https://openzaak.utrechtproeftuin.nl/zaken/api/v1/"
     base_zaaktype_url = "https://openzaak.utrechtproeftuin.nl/catalogi/api/v1/"
