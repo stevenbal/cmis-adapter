@@ -455,6 +455,21 @@ Default: ``/DRC/{{ year }}/{{ month }}/{{ day }}/``
                         +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
                         +-- [filename]-oio (drc:oio)
 
+Notes on differences between DMSs
+=================================
+
+**SQL queries support**
+
+The SQL queries that are not supported in Alfresco can be found `here`_. In addition, queries such as:
+``SELECT * FROM drc:document WHERE cmis:parentId = '<folder.objectId>'`` don't seem to work.
+
+The SQL queries that seem not to be supported in Corsa are:
+
+* ``IN`` queries
+* ``IN_FOLDER('<folder objectId>')``
+* ``OR`` queries
+
+.. _`here`: https://docs.alfresco.com/insight-engine/latest/using/sql/#unsupported-sql-commands
 
 References
 ==========
