@@ -7,7 +7,9 @@ from typing import List, Optional, Union
 from django.conf import settings
 
 import pytz
+from furl import furl
 
+from drc_cmis.mixins import RearrangeFilesOnDeleteMixin
 from drc_cmis.models import CMISConfig
 from drc_cmis.utils.exceptions import CmisRuntimeException, DocumentDoesNotExistError
 from drc_cmis.utils.mapper import (
@@ -560,11 +562,60 @@ class Gebruiksrechten(CMISContentObject):
         )
 
 
-class ObjectInformatieObject(CMISContentObject):
+class ObjectInformatieObject(RearrangeFilesOnDeleteMixin, CMISContentObject):
     table = "drc:oio"
     name_map = OBJECTINFORMATIEOBJECT_MAP
     type_name = "oio"
     type_class = OioDoc
+
+    def _get_related_document(self) -> Optional[Document]:
+        """Get the document referred to by the OIO
+
+        This is the document in the Zaak folder that is referred to by the OIO. It can be a copy of the original
+        document. This means that we can't just filter the documents on drc:document__uuid, but we also need
+        to consider drc:kopie_van
+        """
+        related_documents = self.zaakfolder.get_children_documents(
+            convert_to_document_type=False
+        )
+        informatieobject_url = furl(self.informatieobject)
+        informatieobject_uuid = informatieobject_url.path.segments[-1]
+
+        for document in related_documents:
+            if (
+                document["properties"]["drc:document__uuid"]["value"]
+                == informatieobject_uuid
+                or document["properties"]["drc:kopie_van"]["value"]
+                == informatieobject_uuid
+            ):
+                return Document(document)
+        else:
+            logger.error(
+                "Could not find the document %s in zaakfolder %s before deleting the OIO.",
+                self.informatieobject,
+                self.zaakfolder.name,
+            )
+
+    def _get_gebruiksrechten(self) -> Optional["Gebruiksrechten"]:
+        gebruiksrechten_files = self.client.query(
+            "gebruiksrechten",
+            lhs=["drc:gebruiksrechten__informatieobject = '%s'"],
+            rhs=[self.informatieobject],
+        )
+        if gebruiksrechten_files:
+            related_data_folder = self.get_parent_folders()[0]
+
+            # The gebruiksrechten file would be in the same folder as the OIO
+            for file in gebruiksrechten_files:
+                parent_folder = file.get_parent_folders()[0]
+                if parent_folder.objectId == related_data_folder.objectId:
+                    return file
+            else:
+                logger.error(
+                    "No gebruiksrechten file found in the 'Related data' folder of zaakfolder %s for document %s.",
+                    self.zaakfolder.name,
+                    self.informatieobject,
+                )
 
 
 class Folder(CMISBaseObject):
@@ -681,15 +732,51 @@ class Folder(CMISBaseObject):
         xml_response = extract_xml_from_soap(soap_response)
         logger.debug(pretty_xml(xml_response))
 
+    def get_children_documents(
+        self, convert_to_document_type: bool = True
+    ) -> List[Union[Document, dict]]:
 
-class ZaakTypeFolder(CMISBaseObject):
+        soap_envelope = make_soap_envelope(
+            auth=(self.client.user, self.client.password),
+            repository_id=self.client.main_repo_id,
+            cmis_action="getChildren",
+            folder_id=self.objectId,
+        )
+        logger.debug(soap_envelope.toprettyxml())
+
+        soap_response = self.client.request(
+            "NavigationService", soap_envelope=soap_envelope.toxml()
+        )
+
+        xml_response = extract_xml_from_soap(soap_response)
+        logger.debug(pretty_xml(xml_response))
+
+        extracted_data = extract_object_properties_from_xml(xml_response, "getChildren")
+        documents = []
+        document_objecttype_id = (
+            f"{self.client.get_object_type_id_prefix(Document.type_name)}drc:document"
+        )
+        for object_data in extracted_data:
+            if (
+                object_data["properties"]["cmis:objectTypeId"]["value"]
+                == document_objecttype_id
+            ):
+                if convert_to_document_type:
+                    documents.append(Document(object_data))
+                else:
+                    documents.append(object_data)
+
+        return documents
+
+
+class ZaakTypeFolder(Folder):
     table = "drc:zaaktypefolder"
     name_map = ZAAKTYPE_MAP
     type_name = "zaaktype"
     type_class = ZaakTypeFolderData
 
 
-class ZaakFolder(CMISBaseObject):
+class ZaakFolder(Folder):
     table = "drc:zaakfolder"
     name_map = ZAAK_MAP
     type_name = "zaak"

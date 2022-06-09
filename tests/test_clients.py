@@ -3,6 +3,7 @@ import io
 import os
 import uuid
 from unittest import skipIf
+from unittest.mock import patch
 
 from django.test import TestCase, tag
 from django.utils import timezone
@@ -433,13 +434,15 @@ class CMISClientContentObjectsTests(DMSMixin, TestCase):
                 drc_uuid=invented_uuid, object_type="oio"
             )
 
-    def test_delete_content_object(self):
+    @patch("drc_cmis.webservice.drc_document.ObjectInformatieObject._reorganise_files")
+    def test_delete_content_object(self, m):
         oio = self.cmis_client.create_content_object(data={}, object_type="oio")
         self.cmis_client.delete_content_object(drc_uuid=oio.uuid, object_type="oio")
         with self.assertRaises(DocumentDoesNotExistError):
             self.cmis_client.get_content_object(drc_uuid=oio.uuid, object_type="oio")
 
-    def test_delete_oio(self):
+    @patch("drc_cmis.webservice.drc_document.ObjectInformatieObject._reorganise_files")
+    def test_delete_oio(self, m):
         oio = self.cmis_client.create_content_object(data={}, object_type="oio")
         oio.delete_object()
         with self.assertRaises(DocumentDoesNotExistError):

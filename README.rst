@@ -394,6 +394,17 @@ document is stored.
 When a document is related to any other object, the document is not moved or
 copied and stays in its temporary folder.
 
+**Deleting a Zaak Informatie Object**
+
+When a document is related to a zaak, it is located in the zaak folder and has an OIO in the 'Related Data'
+folder. If the ZIO relating the zaak and the document is deleted, the OIO is deleted, and the document
+should not remain in the zaak folder. This is done as follows:
+
+1. If the document is NOT a copy (i.e. it's the original document), it should be moved to the default folder.
+   If there are related gebruiksrechten, then they should also be moved.
+2. If the document IS a copy, then it should be deleted. Related gebruiksrechten should also be deleted.
+
+
 DMS folder structure overview
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -444,6 +455,21 @@ Default: ``/DRC/{{ year }}/{{ month }}/{{ day }}/``
                         +-- [filename]-gebruiksrechten (drc:gebruiksrechten)
                         +-- [filename]-oio (drc:oio)
 
+Notes on differences between DMSs
+=================================
+
+**SQL queries support**
+
+The SQL queries that are not supported in Alfresco can be found `here`_. In addition, queries such as:
+``SELECT * FROM drc:document WHERE cmis:parentId = '<folder.objectId>'`` don't seem to work.
+
+The SQL queries that seem not to be supported in Corsa are:
+
+* ``IN`` queries
+* ``IN_FOLDER('<folder objectId>')``
+* ``OR`` queries
+
+.. _`here`: https://docs.alfresco.com/insight-engine/latest/using/sql/#unsupported-sql-commands
 
 References
 ==========

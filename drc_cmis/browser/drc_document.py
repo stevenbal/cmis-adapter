@@ -9,7 +9,9 @@ from typing import List, Optional, Union
 from django.utils import timezone
 
 import pytz
+from furl import furl
 
+from drc_cmis.mixins import RearrangeFilesOnDeleteMixin
 from drc_cmis.utils.mapper import (
     DOCUMENT_MAP,
     GEBRUIKSRECHTEN_MAP,
@@ -363,10 +365,75 @@ class Gebruiksrechten(CMISContentObject):
         return self._update_properties(properties)
 
 
-class ObjectInformatieObject(CMISContentObject):
+class ObjectInformatieObject(RearrangeFilesOnDeleteMixin, CMISContentObject):
     table = "drc:oio"
     name_map = OBJECTINFORMATIEOBJECT_MAP
     type_name = "oio"
+
+    def _get_related_document(self) -> Optional["Document"]:
+        """Get the document referred to by the OIO
+
+        This is the document in the Zaak folder that is referred to by the OIO. It can be a copy of the original
+        document. This means that we can't just filter the documents on drc:document__uuid, but we also need
+        to consider drc:kopie_van.
+
+        Note:
+        If we changed the property drc:kopie_van to be indexed, we could retrieve the document with the query:
+
+        SELECT *
+        FROM drc:document
+        WHERE IN_FOLDER('<zaakfolder.objectId>')
+        AND (
+          drc:document__uuid = '<informatieobject uuid>'"
+          OR drc:kopie_van = '<informatieobject uuid>'
+        )
+        """
+        related_documents = self.zaakfolder.get_children_documents(
+            convert_to_document_type=False
+        )
+        informatieobject_url = furl(self.informatieobject)
+        informatieobject_uuid = informatieobject_url.path.segments[-1]
+
+        for document in related_documents:
+            if (
+                document["properties"]["drc:document__uuid"]["value"]
+                == informatieobject_uuid
+                or document["properties"]["drc:kopie_van"]["value"]
+                == informatieobject_uuid
+            ):
+                return Document(document)
+        else:
+            logger.error(
+                "Could not find the document %s in zaakfolder %s before deleting the OIO.",
+                self.informatieobject,
+                self.zaakfolder.name,
+            )
+
+    def _get_gebruiksrechten(self) -> Optional["Gebruiksrechten"]:
+        related_data_folder = self.get_parent_folders()[0]
+        query = CMISQuery(
+            "SELECT * FROM drc:gebruiksrechten WHERE IN_FOLDER('%s') AND drc:gebruiksrechten__informatieobject = '%s'"
+        )
+
+        data = {
+            "cmisaction": "query",
+            "statement": query(related_data_folder.objectId, self.informatieobject),
+        }
+
+        logger.debug("Request data: %s", data)
+        json_response = self.client.post_request(self.client.base_url, data=data)
+        logger.debug("Response data: %s", json_response)
+
+        gebruiksrechten_files = json_response.get("results", [])
+        if not gebruiksrechten_files:
+            logger.error(
+                "No gebruiksrechten file found in the 'Related data' folder of zaakfolder %s for document %s.",
+                self.zaakfolder.name,
+                self.informatieobject,
+            )
+            return
+
+        return Gebruiksrechten(gebruiksrechten_files[0])
 
 
 class Folder(CMISBaseObject):
@@ -448,14 +515,33 @@ class Folder(CMISBaseObject):
         json_response = self.client.post_request(self.client.root_folder_url, data=data)
         logger.debug("CMIS_ADAPTER: delete_tree: response data: %s", json_response)
 
+    def get_children_documents(self, convert_to_document_type=True):
+        """Get documents in the current folder"""
+        query = CMISQuery("SELECT * FROM drc:document WHERE IN_FOLDER('%s')")
+        data = {
+            "cmisaction": "query",
+            "statement": query(self.objectId),
+        }
 
-class ZaakTypeFolder(CMISBaseObject):
+        logger.debug("CMIS_ADAPTER: get_children_documents: request data: %s", data)
+        json_response = self.client.post_request(self.client.base_url, data=data)
+        logger.debug(
+            "CMIS_ADAPTER: get_children_documents: response data: %s", json_response
+        )
+
+        if convert_to_document_type:
+            return self.client.get_all_results(json_response, Document)
+        else:
+            return json_response["results"]
+
+
+class ZaakTypeFolder(Folder):
     table = "drc:zaaktypefolder"
     name_map = ZAAKTYPE_MAP
     type_name = "zaaktype"
 
 
-class ZaakFolder(CMISBaseObject):
+class ZaakFolder(Folder):
     table = "drc:zaakfolder"
     name_map = ZAAK_MAP
     type_name = "zaak"

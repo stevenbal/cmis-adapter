@@ -3,6 +3,7 @@ import io
 import os
 import uuid
 from unittest import skipIf
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone
@@ -881,7 +882,8 @@ class CMISContentObjectsTests(DMSMixin, TestCase):
 
         self.assertEqual(len(zaak_parent.get_children_folders()), 1)
 
-    def test_delete_object(self):
+    @patch("drc_cmis.webservice.drc_document.ObjectInformatieObject._reorganise_files")
+    def test_delete_object(self, m):
         gebruiksrechten = self.cmis_client.create_content_object(
             data={}, object_type="gebruiksrechten"
         )
