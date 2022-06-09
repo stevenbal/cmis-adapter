@@ -2,6 +2,12 @@
 Changelog
 =========
 
+1.3.1 (2022-06-09)
+------------------
+
+* Documented supported/lack of support of various SQL query types with DMS vendors
+* Implemented re-arranging of documents on ZIO delete operations (#32)
+
 1.3.0 (2022-03-10)
 ------------------
 
