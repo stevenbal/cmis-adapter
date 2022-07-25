@@ -62,6 +62,7 @@ OBJECTINFORMATIEOBJECT_MAP = {
     "object_type": None,
     "zaak": None,
     "besluit": None,
+    "verzoek": None,
 }
 
 REVERSE_ZAAKTYPE_MAP = {value: key for key, value in ZAAKTYPE_MAP.items()}

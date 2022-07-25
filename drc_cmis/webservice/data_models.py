@@ -71,6 +71,7 @@ class Oio:
     object_type: str
     besluit: QueriableUrl
     zaak: QueriableUrl
+    verzoek: QueriableUrl
     informatieobject: QueriableUrl
 
 
