@@ -48,6 +48,7 @@
         "object_type": "drc:oio__object_type",
         "besluit": "drc:oio__besluit",
         "zaak": "drc:oio__zaak",
+        "verzoek": "drc:oio__verzoek",
         "informatieobject": "drc:oio__informatieobject"
     },
     "GEBRUIKSRECHTEN_MAP": {
