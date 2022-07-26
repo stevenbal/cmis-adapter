@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.3.2 (2022-07-26)
+------------------
+
+Added missing migration for CMISConfig.time_zone
+
 1.3.1 (2022-06-09)
 ------------------
 
