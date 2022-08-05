@@ -23,6 +23,7 @@ class EnkelvoudigInformatieObject:
     integriteit_waarde: str
     titel: str
     bestandsnaam: str
+    bestandsomvang: int
     formaat: str
     ondertekening_soort: str
     beschrijving: str
