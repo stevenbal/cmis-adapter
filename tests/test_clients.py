@@ -1652,6 +1652,59 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         content.seek(0)
         self.assertEqual(posted_content.read(), content.read())
 
+    def test_create_document_without_content(self):
+
+        identification = str(uuid.uuid4())
+        properties = {
+            "uuid": str(uuid.uuid4()),
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsnaam": "dummy.txt",
+            "bestandsomvang": 17,
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+        }
+        content = io.BytesIO(b"")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            bronorganisatie="159351741",
+            data=properties,
+            content=content,
+        )
+
+        self.assertIsNotNone(document.uuid)
+        self.assertEqual(document.identificatie, identification)
+        self.assertEqual(document.bronorganisatie, "159351741")
+        self.assertEqual(
+            document.creatiedatum,
+            properties["creatiedatum"],
+        )
+        self.assertEqual(document.titel, "detailed summary")
+        self.assertEqual(document.auteur, "test_auteur")
+        self.assertEqual(document.formaat, "txt")
+        self.assertEqual(document.taal, "eng")
+        self.assertEqual(document.versie, 1)
+        self.assertEqual(document.bestandsnaam, "dummy.txt")
+        self.assertEqual(
+            document.link,
+            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+        )
+        self.assertEqual(document.beschrijving, "test_beschrijving")
+        self.assertEqual(document.vertrouwelijkheidaanduiding, "openbaar")
+
+        self.assertIsNotNone(document.contentStreamId)
+        self.assertEqual(document.bestandsomvang, 17)
+
+        # Retrieving the actual content
+        posted_content = document.get_content_stream()
+        content.seek(0)
+        self.assertEqual(posted_content.read(), b"")
+
     def test_create_document_without_checking_for_existence(self):
         identification = str(uuid.uuid4())
         properties = {
@@ -1958,6 +2011,50 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         posted_content = updated_doc.get_content_stream()
         new_content.seek(0)
         self.assertEqual(posted_content.read(), new_content.read())
+
+    def test_update_document_empty_content(self):
+        identification = str(uuid.uuid4())
+        properties = {
+            "creatiedatum": timezone.now(),
+            "titel": "detailed summary",
+            "auteur": "test_auteur",
+            "formaat": "txt",
+            "taal": "eng",
+            "bestandsomvang": 17,
+            "bestandsnaam": "dummy.txt",
+            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "beschrijving": "test_beschrijving",
+            "vertrouwelijkheidaanduiding": "openbaar",
+            "uuid": str(uuid.uuid4()),
+        }
+        content = io.BytesIO(b"Content before update")
+
+        document = self.cmis_client.create_document(
+            identification=identification,
+            data=properties,
+            content=content,
+            bronorganisatie="159351741",
+        )
+
+        new_content = io.BytesIO(b"")
+
+        lock = str(uuid.uuid4())
+        self.cmis_client.lock_document(drc_uuid=document.uuid, lock=lock)
+        self.cmis_client.update_document(
+            drc_uuid=document.uuid, data={}, lock=lock, content=new_content
+        )
+        updated_doc = self.cmis_client.unlock_document(
+            drc_uuid=document.uuid, lock=lock
+        )
+
+        self.assertEqual(updated_doc.identificatie, identification)
+        self.assertEqual(updated_doc.bronorganisatie, "159351741")
+        self.assertEqual(updated_doc.bestandsomvang, 17)
+
+        # Retrieving the content
+        posted_content = updated_doc.get_content_stream()
+        new_content.seek(0)
+        self.assertEqual(posted_content.read(), b"")
 
     def test_update_unlocked_document(self):
         identification = str(uuid.uuid4())
