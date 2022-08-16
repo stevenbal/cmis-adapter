@@ -1664,7 +1664,6 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "taal": "eng",
             "bestandsnaam": "dummy.txt",
             "bestandsomvang": 17,
-            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
         }
@@ -1690,10 +1689,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.assertEqual(document.taal, "eng")
         self.assertEqual(document.versie, 1)
         self.assertEqual(document.bestandsnaam, "dummy.txt")
-        self.assertEqual(
-            document.link,
-            "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
-        )
+        self.assertEqual(document.link, None)
         self.assertEqual(document.beschrijving, "test_beschrijving")
         self.assertEqual(document.vertrouwelijkheidaanduiding, "openbaar")
 
@@ -2022,7 +2018,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
             "taal": "eng",
             "bestandsomvang": 17,
             "bestandsnaam": "dummy.txt",
-            "link": "https://drc.utrechtproeftuin.nl/api/v1/enkelvoudiginformatieobjecten/d06f86e0-1c3a-49cf-b5cd-01c079cf8147/download",
+            "link": "",
             "beschrijving": "test_beschrijving",
             "vertrouwelijkheidaanduiding": "openbaar",
             "uuid": str(uuid.uuid4()),

@@ -187,6 +187,9 @@ class CMISClient:
         content_filename = data.get("bestandsnaam") or cmis_doc.bestandsnaam
 
         try:
+            # Content can be empty in case of large file uploads, because the file is
+            # uploaded using `BestandsDelen`
+            # https://github.com/VNG-Realisatie/gemma-zaken/blob/master/docs/_content/standaard/documenten/index.md#opslaan-van-bestanden
             cmis_doc.update_content(content or "", content_filename)
             if diff_properties:
                 cmis_doc.update_properties(diff_properties)
