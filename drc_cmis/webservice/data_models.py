@@ -98,6 +98,7 @@ class ZaakTypeFolderData:
 
 
 CONVERTER = {
+    int: "propertyInteger",
     str: "propertyString",
     date: "propertyDateTime",
     datetime: "propertyDateTime",

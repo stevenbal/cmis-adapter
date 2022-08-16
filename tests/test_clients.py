@@ -17,6 +17,7 @@ from drc_cmis.utils.exceptions import (
     DocumentExistsError,
     DocumentLockedException,
     DocumentNotLockedException,
+    DocumentSizeMismatchException,
     FolderDoesNotExistError,
     LockDidNotMatchException,
 )
@@ -2008,7 +2009,7 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         new_content.seek(0)
         self.assertEqual(posted_content.read(), new_content.read())
 
-    def test_update_document_empty_content(self):
+    def test_update_document_empty_content_unlock_fails(self):
         identification = str(uuid.uuid4())
         properties = {
             "creatiedatum": timezone.now(),
@@ -2039,18 +2040,9 @@ class CMISClientDocumentTests(DMSMixin, TestCase):
         self.cmis_client.update_document(
             drc_uuid=document.uuid, data={}, lock=lock, content=new_content
         )
-        updated_doc = self.cmis_client.unlock_document(
-            drc_uuid=document.uuid, lock=lock
-        )
 
-        self.assertEqual(updated_doc.identificatie, identification)
-        self.assertEqual(updated_doc.bronorganisatie, "159351741")
-        self.assertEqual(updated_doc.bestandsomvang, 17)
-
-        # Retrieving the content
-        posted_content = updated_doc.get_content_stream()
-        new_content.seek(0)
-        self.assertEqual(posted_content.read(), b"")
+        with self.assertRaises(DocumentSizeMismatchException):
+            self.cmis_client.unlock_document(drc_uuid=document.uuid, lock=lock)
 
     def test_update_unlocked_document(self):
         identification = str(uuid.uuid4())
