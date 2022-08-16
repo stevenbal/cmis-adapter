@@ -791,7 +791,8 @@ class SOAPCMISClient(CMISClient):
         # of the content, that means that the upload has not been completed yet ->
         # the document cannot be unlocked yet
         if (
-            cmis_doc.bestandsomvang
+            not force
+            and cmis_doc.bestandsomvang
             and cmis_doc.bestandsomvang != cmis_doc.contentStreamLength
         ):
             raise DocumentSizeMismatchException(

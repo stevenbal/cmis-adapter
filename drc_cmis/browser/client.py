@@ -443,7 +443,11 @@ class CMISDRCClient(CMISClient):
         # If bestandsomvang is explicitly defined, but does not match the actual size
         # of the content, that means that the upload has not been completed yet ->
         # the document cannot be unlocked yet
-        if pwc.bestandsomvang and pwc.bestandsomvang != pwc.contentStreamLength:
+        if (
+            not force
+            and pwc.bestandsomvang
+            and pwc.bestandsomvang != pwc.contentStreamLength
+        ):
             raise DocumentSizeMismatchException(
                 "`Document.bestandsomvang` does not match the actual size of the uploaded document."
             )
